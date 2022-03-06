@@ -35,15 +35,15 @@
   [app handler]
   (-> app
       (.use (fn [req res _next]
-              (p/-> (p/let [req (req->hash-map req)
-                            handler handler
-                            res-map (handler req)]
-                      (set-headers res res-map)
-                      (set-body res res-map)
-                      (.end res))
-                    (p/catch
-                        (fn [error]
-                          (js/console.error error)
-                          (.send res (.toString error))
-                          (.end res))))))
+              (-> (p/let [req (req->hash-map req)
+                          handler (handler)
+                          res-map (handler req)]
+                    (set-headers res res-map)
+                    (set-body res res-map)
+                    (.end res))
+                  (p/catch
+                      (fn [error]
+                        (js/console.error error)
+                        (.send res (.toString error))
+                        (.end res))))))
       ))

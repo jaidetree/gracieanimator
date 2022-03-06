@@ -7,8 +7,8 @@ module.exports = {
 			},
 
 			fontFamily: {
-				display: ["'Work Sans'", "'Arial Black'", "sans-serif"],
-				body: ["'Open Sans'", "Arial", "Helvetica", "sans-serif"],
+				display: ['"Work Sans"', '"Arial Black"', "sans-serif"],
+				body: ['"Open Sans"', "Arial", "Helvetica", "sans-serif"],
 			},
 		},
 	},

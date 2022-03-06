@@ -8,7 +8,7 @@
 		@apply font-body
 	}
 	h1 {
-		@apply text-4xl font-bold font-display
+		@apply text-4xl font-bold font-display uppercase
 	}
 }
 
@@ -19,5 +19,9 @@
 
 	.site-nav {
 		@apply uppercase font-light
+	}
+	.site-nav a {
+		@apply text-white text-opacity-70 hover:text-opacity-100
+
 	}
 }

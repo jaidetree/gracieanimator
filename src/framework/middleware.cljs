@@ -9,13 +9,40 @@
    [framework.utils.mime-types :refer [mime-types]]))
 
 (defn wrap-default-view
-  [status-pages]
+  []
   (fn [req]
-    (let [status (get req :status 404)
-          view (get status-pages status)]
-      {:headers {:content-type "text/html"}
-       :status status
-       :body (rdom/render-to-string (view req (:data req)))})))
+    {:status 404}))
+
+(defn wrap-render-page
+  [handler status-pages]
+  (fn [req]
+    (p/let [res (handler req)]
+      (let [status (get res :status 404)]
+        (cond (and (<= 200 status) (< status 300) (vector? (:body res)))
+              {:headers {:Content-Type "text/html"}
+               :status status
+               :body (rdom/render-to-string (:body res))}
+
+              (and (<= 200 status) (< status 300))
+              res
+
+              (and (<= 300 status) (< status 400))
+              res
+
+              :else
+              (let [view (get status-pages status)]
+                {:headers {:Content-Type "text/html"}
+                 :status status
+                 :body (rdom/render-to-string (view res (:data res)))}))))))
+
+(defn wrap-error-view
+  [handler]
+  (fn [req]
+    (-> (p/promise (handler req))
+        (p/catch
+            (fn [error]
+              {:status 500
+               :data {:error error}})))))
 
 (defn wrap-logging
   [handler]
@@ -46,6 +73,7 @@
         (if file-exists
           (p/let [contents (.readFile fs filepath #js {:encoding "utf-8"})
                   content-type (get mime-types ext)]
-            {:headers {"Content-Type" content-type}
+            {:status 200
+             :headers {"Content-Type" content-type}
              :body contents})
           (handler req))))))

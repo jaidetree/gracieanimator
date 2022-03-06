@@ -7,17 +7,21 @@
    ["express$default" :as express]))
 
 (defonce app-ref (atom nil))
+(defonce handler-ref (atom nil))
 
-(def handler
-  (p/-> (mw/wrap-default-view status-pages)
-        (mw/wrap-static "public")))
+(reset! handler-ref
+          (p/-> (mw/wrap-default-view)
+                (mw/wrap-static "public")
+                (mw/wrap-error-view)
+                (mw/wrap-render-page status-pages)))
 
 (defn -main
   []
   (let [app (express)
         port (env/optional :APP_PORT 3000)]
     (doto app
-      (server handler))
+      (server (fn []
+                @handler-ref)))
     (reset! app-ref
             (.listen app port
                      (fn []
