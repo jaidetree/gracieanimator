@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+	body {
+		@apply font-body
+	}
+	h1 {
+		@apply text-4xl font-bold font-display
+	}
+}
+
+@layer components {
+	.site-title {
+		@apply text-5xl
+	}
+
+	.site-nav {
+		@apply uppercase font-light
+	}
+}

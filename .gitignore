@@ -1,0 +1,5 @@
+.env
+.log
+/.nrepl-port
+public/css/stylesheet.css
+yarn-error.log
