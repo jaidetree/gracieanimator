@@ -77,3 +77,27 @@
              :headers {"Content-Type" content-type}
              :body contents})
           (handler req))))))
+
+(defn url->cljs-path
+  [root url]
+  (let [filepath (subs url 1)
+        filepath (.replace filepath "/" ".")]
+    (str root "." filepath)))
+
+(defn wrap-file-router
+  [handler root]
+  (fn [req]
+    (let [uri (:uri req)
+          uri (if (= uri "/") "/index" uri)
+          fileroot (.join path "src" (.replace root "." (.-sep path)))
+          filepath (str (url->filepath fileroot uri) ".cljs")
+          classpath (url->cljs-path root uri)
+          module-name (symbol (.basename path filepath ".cljs"))]
+      (p/let [file-exists (file-exists? filepath)]
+        (if file-exists
+          (do
+            #_(require [classpath :as module-name])
+            #_(println "Loaded")
+            #_(println (resolve classpath)))
+          (handler req))))
+    ))

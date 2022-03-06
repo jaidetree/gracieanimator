@@ -1,4 +1,6 @@
-(ns gracie.dev.server (:require
+(ns gracie.dev.server
+  (:require
+   [clojure.pprint :refer [pprint]]
    [promesa.core :as p]
    [gracie.env :as env]
    [gracie.views.base :refer [status-pages]]
@@ -7,13 +9,17 @@
    ["express$default" :as express]))
 
 (defonce app-ref (atom nil))
-(defonce handler-ref (atom nil))
 
-(reset! handler-ref
-          (p/-> (mw/wrap-default-view)
-                (mw/wrap-static "public")
-                (mw/wrap-error-view)
-                (mw/wrap-render-page status-pages)))
+
+(defn handler
+  [req]
+  (p/let [f (p/-> identity
+                  (#'mw/wrap-default-view)
+                  (#'mw/wrap-file-router "gracie.routes")
+                  (#'mw/wrap-static "public")
+                  (#'mw/wrap-error-view)
+                  (#'mw/wrap-render-page status-pages))]
+    (f req)))
 
 (defn -main
   []
@@ -21,7 +27,7 @@
         port (env/optional :APP_PORT 3000)]
     (doto app
       (server (fn []
-                @handler-ref)))
+                (deref #'handler))))
     (reset! app-ref
             (.listen app port
                      (fn []
