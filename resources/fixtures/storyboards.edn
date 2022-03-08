@@ -1,0 +1,190 @@
+[{:archived false,
+  :properties
+  {:PDF
+   {:id "FlJ%7B",
+    :type "files",
+    :files
+    [{:name "gracieanimation-valt-wonder-deer.pdf",
+      :type "file",
+      :file
+      {:url
+       "https://s3.us-west-2.amazonaws.com/secure.notion-static.com/487e3c45-2885-4035-94dd-9c4bb9d43f9e/gracieanimation-valt-wonder-deer.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20220307%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20220307T073718Z&X-Amz-Expires=3600&X-Amz-Signature=b0a546c40469be27af546e3f4f81eefd6b9da0d7b24c24b7a844c7624726b8d8&X-Amz-SignedHeaders=host&x-id=GetObject",
+       :expiry_time "2022-03-07T08:37:18.850Z"}}]},
+   :URL
+   {:id "GT%60k",
+    :type "url",
+    :url "https://vimeo.com/315304354/e65e0aff04"},
+   :Published {:id "QbY%3C", :type "checkbox", :checkbox true},
+   :Category
+   {:id "X%3ETY",
+    :type "select",
+    :select
+    {:id "898c0be9-89f5-4653-afc7-9e01c6fffdde",
+     :name "Kids Animation",
+     :color "orange"}},
+   :Tags
+   {:id "ddno",
+    :type "multi_select",
+    :multi_select
+    [{:id "f6615f9d-4cfc-4714-81f8-3705b6ae8381",
+      :name "storyboarding",
+      :color "green"}
+     {:id "9ce4d66b-e6b9-4d4b-a797-013155f93a85",
+      :name "musical",
+      :color "red"}]},
+   :Featured {:id "u%3DN%5D", :type "checkbox", :checkbox true},
+   :Name
+   {:id "title",
+    :type "title",
+    :title
+    [{:type "text",
+      :text
+      {:content "Valt The Wonder Deer Storyboard Revisions Season 3",
+       :link nil},
+      :annotations
+      {:bold false,
+       :italic false,
+       :strikethrough false,
+       :underline false,
+       :code false,
+       :color "default"},
+      :plain_text
+      "Valt The Wonder Deer Storyboard Revisions Season 3",
+      :href nil}]}},
+  :parent
+  {:type "database_id",
+   :database_id "e3e74e13-9dad-4935-9b48-361cda87196c"},
+  :created_time "2022-03-02T06:16:00.000Z",
+  :cover nil,
+  :icon nil,
+  :last_edited_by
+  {:object "user", :id "9f387e56-c5ef-4fcd-aa50-c103882d3bbe"},
+  :id "40419588-80e8-47ac-ae8a-b6bcebaa08d5",
+  :last_edited_time "2022-03-02T06:16:00.000Z",
+  :url
+  "https://www.notion.so/Valt-The-Wonder-Deer-Storyboard-Revisions-Season-3-4041958880e847acae8ab6bcebaa08d5",
+  :created_by
+  {:object "user", :id "9f387e56-c5ef-4fcd-aa50-c103882d3bbe"},
+  :object "page"}
+ {:archived false,
+  :properties
+  {:PDF
+   {:id "FlJ%7B",
+    :type "files",
+    :files
+    [{:name "gracieanimation-action.pdf",
+      :type "file",
+      :file
+      {:url
+       "https://s3.us-west-2.amazonaws.com/secure.notion-static.com/17d709bd-455d-4484-843e-9a93043464c2/gracieanimation-action.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20220307%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20220307T073718Z&X-Amz-Expires=3600&X-Amz-Signature=54728c0bfe0426df7109c6c0442af53f16c63b14ffb0989ee8dde90862d33273&X-Amz-SignedHeaders=host&x-id=GetObject",
+       :expiry_time "2022-03-07T08:37:18.850Z"}}]},
+   :URL
+   {:id "GT%60k",
+    :type "url",
+    :url "https://vimeo.com/315292072/3c60a51037"},
+   :Published {:id "QbY%3C", :type "checkbox", :checkbox true},
+   :Category
+   {:id "X%3ETY",
+    :type "select",
+    :select
+    {:id "898c0be9-89f5-4653-afc7-9e01c6fffdde",
+     :name "Kids Animation",
+     :color "orange"}},
+   :Tags
+   {:id "ddno",
+    :type "multi_select",
+    :multi_select
+    [{:id "f6615f9d-4cfc-4714-81f8-3705b6ae8381",
+      :name "storyboarding",
+      :color "green"}
+     {:id "1bf51fd5-ffc9-4a53-8f0b-5cda79778cee",
+      :name "action",
+      :color "blue"}]},
+   :Featured {:id "u%3DN%5D", :type "checkbox", :checkbox false},
+   :Name
+   {:id "title",
+    :type "title",
+    :title
+    [{:type "text",
+      :text {:content "Action Sequence", :link nil},
+      :annotations
+      {:bold false,
+       :italic false,
+       :strikethrough false,
+       :underline false,
+       :code false,
+       :color "default"},
+      :plain_text "Action Sequence",
+      :href nil}]}},
+  :parent
+  {:type "database_id",
+   :database_id "e3e74e13-9dad-4935-9b48-361cda87196c"},
+  :created_time "2022-03-02T06:16:00.000Z",
+  :cover nil,
+  :icon nil,
+  :last_edited_by
+  {:object "user", :id "9f387e56-c5ef-4fcd-aa50-c103882d3bbe"},
+  :id "a88bf9c2-b282-405f-85b9-0a0165d05f3b",
+  :last_edited_time "2022-03-02T06:16:00.000Z",
+  :url
+  "https://www.notion.so/Action-Sequence-a88bf9c2b282405f85b90a0165d05f3b",
+  :created_by
+  {:object "user", :id "9f387e56-c5ef-4fcd-aa50-c103882d3bbe"},
+  :object "page"}
+ {:archived false,
+  :properties
+  {:PDF {:id "FlJ%7B", :type "files", :files []},
+   :URL
+   {:id "GT%60k",
+    :type "url",
+    :url "https://vimeo.com/675586974/54e1f432e1"},
+   :Published {:id "QbY%3C", :type "checkbox", :checkbox true},
+   :Category
+   {:id "X%3ETY",
+    :type "select",
+    :select
+    {:id "abc4bab5-75df-45ae-983d-f0f15b871857",
+     :name "Adult Comedy Animation",
+     :color "pink"}},
+   :Tags
+   {:id "ddno",
+    :type "multi_select",
+    :multi_select
+    [{:id "f6615f9d-4cfc-4714-81f8-3705b6ae8381",
+      :name "storyboarding",
+      :color "green"}]},
+   :Featured {:id "u%3DN%5D", :type "checkbox", :checkbox false},
+   :Name
+   {:id "title",
+    :type "title",
+    :title
+    [{:type "text",
+      :text
+      {:content
+       "Robot Chicken (Big Shark Sketch) - Storyboard Artist - Stoopid Buddy",
+       :link nil},
+      :annotations
+      {:bold false,
+       :italic false,
+       :strikethrough false,
+       :underline false,
+       :code false,
+       :color "default"},
+      :plain_text
+      "Robot Chicken (Big Shark Sketch) - Storyboard Artist - Stoopid Buddy",
+      :href nil}]}},
+  :parent
+  {:type "database_id",
+   :database_id "e3e74e13-9dad-4935-9b48-361cda87196c"},
+  :created_time "2022-03-02T06:16:00.000Z",
+  :cover nil,
+  :icon nil,
+  :last_edited_by
+  {:object "user", :id "9f387e56-c5ef-4fcd-aa50-c103882d3bbe"},
+  :id "6eb46dd1-943b-4c05-a980-02b3c98636a8",
+  :last_edited_time "2022-03-02T06:16:00.000Z",
+  :url
+  "https://www.notion.so/Robot-Chicken-Big-Shark-Sketch-Storyboard-Artist-Stoopid-Buddy-6eb46dd1943b4c05a98002b3c98636a8",
+  :created_by
+  {:object "user", :id "9f387e56-c5ef-4fcd-aa50-c103882d3bbe"},
+  :object "page"}],

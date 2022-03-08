@@ -5,23 +5,26 @@
 
 @layer base {
 	body {
-		@apply font-body
+		@apply font-body;
 	}
 	h1 {
-		@apply text-4xl font-bold font-display uppercase
+		@apply text-4xl font-bold font-display uppercase;
+	}
+	pre {
+		@apply my-8 p-8 bg-black bg-opacity-25 whitespace-pre-wrap;
 	}
 }
 
 @layer components {
 	.site-title {
-		@apply text-5xl
+		@apply text-5xl;
 	}
 
 	.site-nav {
-		@apply uppercase font-light
+		@apply uppercase font-light;
 	}
 	.site-nav a {
-		@apply text-white text-opacity-70 hover:text-opacity-100
+		@apply text-white text-opacity-70 hover:text-opacity-100;
 
 	}
 }

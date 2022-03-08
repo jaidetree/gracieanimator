@@ -2,8 +2,8 @@
   (:require
    [clojure.pprint :refer [pprint]]
    [promesa.core :as p]
-   [gracie.env :as env]
-   [gracie.views.base :refer [status-pages]]
+   [gracie.views.base :refer [base status-pages]]
+   [framework.env :as env]
    [framework.server :refer [server]]
    [framework.middleware :as mw]
    ["express$default" :as express]))
@@ -13,10 +13,10 @@
 
 (defn handler
   [req]
-  (p/let [f (p/-> identity
-                  (#'mw/wrap-default-view)
-                  (#'mw/wrap-file-router "gracie.routes")
+  (p/let [f (p/-> (#'mw/wrap-default-view)
+                  (#'mw/wrap-file-router "gracie.routes" base)
                   (#'mw/wrap-static "public")
+                  (#'mw/wrap-json)
                   (#'mw/wrap-error-view)
                   (#'mw/wrap-render-page status-pages))]
     (f req)))

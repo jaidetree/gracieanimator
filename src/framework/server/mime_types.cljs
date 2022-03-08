@@ -1,4 +1,4 @@
-(ns framework.utils.mime-types
+(ns framework.server.mime-types
   "
   This file was more or less copied from
   https://github.com/macchiato-framework/macchiato-core/blob/14eac3dbc561927ee61b6127f30ef0b0269b2af6/src/macchiato/util/mime_type.cljs

@@ -1,4 +1,6 @@
-(ns gracie.views.base)
+(ns gracie.views.base
+  (:require
+   [framework.utils :refer [pprint-str]]))
 
 (defn site-header
   []
@@ -12,7 +14,7 @@
     [:a {:href "/about"} "About"]]])
 
 (defn base
-  [& children]
+  [req data & children]
   [:html
    [:head
     [:title "Grace Space"]
@@ -29,9 +31,22 @@
 (defn error-404
   [req data]
   [base
+   req data
    [:section
     [:h1 "404 Not Found"]
     [:p "The requested URL could not be found. Maybe try a little harder next time ok champ?"]]])
 
+(defn error-505
+  [req {:keys [error] :as data}]
+  [base
+   req data
+   [:section
+    [:h1 "Hey it's a.. uh... \"oh no\""]
+    [:pre
+     (str
+      (ex-message error) "\n"
+      (pprint-str (ex-data error)))]]])
+
 (def status-pages
-  {404 error-404})
+  {404 #'error-404
+   500 #'error-505})

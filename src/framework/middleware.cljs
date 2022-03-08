@@ -1,12 +1,13 @@
 (ns framework.middleware
   (:require
+   [nbb.core :as nbb]
    [cljs.pprint :refer [pprint]]
    [clojure.string :as s]
    [promesa.core :as p]
    ["fs/promises" :as fs]
    ["path" :as path]
    [reagent.dom.server :as rdom]
-   [framework.utils.mime-types :refer [mime-types]]))
+   [framework.server.mime-types :refer [mime-types]]))
 
 (defn wrap-default-view
   []
@@ -78,26 +79,72 @@
              :body contents})
           (handler req))))))
 
+(defn json-header?
+  [req]
+  (= (get-in req [:headers "Content-Type"]) "application/json"))
+
+(defn json->clj
+  [body]
+  (-> body
+      (js/JSON.parse)
+      (js->clj :keywordize-keys true)))
+
+(defn clj->json
+  [body]
+  (-> body
+      (clj->js)
+      (js/JSON.stringify nil 2)))
+
+(defn wrap-json
+  [handler]
+  (fn [req]
+    (p/let [req (if (json-header? req)
+                  (update req :body json->clj)
+                  req)
+            res (handler req)]
+      (if (json-header? res)
+        (update res :body clj->json)
+        res))))
+
 (defn url->cljs-path
   [root url]
   (let [filepath (subs url 1)
         filepath (.replace filepath "/" ".")]
     (str root "." filepath)))
 
+(defn- load-data
+  [req loader-fn]
+  (if loader-fn
+    (p/let [data (loader-fn req (:data req))]
+      (update req :data merge data))
+    req))
+
+(defn- load-meta
+  [req meta-fn]
+  (if meta-fn
+    (p/let [meta (meta-fn req (:data req))]
+      (update req :meta merge meta))
+    req))
+
 (defn wrap-file-router
-  [handler root]
+  [handler root base-view]
   (fn [req]
     (let [uri (:uri req)
           uri (if (= uri "/") "/index" uri)
           fileroot (.join path "src" (.replace root "." (.-sep path)))
           filepath (str (url->filepath fileroot uri) ".cljs")
-          classpath (url->cljs-path root uri)
-          module-name (symbol (.basename path filepath ".cljs"))]
+          classpath (url->cljs-path root uri)]
       (p/let [file-exists (file-exists? filepath)]
         (if file-exists
-          (do
-            #_(require [classpath :as module-name])
-            #_(println "Loaded")
-            #_(println (resolve classpath)))
+          (p/let [module (nbb/load-file filepath)
+                  meta-fn (resolve (symbol classpath "meta"))
+                  loader-fn (resolve (symbol classpath "loader"))
+                  view-fn (resolve (symbol classpath "view"))
+                  req (p/-> req
+                            (load-data loader-fn)
+                            (load-meta meta-fn))]
+            {:status 200
+             :body (base-view req (:data req)
+                              (view-fn req (:data req)))})
           (handler req))))
     ))
