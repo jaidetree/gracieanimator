@@ -1,8 +1,10 @@
 (ns notion.api
   (:require
-   [cljs-bean.core :refer [->js]]
+   [clojure.string :as s]
+   [cljs-bean.core :refer [->js bean]]
    [promesa.core :as p]
    [framework.env :as env]
+   [framework.utils :refer [slugify]]
    ["fs" :as fs]))
 
 (def notion-api (js/require "@notionhq/client"))
@@ -10,17 +12,29 @@
 
 (def notion (new (.-Client notion-api) #js {:auth api-key}))
 
+(def key-fn (comp keyword slugify))
+
+(defn js->clj-slugify
+  [v]
+  (cond
+    (object? v) (into {}
+                      (map (fn [[k v]]
+                             [(key-fn k) (js->clj-slugify v)]))
+                      (js/Object.entries v))
+    (array? v) (mapv #(js->clj-slugify %) v)
+    :else v))
+
 
 (defn fetch-page
   [{:keys [page-id]}]
   (p/-> (.. notion -pages (retrieve #js {:page_id page-id}))
-        (js->clj :keywordize-keys true)))
+        (js->clj-slugify)))
 
 (defn fetch-blocks
   [{:keys [block-id]}]
   (p/-> (.. notion -blocks -children (list #js {:block_id block-id}))
-        (js->clj :keywordize-keys true)
-        (:results)))
+        (js->clj-slugify)
+        (get :results [])))
 
 (defn fetch-all-blocks
   [{:keys [block-id]}]
@@ -32,7 +46,7 @@
                                 (assoc % :children blocks))
                               (p/resolved (assoc % :children []))))
                       (vec)))
-          (js->clj :keywordize-keys true))))
+          (js->clj-slugify))))
 
 (defn write-json-file
   [filename text]
@@ -49,14 +63,23 @@
     (p/let [response (.. notion -blocks -children
                          (append #js {:block_id block-id
                                       :children children}))]
-      (-> (js->clj response :keywordize-keys true)
+      (-> response
+          (js->clj-slugify)
           (get :results [])))))
 
+
 (defn fetch-db-entries
-  [{:keys [db-id query]}]
+  [{:keys [db-id filter]}]
   (let [request (clj->js {:database_id db-id
-                          :query query})]
+                          :filter filter})]
     (p/let [pages (.. notion -databases (query request))]
       (-> pages
-          (js->clj :keywordize-keys true)
+          (js->clj-slugify)
           (get :results [])))))
+
+(defn fetch-db
+  [{:keys [db-id]}]
+  (let [request (clj->js {:database_id db-id})]
+    (p/let [db (.. notion -databases (retrieve request))]
+      (-> db
+          (js->clj-slugify)))))

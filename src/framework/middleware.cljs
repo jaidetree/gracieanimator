@@ -6,8 +6,10 @@
    [promesa.core :as p]
    ["fs/promises" :as fs]
    ["path" :as path]
+   [framework.server.router :as router]
    [reagent.dom.server :as rdom]
-   [framework.server.mime-types :refer [mime-types]]))
+   [framework.server.mime-types :refer [mime-types]]
+   [framework.utils :refer [file-exists? url->filepath]]))
 
 (defn wrap-default-view
   []
@@ -53,18 +55,6 @@
       (pprint res)
       res)))
 
-(defn url->filepath
-  [root url]
-  (let [dirpath (subs url 1)
-        dirpath (.replace dirpath "/" (.-sep path))]
-    (.resolve path (.join path root dirpath))))
-
-(defn file-exists?
-  [filepath]
-  (-> (.stat fs filepath)
-      (p/then (fn [stats] (.isFile stats)))
-      (p/catch (constantly false))))
-
 (defn wrap-static
   [handler root]
   (fn [req]
@@ -106,45 +96,12 @@
         (update res :body clj->json)
         res))))
 
-(defn url->cljs-path
-  [root url]
-  (let [filepath (subs url 1)
-        filepath (.replace filepath "/" ".")]
-    (str root "." filepath)))
-
-(defn- load-data
-  [req loader-fn]
-  (if loader-fn
-    (p/let [data (loader-fn req (:data req))]
-      (update req :data merge data))
-    req))
-
-(defn- load-meta
-  [req meta-fn]
-  (if meta-fn
-    (p/let [meta (meta-fn req (:data req))]
-      (update req :meta merge meta))
-    req))
-
 (defn wrap-file-router
-  [handler root base-view]
-  (fn [req]
-    (let [uri (:uri req)
-          uri (if (= uri "/") "/index" uri)
-          fileroot (.join path "src" (.replace root "." (.-sep path)))
-          filepath (str (url->filepath fileroot uri) ".cljs")
-          classpath (url->cljs-path root uri)]
-      (p/let [file-exists (file-exists? filepath)]
-        (if file-exists
-          (p/let [module (nbb/load-file filepath)
-                  meta-fn (resolve (symbol classpath "meta"))
-                  loader-fn (resolve (symbol classpath "loader"))
-                  view-fn (resolve (symbol classpath "view"))
-                  req (p/-> req
-                            (load-data loader-fn)
-                            (load-meta meta-fn))]
-            {:status 200
-             :body (base-view req (:data req)
-                              (view-fn req (:data req)))})
-          (handler req))))
-    ))
+  [handler routes-path base-view]
+  (router/route-url
+   routes-path
+   (fn [req view]
+     (if view
+       {:status 200
+        :body (base-view req (:data req) (view req (:data req)))}
+       (handler req)))))

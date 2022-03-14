@@ -10,8 +10,14 @@
 	h1 {
 		@apply text-4xl font-bold font-display uppercase;
 	}
+	h2 {
+		@apply text-2xl font-bold font-display uppercase;
+	}
 	pre {
 		@apply my-8 p-8 bg-black bg-opacity-25 whitespace-pre-wrap;
+	}
+	.page a {
+		@apply text-white text-opacity-80 hover:text-opacity-100
 	}
 }
 
@@ -25,6 +31,9 @@
 	}
 	.site-nav a {
 		@apply text-white text-opacity-70 hover:text-opacity-100;
+	}
 
+	.sidebar-section h2 {
+		@apply mb-2;
 	}
 }
