@@ -56,13 +56,13 @@
   [req {:keys [storyboard id slug]}]
   [:div
    [:div.grid.grid-cols-12.gap-8
-    [:main.col-span-full.md:col-span-8.space-y-16
+    [:main.col-span-full.md:col-span-8.space-y-16.order-2.md:order-1
      [:div#animatic.space-y-8
       {:x-data "{ open: false }"}
       [:h1
        {:x-on:click "open = !open"}
        (:title storyboard)]
-      [:div.embedded-video.relative.hidden.md:block
+      [:div.embedded-video.relative.md:block
        {:style (let [video (get storyboard :video {})
                      {:keys [width height]} video]
                  {:padding-bottom (-> height
@@ -78,7 +78,7 @@
        [:div#boards.space-y-8
         [:h2
          "Boards"]
-        [:div.embedded-shots.relative.hidden.md:block
+        [:div.embedded-shots.relative.md:block
          {:style (let [deck (get storyboard :speakerdeck {})
                        {:keys [width height]} deck]
                    {:padding-bottom (-> height
@@ -95,7 +95,7 @@
        [:div#pdfs.space-y-8
         [:h2
          "PDFs"]
-        [:ul.bg-black.bg-opacity-20.p-8.hidden.md:block
+        [:ul.bg-black.bg-opacity-20.p-8.md:block
          (for [pdf (get storyboard :pdfs [])]
            [:li
             {:key (:name pdf)}
@@ -111,20 +111,16 @@
 
      ]
 
-    [:aside.col-span-4
+    [:aside.col-span-12.md:col-span-4.order-1.md:order-2
      [:div.space-y-4.sticky.top-8
       [:div.sidebar-section
-       [:h2 "Type"]
-       [:p
-        [:a
-         {:href (str "/storyboards")}
-         "Storyboard"]]]
-      [:div.sidebar-section
-       [:h2 "Category"]
-       [:p
-        [:a
+       [:a
+        {:href (str "/storyboards")}
+        "Storyboard"]
+       [:span.mx-4.text-white.text-opacity-50 "/"]
+       [:a
          {:href (str "/storyboards/category/" (u/slugify (:category storyboard)))}
-         (:category storyboard)]]]
+         (:category storyboard)]]
 
       (when (count (get storyboard :pdfs []))
         [:div.sidebar-section

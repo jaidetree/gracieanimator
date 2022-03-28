@@ -22,5 +22,5 @@
    [:h1.mb-8 (:title page)]
    (-> [:div]
        (into (blocks->hiccup blocks)))
-   [:pre
+   #_[:pre
     (u/pprint-str data)]])
