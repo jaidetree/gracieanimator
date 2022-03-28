@@ -1067,9 +1067,9 @@ nanoid@^3.3.1:
   integrity sha512-n6Vs/3KGyxPQd6uO0eH4Bv0ojGSUvuLlIHtC3Y0kEO23YRge8H9x1GCzLn28YX0H66pMkxuaeESFq4tKISKwdw==
 
 nbb@^0.2.0:
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/nbb/-/nbb-0.2.4.tgz#3e47cf98ab02bf832de2095eea52e3f85ddf509f"
-  integrity sha512-4PYgcOfCQze+25KU/OoZ1RLqBenTG7shboDfDVcGNS9N9B94wTG2K5xWL22vvvKR5ELX83bOlT2cfiXm85OXZQ==
+  version "0.2.9"
+  resolved "https://registry.yarnpkg.com/nbb/-/nbb-0.2.9.tgz#8d90cd8617b78ddde424d1b997eaa7b2cd72add4"
+  integrity sha512-APG1cRM8hPE3/1wkiVkzIvrYm67FBUe3RDV3Lk0K9AL3AOfXE4TzrS6CUGrtiA18RGl/U006+NSJOSpYMKIIYg==
 
 negotiator@0.6.3:
   version "0.6.3"

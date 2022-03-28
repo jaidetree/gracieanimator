@@ -3,28 +3,31 @@
    [framework.utils :refer [pprint-str]]))
 
 (defn site-header
-  []
-  [:div.flex.flex-row.justify-between.items-center.mb-16.site-header
-   [:h1.site-title
+  [{:keys [pages]}]
+  [:div.md:flex.md:flex-row.justify-between.items-center.mb-16.site-header
+   [:h1.site-title.text-center.md:text-left
     [:a {:href "/"}
      "The Grace Space"]]
-   [:nav.flex.flex-row.gap-4.site-nav
-    [:a {:href "/portfolio"} "Portfolio"]
-    [:a {:href "/resume"} "Resume"]
-    [:a {:href "/about"} "About"]]])
+   [:nav.flex.flex-row.gap-4.site-nav.justify-center.md:justify-start
+    [:a {:href "/"} "Portfolio"]
+    (for [{:keys [slug title]} pages]
+      [:a {:href (str "/" slug)} title])]])
 
 (defn base
-  [req data & children]
+  [req {:keys [pages]} & children]
   [:html
    [:head
+    [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]
     [:title "Grace Space"]
     [:link {:rel "preconnect" :href "https://fonts.googleapis.com"}]
     [:link {:rel "preconnect" :href "https://fonts.gstatic.com" :crossOrigin "true"}]
     [:link {:rel "stylesheet" :href "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Work+Sans:ital,wght@0,100;0,300;0,400;0,600;0,700;0,800;1,400&display=block"}]
-    [:link {:rel "stylesheet" :href "/css/stylesheet.css"}]]
+    [:link {:rel "stylesheet" :href "/css/stylesheet.css"}]
+    [:script {:defer true :src "https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"}]]
    [:body.bg-primary.text-white
-    [:main.max-w-5xl.m-auto.my-16
-     [site-header]
+    [:main.max-w-5xl.m-auto.my-16.p-4.md:p-0
+     [site-header
+      {:pages pages}]
      (-> [:div.page]
          (into children))]]])
 

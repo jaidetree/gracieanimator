@@ -3,6 +3,7 @@
    [clojure.pprint :refer [pprint]]
    [promesa.core :as p]
    [gracie.views.base :refer [base status-pages]]
+   [gracie.middleware :as gmw]
    [framework.env :as env]
    [framework.server :refer [server]]
    [framework.middleware :as mw]
@@ -15,6 +16,7 @@
   [req]
   (p/let [f (p/-> (#'mw/wrap-default-view)
                   (#'mw/wrap-file-router "gracie.routes" base)
+                  (#'gmw/wrap-fetch-pages)
                   (#'mw/wrap-static "public")
                   (#'mw/wrap-json)
                   (#'mw/wrap-error-view)

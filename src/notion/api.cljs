@@ -41,7 +41,7 @@
   (p/let [blocks (fetch-blocks {:block-id block-id})]
     (p/-> (p/all (->> blocks
                       (filter #(not (:archived %)))
-                      (map #(if (true? (:has_children %))
+                      (map #(if (true? (:has-children %))
                               (p/let [blocks (fetch-all-blocks {:block-id (:id %)})]
                                 (assoc % :children blocks))
                               (p/resolved (assoc % :children []))))
@@ -69,9 +69,13 @@
 
 
 (defn fetch-db-entries
-  [{:keys [db-id filter]}]
-  (let [request (clj->js {:database_id db-id
-                          :filter filter})]
+  [{:keys [db-id filter sorts]}]
+  (let [request (clj->js
+                 (merge
+                  {:database_id db-id}
+                  (when filter {:filter filter})
+                  (when sorts {:sorts sorts}))
+                   )]
     (p/let [pages (.. notion -databases (query request))]
       (-> pages
           (js->clj-slugify)

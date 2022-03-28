@@ -19,6 +19,9 @@
 	.page a {
 		@apply text-white text-opacity-80 hover:text-opacity-100
 	}
+	ul, ol {
+		@apply mb-2;
+	}
 }
 
 @layer components {
@@ -36,4 +39,8 @@
 	.sidebar-section h2 {
 		@apply mb-2;
 	}
+	.paragraph {
+		@apply leading-relaxed text-lg my-4
+	}
+
 }

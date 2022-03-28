@@ -30,7 +30,7 @@
     {:projects-by-type projects-by-type}))
 
 (defn view
-  [req {:keys [projects-by-type]}]
+  [req {:keys [projects-by-type pages]}]
   [:div.flex.flex-wrap.gap-4
    (for [[type projects] projects-by-type]
      (let [project (first projects)
@@ -41,4 +41,4 @@
          :project project}
         type]))
    #_[:pre
-    (u/pprint-str projects-by-type)]])
+    (u/pprint-str pages)]])
