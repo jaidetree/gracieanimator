@@ -1,6 +1,8 @@
 (ns gracie.projects.core
   (:require
    [promesa.core :as p]
+   [notion.api :as notion]
+   [framework.env :as env]
    [framework.utils :as u]
    ["node-fetch$default" :as fetch]
    ))
@@ -11,6 +13,10 @@
   {:name (get file :name)
    :url  (get-in file [:file :url])})
 
+(defn normalize-thumbnail
+  [video]
+  (assoc video :thumbnail_url (str (:thumbnail_url video) ".avif")))
+
 (defn fetch-vimeo-oembed
   [url]
   (let [vimeo-api-url (str "https://vimeo.com/api/oembed.json?url="
@@ -19,7 +25,8 @@
         params (clj->js {:headers {"Referer" "https://gracieanimator.squarespace.com"}})]
     (-> (p/-> (fetch vimeo-api-url params)
               (.json)
-              (js->clj :keywordize-keys true))
+              (js->clj :keywordize-keys true)
+              (normalize-thumbnail))
         (p/catch
             (fn [error]
               (js/console.error error)
@@ -124,3 +131,22 @@
 (defn group-by-category
   [projects]
   (group-by :category projects))
+
+(defn format-page
+  [page]
+  (let [props (get page :properties {})]
+    {:id (get page :id)
+     :slug (get-in props [:url-friendly-name :rich-text 0 :text :content])
+     :title (get-in props [:name :title 0 :text :content])}))
+
+(defn fetch-pages
+  []
+  (p/->> (notion/fetch-db-entries
+          {:db-id (env/required "CMS_PAGES_ID")
+           :filter {:and [{:property "Published"
+                           :checkbox {:equals true}}
+                          ]}
+           :sorts [{:property "Order"
+                    :direction "ascending"}]})
+         (map format-page)
+         (p/all)))

@@ -26,14 +26,14 @@
 
 @layer components {
 	.site-title {
-		@apply text-5xl;
+		@apply text-3xl md:text-5xl;
 	}
 
 	.site-nav {
 		@apply uppercase font-light;
 	}
 	.site-nav a {
-		@apply text-white text-opacity-70 hover:text-opacity-100;
+		@apply text-lg md:text-base text-white text-opacity-70 hover:text-opacity-100;
 	}
 
 	.sidebar-section h2 {

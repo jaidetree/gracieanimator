@@ -31,10 +31,10 @@
 
 (defn view
   [req {:keys [projects-by-type pages]}]
-  [:div.flex.flex-wrap.gap-4
+  [:div.flex.flex-wrap.gap-4.justify-center.md:justify-start
    (for [[type projects] projects-by-type]
      (let [project (first projects)
-           url (str "/" (u/slugify type))]
+           url (str "/" (u/slugify type) "/")]
        [project-thumb
         {:key (:id project)
          :url url

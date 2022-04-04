@@ -27,6 +27,10 @@
   [filename contents]
   (.writeFileSync fs filename (pprint-str contents) #js {:encoding "utf-8"}))
 
+(defn write-file
+  [filename contents]
+  (.writeFileSync fs filename contents #js {:encoding "utf-8"}))
+
 (defn file-exists?
   [filepath]
   (-> (.stat fsp filepath)

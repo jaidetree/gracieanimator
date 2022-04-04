@@ -1,4 +1,7 @@
-(ns gracie.projects.views)
+(ns gracie.projects.views
+  (:require
+   [framework.assets :refer [download-sync]]
+   [framework.utils :as u]))
 
 (defn project-thumb
   [{:keys [url project]} & children]
@@ -9,9 +12,11 @@
      [:a.absolute.left-0.right-0.top-0.bottom-0.block
       {:href url
        :style {:background-image (str "url('"
-                                      (or (get project :thumbnail)
-                                          (get project :image)
-                                          (get-in project [:video :thumbnail_url]))
+                                      (download-sync
+                                       "imgs" (or (get project :thumbnail)
+                                                  (get project :image)
+                                                  (get-in project [:video :thumbnail_url]))
+                                       (u/slugify (:title project)))
                                       "')")
                :background-repeat "no-repeat"
                :background-size   "cover"

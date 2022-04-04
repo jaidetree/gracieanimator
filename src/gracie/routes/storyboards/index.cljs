@@ -27,15 +27,17 @@
 (defn view
   [req {:keys [categories]}]
   [:main
-   [:h1 "Storyboards"]
+   [:h1.text-center.md:text-left "Storyboards"]
    [:div.space-y-16
     (for [[category storyboards] categories]
       [:section.mt-8
-       [:h2
-        [:a
-         {:href (str "/storyboards/category/" (u/slugify category))}
-         category]]
-       [:ul.flex.flex-wrap.gap-4.mt-8
+       {:key category}
+       [:header.text-center.md:text-left
+        [:h2
+         [:a
+          {:href (str "/storyboards/category/" (u/slugify category))}
+          category]]]
+       [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
         (for [storyboard storyboards]
           (let [url (str "/storyboards/"
                          (u/uid->base64 (:uid storyboard))

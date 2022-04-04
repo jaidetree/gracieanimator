@@ -12,7 +12,6 @@
   (let [slug (get-in req [:params :page-slug])
         page (some #(when (= (:slug %) slug) %) pages)]
     (p/let [blocks (notion/fetch-all-blocks {:block-id (:id page)})]
-      (u/write-edn-file "blocks.edn" blocks)
       {:page page
        :blocks blocks})))
 

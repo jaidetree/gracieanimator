@@ -36,21 +36,23 @@
   [req {:keys [storyboards categories category]}]
 
   [:main
-   [:h1
-    [:a
-     {:href "/storyboards"}
-     "Storyboards"]]
-   [:p.uppercase.font-body
-    category]
-   [:ul.flex.flex-wrap.gap-4.mt-8
+   [:header.text-center.md:text-left
+    [:h1
+     [:a
+      {:href "/storyboards"}
+      "Storyboards"]]
+    [:p.uppercase.font-body
+     category]]
+   [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
     (for [storyboard storyboards]
       (let [url (str "/storyboards/"
                      (u/uid->base64 (:uid storyboard))
-                     "/" (u/slugify (:title storyboard)))]
+                     "/" (u/slugify (:title storyboard))
+                     ".html")]
         [:li.max-w-xs.w-full
          [:div.text-center
           [:div.relative.overflow-hidden
-           {:style {:height "13.5rem"}}
+           {:class "w-full pt-[65%] md:w-auto md:h-[13.5rem]"}
            [:a.absolute.left-0.right-0.top-0.bottom-0.block
             {:href url
              :style {:background-image (str "url('"

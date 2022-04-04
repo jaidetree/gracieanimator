@@ -4,14 +4,14 @@
 
 (defn site-header
   [{:keys [pages]}]
-  [:div.md:flex.md:flex-row.justify-between.items-center.mb-16.site-header
+  [:div.md:flex.md:flex-row.justify-between.items-center.mb-8.md:mb-16.site-header
    [:h1.site-title.text-center.md:text-left
     [:a {:href "/"}
      "The Grace Space"]]
    [:nav.flex.flex-row.gap-4.site-nav.justify-center.md:justify-start
     [:a {:href "/"} "Portfolio"]
     (for [{:keys [slug title]} pages]
-      [:a {:href (str "/" slug)} title])]])
+      [:a {:key slug :href (str "/" slug)} title])]])
 
 (defn base
   [req {:keys [pages]} & children]
@@ -25,7 +25,7 @@
     [:link {:rel "stylesheet" :href "/css/stylesheet.css"}]
     [:script {:defer true :src "https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"}]]
    [:body.bg-primary.text-white
-    [:main.max-w-5xl.m-auto.my-16.p-4.md:p-0
+    [:div.max-w-5xl.m-auto.my-8.p-4.md:p-0.md:my-16
      [site-header
       {:pages pages}]
      (-> [:div.page]

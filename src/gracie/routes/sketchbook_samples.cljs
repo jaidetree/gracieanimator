@@ -10,7 +10,7 @@
 
 (defn loader
   [req _data]
-  (p/let [illustrations
+  (p/let [images
           (p/->> (notion/fetch-db-entries
                   {:db-id (env/required "CMS_STORYBOARDS_ID")
                    :filter {:and [{:property "Published"
@@ -19,16 +19,16 @@
                                    :select {:equals "Sketchbook Samples"}}
                                   ]}})
                  (projects/format-projects))]
-    {:illustrations illustrations}))
+    {:images images}))
 
 (defn view
-  [req {:keys [illustrations]}]
+  [req {:keys [images]}]
   [:div
    [:h1.mb-8 "Sketchbook Samples"]
    [:div.sketchbook-samples.space-y-8
-    (for [illustration illustrations]
+    (for [image images]
       [:img
-       {:src (:image illustration)}])
+       {:src (:image image) :alt (:title image)}])
 
     #_[:pre
      (u/pprint-str illustrations)]]])

@@ -1,5 +1,6 @@
 (ns notion.hiccup
   (:require
+   [framework.assets :refer [download-sync]]
    [clojure.string :as s]
    ["path" :as path]))
 
@@ -57,7 +58,7 @@
                      (map #(get-in % [:text :content]))
                      (s/join " "))]
     [:img
-     {:src url
+     {:src (download-sync "imgs" url)
       :alt (if (s/blank? caption)
              (let [basename (.basename path url)]
                (subs (.basename path url) 0 (s/index-of basename "?")))
@@ -157,7 +158,7 @@
       [:div.relative.my-8
        {:style {:padding-top "77.27%"}}
        [:iframe.absolute.left-0.right-0.top-0.bottom-0.w-full.h-full
-        {:src (get-in pdf [:file :url])}]
+        {:src (download-sync "downloads" (get-in pdf [:file :url]))}]
        ]
       [:div
        "PDF format currently unsupported. Please report this error"])))
@@ -180,11 +181,10 @@
    (let [url-str (get-in file [:file :url])
          url (js/URL. url-str)]
      [:a.flex.flex-row.gap-4.p-4
-      {:href url-str}
       [:span
        [pdf-icon]]
       [:span
-       (.basename path (.-pathname url))]])])
+       (download-sync "downloads" (.basename path (.-pathname url)))]])])
 
 (defn block->hiccup
   [block]
@@ -265,13 +265,22 @@
                      (conj grouped block)
                      type))))))))
 
+(defn key-element
+  [el block]
+  (let [[tag opts & children] el]
+    (if (map? opts)
+      (update el 1 assoc :key (:id block))
+      (into [tag {:key (:id block)} opts] children))))
+
 (defn blocks->hiccup
   [blocks]
   (->> blocks
        (group-list-items)
        (keep
         (fn [block]
-          (let [el (block->hiccup block)
+          (let [el (-> block
+                       (block->hiccup)
+                       (key-element block))
                 children (:children block [])]
             (when el
               (if (:has-children block)
