@@ -17,10 +17,8 @@
     "repl": "concurrently -n css,repl yarn:dev:css \"yarn nbb nrepl-server :port 1337\"",
     "deploy": "netlify deploy --site luminous-semifreddo-a1547d --dir build/"
   },
-  "dependencies": {
-    "nbb": "^1.2.163"
-  },
   "devDependencies": {
+    "nbb": "^1.2.163",
     "@notionhq/client": "^1.0.1",
     "concurrently": "^7.0.0",
     "dotenv": "^16.0.0",
