@@ -71,7 +71,9 @@
     (let [data {:pages      pages
                 :categories categories}
           req (merge {} {:data data})]
-      (write-hiccup "storyboards/index.html" (base req data (storyboards/view req data)))
+      (write-hiccup
+       "storyboards/index.html"
+       (base req data (storyboards/view req data)))
       )))
 
 (defn build-storyboard-categories
@@ -79,17 +81,18 @@
   (p/let [categories (p/->> projects
                             (filter #(= (:type %) "Storyboards"))
                             (projects/group-by-category))]
-    (for [[category storyboards] categories]
-      (let [data {:pages       pages
-                  :category    category
-                  :storyboards storyboards
-                  :categories  categories}
-            slug (u/slugify category)
-            req (merge {} {:data data})]
-        (write-hiccup
-         (str "storyboards/category/" slug "/index.html")
-         (base req data (category/view req data)))
-        ))))
+    (p/all
+     (for [[category storyboards] categories]
+       (let [data {:pages       pages
+                   :category    category
+                   :storyboards storyboards
+                   :categories  categories}
+             slug (u/slugify category)
+             req (merge {} {:data data})]
+         (write-hiccup
+          (str "storyboards/category/" slug "/index.html")
+          (base req data (category/view req data)))
+         )))))
 
 (defn build-storyboard-pages
   [{:keys [projects pages]}]

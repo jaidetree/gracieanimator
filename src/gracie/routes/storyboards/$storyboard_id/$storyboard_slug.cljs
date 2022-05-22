@@ -84,7 +84,7 @@
                                       (* 100)
                                       (str "%"))})
         :dangerouslySetInnerHTML {:__html (s/replace
-                                           (get-in storyboard [:video :html])
+                                           (get-in storyboard [:video :html] "")
                                            #"<iframe"
                                            "<iframe class=\"absolute w-full h-full top-0 left-0\"")}}]]
 
@@ -101,7 +101,7 @@
                                         (str "%"))})
 
           :dangerouslySetInnerHTML
-          {:__html (s/replace (get-in storyboard [:speakerdeck :html])
+          {:__html (s/replace (get-in storyboard [:speakerdeck :html] "")
                               #"<iframe"
                               "<iframe class=\"absolute w-full h-full top-0 left-0\"")}}]])
 
@@ -114,7 +114,7 @@
            [:li
             {:key (:name pdf)}
             [:a.flex.flex-row
-             {:href (:url pdf)
+             {:href (download-sync "downloads" (:url pdf))
               :target (str "_grace_pdf_")}
              [:span.mr-2.text-lg
               [pdf-icon]]
@@ -166,7 +166,8 @@
             "More"]])
         ]]
 
-      (when (count (get storyboard :pdfs []))
+      (when (or (pos? (count (get storyboard :pdfs [])))
+                (get storyboard :speakerdeck))
         [:div.sidebar-section
          [:h2 "Quick Links"]
          [:ul.space-y-1
@@ -177,14 +178,15 @@
               [:span
                [img-icon]]
               "Boards"]])
-          (for [pdf (get storyboard :pdfs [])]
-            [:li
-             {:key (:name pdf)}
-             [:a.flex.flex-row.gap-2
-              {:href (download-sync "downloads" (:url pdf))}
-              [:span
-               [pdf-icon]]
-              (:name pdf)]])]])]]]
+          (when (count (get storyboard :pdfs []))
+            (for [pdf (get storyboard :pdfs [])]
+              [:li
+               {:key (:name pdf)}
+               [:a.flex.flex-row.gap-2
+                {:href (download-sync "downloads" (:url pdf))}
+                [:span
+                 [pdf-icon]]
+                (:name pdf)]]))]])]]]
 
 
    [:script {:src "/js/login-gate.js"}]]

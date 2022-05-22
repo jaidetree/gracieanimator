@@ -15,7 +15,7 @@
     "dev:css": "yarn build:css --watch",
     "dev:server": "yarn nbb -m gracie.dev.server",
     "repl": "concurrently -n css,repl yarn:dev:css \"yarn nbb nrepl-server :port 1337\"",
-    "deploy":"netlify deploy --site luminous-semifreddo-a1547d --dir build/ --prod"
+    "deploy":"netlify deploy --site luminous-semifreddo-a1547d --dir build/"
   },
   "dependencies": {
     "nbb": "^0.2.0"

@@ -15,7 +15,7 @@
 
 (defn normalize-thumbnail
   [video]
-  (assoc video :thumbnail_url (str (:thumbnail_url video) ".avif")))
+  (assoc video :thumbnail_url (str (:thumbnail_url video) ".jpg")))
 
 (defn fetch-vimeo-oembed
   [url]

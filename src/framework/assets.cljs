@@ -12,7 +12,6 @@
 
 (defn download-sync
   [dir url & [filename]]
-  (println url)
   (let [base @basedir]
     (-> (.execFileSync cp "nbb"
                        #js ["./workers/download.cljs"

@@ -4,6 +4,7 @@
    [promesa.core :as p]
    [framework.env :as env]
    [framework.utils :as u]
+   [framework.assets :refer [download-sync]]
    [notion.api :as notion]
    [gracie.projects.core :as projects]
    [clojure.string :as s]))
@@ -28,7 +29,8 @@
    [:div.illustrations.space-y-8
     (for [illustration illustrations]
       [:img
-       {:src (:image illustration)}])
+       {:src (download-sync "imgs/illustrations" (:image illustration))
+        :alt (:title illustration)}])
 
     #_[:pre
      (u/pprint-str illustrations)]]])

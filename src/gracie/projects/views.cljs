@@ -13,9 +13,10 @@
       {:href url
        :style {:background-image (str "url('"
                                       (download-sync
-                                       "imgs" (or (get project :thumbnail)
-                                                  (get project :image)
-                                                  (get-in project [:video :thumbnail_url]))
+                                       (str "imgs/" (u/slugify (name (:type project))))
+                                       (or (get project :thumbnail)
+                                           (get project :image)
+                                           (get-in project [:video :thumbnail_url]))
                                        (u/slugify (:title project)))
                                       "')")
                :background-repeat "no-repeat"

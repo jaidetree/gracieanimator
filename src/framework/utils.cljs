@@ -47,7 +47,7 @@
   [text]
   (let [charlist (set "abcdefghijklmnopqrstuvwxyz0123456789")]
     (loop [slug ""
-           remaining (s/lower-case text)]
+           remaining (s/lower-case (or text ""))]
       (let [[char & remaining] remaining
             last-char (last slug)]
         (cond

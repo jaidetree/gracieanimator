@@ -31,10 +31,15 @@
   (.mkdirSync fs (.join path root dir) #js {:recursive true})
   (let [dest-stream (.createWriteStream fs dest-file)]
     (p/let [res (fetch url)]
-      (p/-> (js/Promise.
+      (-> (js/Promise.
              (fn [resolve]
                (.once
                 dest-stream "finish" (fn []
                                        (resolve (str "/" dest-url))))
                (.pipe (.-body res) dest-stream)))
-            (println)))))
+          (p/then println)
+          (p/catch
+              (fn [err]
+                (js/console.error "Failed downloading" url)
+                (js/console.error err)
+                (js/throw err)))))))
