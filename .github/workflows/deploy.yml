@@ -52,3 +52,7 @@ jobs:
           npx deploy --alias=staging
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          CMS_STORYBOARDS_ID: ${{ secrets.CMS_STORYBOARDS_ID }}
+          CMS_PAGES_ID: ${{ secrets.CMS_PAGES_ID }}
+          GRACIE_STORYBOARDS_PASSWORD: ${{ secrets.GRACIE_STORYBOARDS_PASSWORD }}
