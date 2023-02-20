@@ -35,12 +35,10 @@ jobs:
             ${{ runner.os }}-modules-
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2.5.1
+        uses: actions/setup-node@v3
         with:
-          # Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm
+          node-version: 18
           cache: npm
-          # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.
-          cache-dependency-path: package-lock.json
 
       - name: Install Dependencies
         run: npm install
