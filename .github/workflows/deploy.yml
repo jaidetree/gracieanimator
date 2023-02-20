@@ -1,0 +1,56 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+  repository_dispatch:
+    types: [deploy]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get npm cache directory path
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        id: npm-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        with:
+          path: |
+            node_modules
+            ~/.cache
+            ~/.m2/repository
+            ${{ steps.npm-cache-dir-path.outputs.dir }}
+          key:
+            ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}-pkg-${{
+            hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-modules-
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.5.1
+        with:
+          # Used to specify a package manager for caching in the default directory. Supported values: npm, yarn, pnpm
+          cache: npm
+          # Used to specify the path to a dependency file: package-lock.json, yarn.lock, etc. Supports wildcards or a list of file names for caching multiple dependencies.
+          cache-dependency-path: package-lock.json
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run:
+          npm run build
+
+      - name: Deploy
+        run:
+          npx deploy --alias=staging
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
