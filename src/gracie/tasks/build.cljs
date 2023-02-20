@@ -8,6 +8,7 @@
    [gracie.projects.core :as projects]
    [notion.api :as notion]
    [gracie.views.base :refer [base]]
+   [gracie.views.auth :as auth]
    [reagent.dom.server :as rdom]
    ["path" :as path]
    ["fs" :as fs]
@@ -18,8 +19,8 @@
    [gracie.routes.illustrations :as illustrations]
    [gracie.routes.sketchbook-samples :as sketchbook]
    [gracie.routes.comics :as comics]
-   [gracie.routes.$page-slug :as dynamic-page]
-   ))
+   [gracie.routes.$page-slug :as dynamic-page]))
+
 
 (assets/set-basedir! "build")
 
@@ -35,17 +36,20 @@
 
 
 (def build-dir (.resolve path (js/process.cwd) "build"))
+(def functions-dir (.resolve path (js/process.cwd) "netlify/functions/auth"))
 
 (defn write-file
-  [filename contents]
-  (let [filepath (.join path build-dir filename)]
+  [dirname filename contents]
+  (let [filepath (.join path dirname filename)]
     (println "Writing" filename)
     (.mkdirSync fs (.dirname path filepath) #js {:recursive true})
     (u/write-file filepath contents)))
 
 (defn write-hiccup
-  [filename hiccup-vec]
-  (write-file filename (rdom/render-to-static-markup hiccup-vec)))
+  ([filename hiccup-vec]
+   (write-hiccup build-dir filename hiccup-vec))
+  ([dirname filename hiccup-vec]
+   (write-file dirname filename (rdom/render-to-static-markup hiccup-vec))))
 
 (defn group-by-type
   [projects]
@@ -72,9 +76,17 @@
                 :categories categories}
           req (merge {} {:data data})]
       (write-hiccup
-       "storyboards/index.html"
-       (base req data (storyboards/view req data)))
-      )))
+       functions-dir
+       "storyboards.html"
+       (storyboards/view req data)))))
+
+
+(defn build-storyboards-auth
+  [{:keys [projects pages]}]
+  (let [data {:pages    pages
+              :projects projects}
+        req (merge {} {:data data})]
+    (write-hiccup "storyboards/index.html" (base req data (auth/view req data)))))
 
 (defn build-storyboard-categories
   [{:keys [projects pages]}]
@@ -91,8 +103,8 @@
              req (merge {} {:data data})]
          (write-hiccup
           (str "storyboards/category/" slug "/index.html")
-          (base req data (category/view req data)))
-         )))))
+          (base req data (category/view req data))))))))
+
 
 (defn build-storyboard-pages
   [{:keys [projects pages]}]
@@ -111,8 +123,8 @@
                req (merge {} {:data data})]
            (write-hiccup
             (str "storyboards/" id "/" slug ".html")
-            (base req data (storyboard/view req data)))
-           ))))))
+            (base req data (storyboard/view req data)))))))))
+
 
 (defn build-illustrations
   [{:keys [projects pages]}]
@@ -123,8 +135,8 @@
           req (merge {} {:data data})]
       (write-hiccup
        "illustrations/index.html"
-       (base req data (illustrations/view req data)))
-      )))
+       (base req data (illustrations/view req data))))))
+
 
 (defn build-sketches
   [{:keys [projects pages]}]
@@ -135,8 +147,8 @@
           req (merge {} {:data data})]
       (write-hiccup
        "sketchbook-samples/index.html"
-       (base req data (sketchbook/view req data)))
-      )))
+       (base req data (sketchbook/view req data))))))
+
 
 (defn build-comics
   [{:keys [projects pages]}]
@@ -147,8 +159,8 @@
           req (merge {} {:data data})]
       (write-hiccup
        "comics/index.html"
-       (base req data (comics/view req data)))
-      )))
+       (base req data (comics/view req data))))))
+
 
 (defn build-dynamic-pages
   [{:keys [pages]}]
@@ -162,8 +174,8 @@
              req (merge {} {:data data})]
          (write-hiccup
           (str slug ".html")
-          (base req data (dynamic-page/view req data)))
-         )))))
+          (base req data (dynamic-page/view req data))))))))
+
 
 
 (defn -main
@@ -176,6 +188,10 @@
          {:projects projects
           :pages    pages})
 
+        (build-storyboards-auth
+         {:projects projects
+          :pages    pages})
+
         (build-storyboards
          {:projects projects
           :pages    pages})
@@ -184,9 +200,9 @@
          {:projects projects
           :pages    pages})
 
-        (build-storyboard-pages
-         {:projects projects
-          :pages    pages})
+        #_(build-storyboard-pages
+           {:projects projects
+            :pages    pages})
 
         (build-illustrations
          {:projects projects
@@ -204,3 +220,21 @@
          {:pages    pages})
 
         (println "Site built")))))
+
+(comment
+
+  (let [req {}]
+    (p/let [[projects pages] (p/all [(fetch-projects)
+                                     (projects/fetch-pages)])]
+      (p/do
+        (build-storyboards-auth
+         {:projects projects
+          :pages    pages})
+
+        (build-storyboards
+         {:projects projects
+          :pages    pages})
+
+        (println "Site built")))))
+
+

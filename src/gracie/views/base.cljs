@@ -23,13 +23,25 @@
     [:link {:rel "preconnect" :href "https://fonts.gstatic.com" :crossOrigin "true"}]
     [:link {:rel "stylesheet" :href "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Work+Sans:ital,wght@0,100;0,300;0,400;0,600;0,700;0,800;1,400&display=block"}]
     [:link {:rel "stylesheet" :href "/css/stylesheet.css"}]
-    [:script {:defer true :src "https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"}]]
+    [:script
+     {:type "text/javascript"
+      :src "https://cdn.jsdelivr.net/npm/scittle@0.1.2/dist/scittle.js"}]
+    [:script
+     {:type "text/javascript"
+      :src "https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"}]
+    [:script
+     {:type "text/javascript"
+      :src "https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"}]
+    [:script
+     {:type "text/javascript"
+      :src "https://cdn.jsdelivr.net/npm/scittle@0.1.2/dist/scittle.reagent.js"}]]
    [:body.bg-primary.text-white
     [:div.max-w-5xl.m-auto.my-8.p-4.md:p-0.md:my-16
      [site-header
       {:pages pages}]
      (-> [:div.page]
-         (into children))]]])
+         (into children))]
+    ]])
 
 
 (defn error-404

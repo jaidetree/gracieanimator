@@ -41,8 +41,8 @@
                         [filepath]
 
                         :else
-                        []))
-                ))
+                        []))))
+                
          (p/all)
          (reduce #(into %1 %2) [])))
 
@@ -142,7 +142,7 @@
   (p/let [routes (load-routes "gracie.routes")
           target (match-route routes "/storyboards/MDA1MDYwODMyMjAy/robot-chicken-totoro-sketch-storyboard-artist-stoopid-buddy-adult-animated-comedy")]
     #_(pprint {:routes routes
-             :ranks (map route-rank routes)})
-    (pprint target))
+               :ranks (map route-rank routes)})
+    (pprint target)))
 
-  )
+  

@@ -20,8 +20,7 @@
      :scheme (.-protocol req)
      :request-method (keyword (.-method req))
      :headers (js->clj (.-headers req) :keywordize true)
-     :body (.-body req)
-     }))
+     :body (.-body req)}))
 
 (defn set-headers
   [res res-map]
@@ -45,5 +44,5 @@
                       (fn [error]
                         (js/console.error error)
                         (.send res (.toString error))
-                        (.end res))))))
-      ))
+                        (.end res))))))))
+      

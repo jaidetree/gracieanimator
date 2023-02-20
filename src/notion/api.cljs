@@ -1,11 +1,11 @@
 (ns notion.api
   (:require
-   [clojure.string :as s]
-   [cljs-bean.core :refer [->js bean]]
-   [promesa.core :as p]
-   [framework.env :as env]
-   [framework.utils :refer [slugify]]
-   ["fs" :as fs]))
+     [clojure.string :as s]
+     [cljs-bean.core :refer [->js bean]]
+     [promesa.core :as p]
+     [framework.env :as env]
+     [framework.utils :refer [slugify]]
+     ["fs" :as fs]))
 
 (def notion-api (js/require "@notionhq/client"))
 (def api-key (env/required :NOTION_API_KEY))
@@ -74,8 +74,8 @@
                  (merge
                   {:database_id db-id}
                   (when filter {:filter filter})
-                  (when sorts {:sorts sorts}))
-                   )]
+                  (when sorts {:sorts sorts})))]
+
     (p/let [pages (.. notion -databases (query request))]
       (-> pages
           (js->clj-slugify)
