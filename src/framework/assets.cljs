@@ -12,13 +12,17 @@
 
 (defn download-sync
   [dir url & [filename]]
-  (let [base @basedir]
-    (-> (.execFileSync cp "nbb"
-                       #js ["./workers/download.cljs"
-                            (js/JSON.stringify
-                             (clj->js {:url url
-                                       :root base
-                                       :dir dir
-                                       :filename filename}))]
-                       #js {:encoding "utf-8"})
-        (s/trim))))
+  (if url
+   (let [base @basedir]
+     (-> (.execFileSync
+           cp "nbb"
+           #js ["./workers/download.cljs"
+                (js/JSON.stringify
+                  (clj->js {:url url
+                            :root base
+                            :dir dir
+                            :filename filename}))]
+           #js {:encoding "utf-8"
+                #_#_:stdio "inherit"})
+         (s/trim)))
+   ""))

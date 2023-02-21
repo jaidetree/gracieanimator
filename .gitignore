@@ -4,3 +4,7 @@
 public/css/stylesheet.css
 yarn-error.log
 .cpcache
+build
+
+# Local Netlify folder
+.netlify

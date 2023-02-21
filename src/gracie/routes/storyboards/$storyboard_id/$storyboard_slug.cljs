@@ -45,8 +45,8 @@
                      :filter {:and [{:property "Published"
                                      :checkbox {:equals true}}
                                     {:property "UID"
-                                     :formula {:string {:equals uid}}}
-                                    ]}})
+                                     :formula {:string {:equals uid}}}]}})
+
                    (first)
                    (projects/format-project))
             blocks (notion/fetch-all-blocks {:block-id (:id storyboard)})]
@@ -60,16 +60,16 @@
   [req {:keys [storyboard id slug blocks]}]
   [:div
    #_[:div#login-page
-    [:form.max-w-xl.m-auto
-     {:method "POST"
-      :action "/.netlify/functions/login"}
-     [:input.bg-white.bg-opacity-20.px-4.text-lg.text-white.w-full
-      {:type "password"
-       :name "password"}]
-     [:div.text-center
-      [:button
-       {:type "submit"}
-       "Login"]]]]
+      [:form.max-w-xl.m-auto
+       {:method "POST"
+        :action "/.netlify/functions/login"}
+       [:input.bg-white.bg-opacity-20.px-4.text-lg.text-white.w-full
+        {:type "password"
+         :name "password"}]
+       [:div.text-center
+        [:button
+         {:type "submit"}
+         "Login"]]]]
 
    [:div#storyboard-page.grid.grid-cols-12.gap-8
     [:main.col-span-full.md:col-span-8.space-y-16.order-2.md:order-1
@@ -88,22 +88,23 @@
                                            #"<iframe"
                                            "<iframe class=\"absolute w-full h-full top-0 left-0\"")}}]]
 
-     (when (:speakerdeck storyboard)
+     (when (seq (:speakerdecks storyboard))
        [:div#boards.space-y-8
         [:h2
          "Boards"]
-        [:div.embedded-shots.relative.md:block
-         {:style (let [deck (get storyboard :speakerdeck {})
-                       {:keys [width height]} deck]
-                   {:padding-bottom (-> height
-                                        (/ width)
-                                        (* 100)
-                                        (str "%"))})
+        (for [[idx deck] (map-indexed vector (get storyboard :speakerdecks []))]
+         [:div.embedded-shots.relative.md:block
+          {:key idx}
+          {:style (let [{:keys [width height]} deck]
+                    {:padding-bottom (-> height
+                                         (/ width)
+                                         (* 100)
+                                         (str "%"))})
 
-          :dangerouslySetInnerHTML
-          {:__html (s/replace (get-in storyboard [:speakerdeck :html] "")
-                              #"<iframe"
-                              "<iframe class=\"absolute w-full h-full top-0 left-0\"")}}]])
+           :dangerouslySetInnerHTML
+           {:__html (s/replace (get deck :html "")
+                               #"<iframe"
+                               "<iframe class=\"absolute w-full h-full top-0 left-0\"")}}])])
 
      (when (pos? (count (get storyboard :pdfs [])))
        [:div#pdfs.space-y-8
@@ -126,9 +127,9 @@
 
 
      #_[:pre
-      (u/pprint-str (get storyboard :speakerdeck))]
+        (u/pprint-str (get storyboard :speakerdeck))]]
 
-     ]
+
 
     [:aside.col-span-12.md:col-span-4.order-1.md:order-2
      [:div.space-y-4.sticky.top-8
@@ -149,7 +150,7 @@
          [:a.py-1.px-4.block.text-white.text-opacity-80.hover:text-opacity-100.hover:bg-black.hover:bg-opacity-20
           {:href "#animatic"}
           "Animatic"]]
-        (when (get storyboard :speakerdeck)
+        (when (seq (get storyboard :speakerdecks []))
           [:li
            [:a.py-1.px-4.block.text-white.text-opacity-80.hover:text-opacity-100.hover:bg-black.hover:bg-opacity-20
             {:href "#boards"}
@@ -163,21 +164,22 @@
           [:li
            [:a.py-1.px-4.block.text-white.text-opacity-80.hover:text-opacity-100.hover:bg-black.hover:bg-opacity-20
             {:href "#content"}
-            "More"]])
-        ]]
+            "More"]])]]
+
 
       (when (or (pos? (count (get storyboard :pdfs [])))
-                (get storyboard :speakerdeck))
+                (get storyboard :speakerdecks))
         [:div.sidebar-section
          [:h2 "Quick Links"]
          [:ul.space-y-1
-          (when-let [deck (storyboard :speakerdeck)]
+          (for [[idx url] (map-indexed vector (get storyboard :speakerdeck-urls []))]
             [:li
+             {:key url}
              [:a.flex.flex-row.gap-2
-              {:href (get storyboard :speakerdeck-url)}
+              {:href url}
               [:span
                [img-icon]]
-              "Boards"]])
+              (str "Boards Set " (inc idx))]])
           (when (count (get storyboard :pdfs []))
             (for [pdf (get storyboard :pdfs [])]
               [:li
@@ -189,5 +191,5 @@
                 (:name pdf)]]))]])]]]
 
 
-   [:script {:src "/js/login-gate.js"}]]
-  )
+   [:script {:src "/js/login-gate.js"}]])
+

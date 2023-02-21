@@ -3,7 +3,8 @@
             [promesa.core :as p]
             [clojure.string :as s]
             ["path" :as path]
-            ["fs" :as fs]))
+            ["fs" :as fs]
+            ["stream" :refer [Readable]]))
 
 (defn normalize-filename
   [filename basename]
@@ -12,8 +13,8 @@
         :else basename))
 
 
-(let [{:keys [url dir filename root]
-        (js->clj (js/JSON.parse (nth js/process.argv 3)) :keywordize-keys true)}
+(let [{:keys [url dir filename root]}
+      (js->clj (js/JSON.parse (nth js/process.argv 3)) :keywordize-keys true)
       url-obj (js/URL. url)
       url-path (.-pathname url-obj)
       base (normalize-filename filename (.basename path url-path))
@@ -24,8 +25,10 @@
     (p/let [res (js/fetch url)]
       (-> (js/Promise.
             (fn [resolve]
-              (.once dest-stream "finish" (fn [] (resolve (str "/" dest-url))))
-              (.pipeTo (.-body res) dest-stream)))
+              (let [src-stream (.fromWeb Readable (.-body res))]
+                (.once dest-stream "finish" (fn []
+                                              (resolve (str "/" dest-url))))
+                (.pipe src-stream dest-stream))))
           (p/then println)
           (p/catch (fn [err]
                      (js/console.error "Failed downloading" url)

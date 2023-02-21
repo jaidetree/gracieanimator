@@ -1,9 +1,10 @@
 (ns gracie.projects.core
   (:require
-   [promesa.core :as p]
-   [notion.api :as notion]
-   [framework.env :as env]
-   [framework.utils :as u]))
+    [cljs.pprint :refer [pprint]]
+    [promesa.core :as p]
+    [notion.api :as notion]
+    [framework.env :as env]
+    [framework.utils :as u]))
 
 
 (defn format-pdf
@@ -32,46 +33,54 @@
 
 (defn fetch-speakerdeck-oembed
   [url]
-  (let [vimeo-api-url (str "https://speakerdeck.com/oembed.json?url="
-                           (js/encodeURIComponent url))]
-    (-> (p/-> (js/fetch vimeo-api-url)
+  (let [speakerdeck-api-url (str "https://speakerdeck.com/oembed.json?url="
+                                 (js/encodeURIComponent url))]
+    (-> (p/-> (js/fetch speakerdeck-api-url)
               (.json)
               (js->clj :keywordize-keys true))
-        (p/catch (fn [error] (js/console.error error) {})))))
+        (p/catch (fn [error]
+                   (js/console.error "Failed fetching speakerdeck url" url)
+                   (js/console.error error) {})))))
 
-(defn fetch-speakerdeck
-  [speakerdeck-url]
-  (if speakerdeck-url (fetch-speakerdeck-oembed speakerdeck-url) nil))
+(defn fetch-speakerdecks
+  [speakerdeck-urls]
+  (p/all
+    (->> speakerdeck-urls
+         (filter seq)
+         (map fetch-speakerdeck-oembed))))
 
 (defn format-project
   [project]
   (let [fields (get project :properties)
         type (get-in fields [:type :select :name])
         vimeo-url (get-in fields [:vimeo-url :url])
-        speakerdeck-url (get-in fields [:speakerdeck-url :url])]
+        speakerdeck-urls (->> (get-in fields [:speakerdeck-url :files])
+                              (map #(get-in % [:external :url])))]
+    (println "format-project")
+    (pprint speakerdeck-urls)
     ;; Fetch these resources in parallel
-    (p/let [[video speakerdeck] (p/all [(fetch-video vimeo-url)
-                                        (fetch-speakerdeck speakerdeck-url)])]
+    (p/let [[video speakerdecks] (p/all [(fetch-video vimeo-url)
+                                         (fetch-speakerdecks speakerdeck-urls)])]
       {:id (get project :id),
        :uid (get-in fields [:uid :formula :string]),
        :pdfs (->> (get-in fields [:pdf :files])
-                  (map format-pdf)),
+                  (map format-pdf))
        :thumbnail (->> (get-in fields [:thumbnail :files])
                        (map #(get-in % [:file :url]))
-                       (first)),
+                       (first))
        :image (->> (get-in fields [:image :files])
                    (map #(get-in % [:file :url]))
-                   (first)),
-       :vimeo-url vimeo-url,
-       :video video,
-       :speakerdeck-url speakerdeck-url,
-       :speakerdeck speakerdeck,
-       :type type,
-       :category (get-in fields [:category :select :name]),
+                   (first))
+       :vimeo-url vimeo-url
+       :video video
+       :speakerdeck-urls speakerdeck-urls
+       :speakerdecks speakerdecks
+       :type type
+       :category (get-in fields [:category :select :name])
        :tags (->> (get-in fields [:tags :multi-select])
-                  (map #(select-keys % [:id :name]))),
-       :featured (get-in fields [:featured :checkbox]),
-       :title (get-in fields [:name :title 0 :text :content]),
+                  (map #(select-keys % [:id :name])))
+       :featured (get-in fields [:featured :checkbox])
+       :title (get-in fields [:name :title 0 :text :content])
        :updated-at (get project :last-edited-time)})))
 
 (defn format-projects

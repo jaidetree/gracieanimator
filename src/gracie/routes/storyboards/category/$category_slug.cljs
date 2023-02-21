@@ -23,8 +23,8 @@
                                              {:property "Type"
                                               :select {:equals "Storyboards"}}
                                              {:property "Category"
-                                              :select {:equals category}}
-                                             ]}})
+                                              :select {:equals category}}]}})
+
                             (projects/format-projects)
                             (projects/sort-newest-first))]
       {:storyboards projects
@@ -50,6 +50,7 @@
                      "/" (u/slugify (:title storyboard))
                      ".html")]
         [:li.max-w-xs.w-full
+         {:key url}
          [:div.text-center
           [:div.relative.overflow-hidden
            {:class "w-full pt-[65%] md:w-auto md:h-[13.5rem]"}

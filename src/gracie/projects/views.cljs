@@ -1,10 +1,16 @@
 (ns gracie.projects.views
   (:require
    [framework.assets :refer [download-sync]]
-   [framework.utils :as u]))
+   [framework.utils :as u]
+   [cljs.pprint :refer [pprint]]))
 
 (defn project-thumb
   [{:keys [url project]} & children]
+  (println "project-thumb"
+           (:title project)
+           (or (get project :thumbnail)
+               (get project :image)
+               (get-in project [:video :thumbnail_url])))
   [:div.max-w-xs.w-full
    [:div.text-center
     [:div.relative.overflow-hidden

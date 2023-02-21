@@ -200,9 +200,9 @@
          {:projects projects
           :pages    pages})
 
-        #_(build-storyboard-pages
-           {:projects projects
-            :pages    pages})
+        (build-storyboard-pages
+          {:projects projects
+           :pages    pages})
 
         (build-illustrations
          {:projects projects
@@ -224,8 +224,8 @@
 (comment
 
   (let [req {}]
-    (p/let [[projects pages] (p/all [(fetch-projects)
-                                     (projects/fetch-pages)])]
+    (p/let [projects (fetch-projects)
+            pages    (projects/fetch-pages)]
       (p/do
         (build-storyboards-auth
          {:projects projects

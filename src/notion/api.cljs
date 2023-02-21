@@ -5,7 +5,12 @@
      [promesa.core :as p]
      [framework.env :as env]
      [framework.utils :refer [slugify]]
+     [framework.queue :as queue]
      ["fs" :as fs]))
+
+(def request-queue (queue/create))
+
+(queue/begin! request-queue)
 
 (def notion-api (js/require "@notionhq/client"))
 (def api-key (env/required :NOTION_API_KEY))
@@ -13,6 +18,11 @@
 (def notion (new (.-Client notion-api) #js {:auth api-key}))
 
 (def key-fn (comp keyword slugify))
+
+(defn log
+  [data & args]
+  (apply println args)
+  data)
 
 (defn js->clj-slugify
   [v]
@@ -32,34 +42,32 @@
 
 (defn fetch-blocks
   [{:keys [block-id]}]
-  (p/-> (.. notion -blocks -children (list #js {:block_id block-id}))
-        (js->clj-slugify)
-        (get :results [])))
+  (println "Queueing fetching blocks for block" block-id)
+  (queue/enqueue
+    request-queue
+    (fn []
+      (println "Queue started fetching blocks for block" block-id)
+      (p/-> (.. notion -blocks -children (list #js {:block_id block-id}))
+            (js->clj-slugify)
+            (get :results [])
+            (log "Fetched blocks for block" block-id)))))
 
 (defn fetch-all-blocks
   [{:keys [block-id]}]
   (p/let [blocks (fetch-blocks {:block-id block-id})]
-    (p/-> (p/all (->> blocks
-                      (filter #(not (:archived %)))
-                      (map #(if (true? (:has-children %))
-                              (p/let [blocks (fetch-all-blocks {:block-id (:id %)})]
-                                (assoc % :children blocks))
-                              (p/resolved (assoc % :children []))))
-                      (vec)))
-          (js->clj-slugify))))
-
-(defn write-json-file
-  [filename text]
-  (.writeFileSync fs filename text #{:encoding "utf-8"}))
+    (p/all (->> blocks
+                (js->clj-slugify)
+                (filter #(not (:archived %)))
+                (map #(if (true? (:has-children %))
+                        (p/let [blocks (fetch-all-blocks {:block-id (:id %)})]
+                          (assoc % :children blocks))
+                        (p/resolved (assoc % :children []))))
+                (vec)))))
 
 (defn append-blocks
   [{:keys [block-id children]}]
   (let [children (->js children)]
 
-    (write-json-file
-     "request.json"
-     (js/JSON.stringify #js {:block-id "[redacted]"
-                             :children children} nil 2))
     (p/let [response (.. notion -blocks -children
                          (append #js {:block_id block-id
                                       :children children}))]
