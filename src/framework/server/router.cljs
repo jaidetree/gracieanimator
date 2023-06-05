@@ -4,16 +4,8 @@
    [clojure.pprint :refer [pprint]]
    [nbb.core :as nbb]
    [promesa.core :as p]
-   [framework.utils :refer [file-exists? url->filepath]]
    ["fs/promises" :as fs]
    ["path" :as path]))
-
-
-(defn url->cljs-path
-  [root url]
-  (let [filepath (subs url 1)
-        filepath (.replace filepath "/" ".")]
-    (str root "." filepath)))
 
 (defn- load-data
   [req loader-fn]
@@ -42,7 +34,7 @@
 
                         :else
                         []))))
-                
+
          (p/all)
          (reduce #(into %1 %2) [])))
 
@@ -145,4 +137,4 @@
                :ranks (map route-rank routes)})
     (pprint target)))
 
-  
+

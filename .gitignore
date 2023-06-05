@@ -8,3 +8,8 @@ build
 
 # Local Netlify folder
 .netlify
+public/imgs/comics
+public/imgs/illustrations
+public/imgs/sketchbook-samples
+public/imgs/storyboards
+assets/

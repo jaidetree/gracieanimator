@@ -37,11 +37,11 @@
       (p/then (fn [stats] (.isFile stats)))
       (p/catch (constantly false))))
 
-(defn url->filepath
-  [root url]
-  (let [dirpath (subs url 1)
-        dirpath (.replace dirpath "/" (.-sep path))]
-    (.resolve path (.join path root dirpath))))
+(defn urlpath->filepath
+  [root url-path]
+  (let [dir-path (subs url-path 1)
+        dir-path (.replace dir-path "/" (.-sep path))]
+    (.resolve path (.join path root dir-path))))
 
 (defn slugify
   [text]

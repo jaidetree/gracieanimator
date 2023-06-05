@@ -11,7 +11,6 @@
                       (done nil action-fn))}))
 
 
-
 (defn action-handler
   [promise-fn resolve]
   (fn []

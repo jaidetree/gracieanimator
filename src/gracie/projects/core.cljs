@@ -1,10 +1,9 @@
 (ns gracie.projects.core
-  (:require
-    [cljs.pprint :refer [pprint]]
-    [promesa.core :as p]
-    [notion.api :as notion]
-    [framework.env :as env]
-    [framework.utils :as u]))
+  (:require [cljs.pprint :refer [pprint]]
+            [promesa.core :as p]
+            [notion.api :as notion]
+            [framework.env :as env]
+            [framework.utils :as u]))
 
 
 (defn format-pdf
@@ -40,14 +39,14 @@
               (js->clj :keywordize-keys true))
         (p/catch (fn [error]
                    (js/console.error "Failed fetching speakerdeck url" url)
-                   (js/console.error error) {})))))
+                   (js/console.error error)
+                   {})))))
 
 (defn fetch-speakerdecks
   [speakerdeck-urls]
-  (p/all
-    (->> speakerdeck-urls
-         (filter seq)
-         (map fetch-speakerdeck-oembed))))
+  (p/all (->> speakerdeck-urls
+              (filter seq)
+              (map fetch-speakerdeck-oembed))))
 
 (defn format-project
   [project]
@@ -56,31 +55,30 @@
         vimeo-url (get-in fields [:vimeo-url :url])
         speakerdeck-urls (->> (get-in fields [:speakerdeck-url :files])
                               (map #(get-in % [:external :url])))]
-    (println "format-project")
-    (pprint speakerdeck-urls)
     ;; Fetch these resources in parallel
     (p/let [[video speakerdecks] (p/all [(fetch-video vimeo-url)
-                                         (fetch-speakerdecks speakerdeck-urls)])]
+                                         (fetch-speakerdecks
+                                           speakerdeck-urls)])]
       {:id (get project :id),
        :uid (get-in fields [:uid :formula :string]),
        :pdfs (->> (get-in fields [:pdf :files])
-                  (map format-pdf))
+                  (map format-pdf)),
        :thumbnail (->> (get-in fields [:thumbnail :files])
                        (map #(get-in % [:file :url]))
-                       (first))
+                       (first)),
        :image (->> (get-in fields [:image :files])
                    (map #(get-in % [:file :url]))
-                   (first))
-       :vimeo-url vimeo-url
-       :video video
-       :speakerdeck-urls speakerdeck-urls
-       :speakerdecks speakerdecks
-       :type type
-       :category (get-in fields [:category :select :name])
+                   (first)),
+       :vimeo-url vimeo-url,
+       :video video,
+       :speakerdeck-urls speakerdeck-urls,
+       :speakerdecks speakerdecks,
+       :type type,
+       :category (get-in fields [:category :select :name]),
        :tags (->> (get-in fields [:tags :multi-select])
-                  (map #(select-keys % [:id :name])))
-       :featured (get-in fields [:featured :checkbox])
-       :title (get-in fields [:name :title 0 :text :content])
+                  (map #(select-keys % [:id :name]))),
+       :featured (get-in fields [:featured :checkbox]),
+       :title (get-in fields [:name :title 0 :text :content]),
        :updated-at (get project :last-edited-time)})))
 
 (defn format-projects
@@ -122,18 +120,15 @@
 (defn format-page
   [page]
   (let [props (get page :properties {})]
-    {:id (get page :id)
-     :slug (get-in props [:url-friendly-name :rich-text 0 :text :content])
+    {:id (get page :id),
+     :slug (get-in props [:url-friendly-name :rich-text 0 :text :content]),
      :title (get-in props [:name :title 0 :text :content])}))
 
 (defn fetch-pages
   []
   (p/->> (notion/fetch-db-entries
-           {:db-id (env/required "CMS_PAGES_ID")
-            :filter {:and [{:property "Published"
-                            :checkbox {:equals true}}]}
-
-            :sorts [{:property "Order"
-                     :direction "ascending"}]})
+           {:db-id (env/required "CMS_PAGES_ID"),
+            :filter {:and [{:property "Published", :checkbox {:equals true}}]},
+            :sorts [{:property "Order", :direction "ascending"}]})
          (map format-page)
          (p/all)))

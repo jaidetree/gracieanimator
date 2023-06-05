@@ -18,8 +18,9 @@
 		"deploy": "netlify deploy --site luminous-semifreddo-a1547d --dir build/"
 	},
 	"dependencies": {
+		"baconjs": "^3.0.17",
 		"jsonwebtoken": "^8.5.1",
-    "nbb": "^1.2.163"
+		"nbb": "^1.2.163"
 	},
 	"devDependencies": {
 		"@notionhq/client": "^2.2.3",
