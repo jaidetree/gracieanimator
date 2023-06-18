@@ -1,8 +1,11 @@
 (ns gracie.projects2
   (:require
+    [clojure.string :as str]
     [notion.api :as notion]
     [framework.env :as env]
-    [gracie.queue :as q]))
+    [gracie.queue :as q]
+    [framework.utils :refer [slugify]]))
+
 
 (defn fetch-projects
   []
@@ -19,3 +22,7 @@
                  :fetch (fn [_url]
                           (fetch-projects))}]}))
 
+(defn normalize
+  [project]
+  (let [type (get-in project [:properties :type :select :name])]
+    (assoc project :type (keyword (slugify (str/lower-case type))))))
