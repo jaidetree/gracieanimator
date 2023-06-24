@@ -26,3 +26,4 @@
   [project]
   (let [type (get-in project [:properties :type :select :name])]
     (assoc project :type (keyword (slugify (str/lower-case type))))))
+

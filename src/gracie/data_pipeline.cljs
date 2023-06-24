@@ -25,19 +25,51 @@
   [project-type phase handler]
   (swap! hooks assoc-in [project-type phase] handler))
 
+(defn get-hook
+  [project-type phase]
+  (get-in @hooks [project-type phase]))
+
 (def projects-queue (stream/bus))
 
+(comment
+  (update-in {} [:storyboards :parse-project] conj 2))
+
 (defn parse-project
-  [project])
+  [project]
+  (let [hook-fn (get-hook (:type project) :parse-project)]
+    (stream/from-promise
+      (p/let [parsed (hook-fn project)]
+        {:source   project
+         :project  parsed}))))
 
 (defn schedule-requests
-  [project])
+  [{:keys [source project] :as state}]
+  (let [hook-fn (get-hook (:type source) :queue-requests)]
+    (stream/from-promise
+      (p/let [requests (hook-fn project)
+              responses (q/enqueue {:type :resource
+                                    :requests requests})]
+        (assoc state
+               :requests requests
+               :responses responses)))))
+
 
 (defn format-project
-  [project])
+  [{:keys [source project responses] :as state}]
+  (let [hook-fn (get-hook (:type project) :format-project)]
+    (stream/from-promise
+      (p/let [formatted (hook-fn {:project project
+                                  :responses responses})]
+        (assoc state :dest formatted)))))
 
 (defn cache-project
-  [project])
+  [{:keys [dest] :as state}]
+  (stream/from-promise
+    (p/let [cached (q/enqueue
+                     {:type :cache
+                      :data dest})]
+      (assoc state :cached cached))))
+
 
 (defn projects->project-stream
   [projects]
@@ -50,7 +82,7 @@
 (def projects-pipeline
   (-> projects-queue
       (.flatMapLatest projects->project-stream)
-      (.onValue console.log)))
+      (.onValue js/console.log)))
 
 (defn load!
  []
