@@ -47,12 +47,12 @@
   [{:keys [source project] :as state}]
   (let [hook-fn (get-hook (:type source) :queue-requests)]
     (stream/from-promise
-      (p/let [requests (hook-fn project)
-              ctx (q/enqueue {:type :resource
-                              :requests requests})]
-        (assoc state
-               :requests requests
-               :responses ctx)))))
+     (p/let [requests (hook-fn project)
+             ctx (q/enqueue {:type :resource
+                             :requests requests})]
+       (assoc state
+              :requests requests
+              :responses ctx)))))
 
 (defn format-project
   [{:keys [source project responses] :as state}]
@@ -70,35 +70,41 @@
                       :data dest})]
       (assoc state :cached cached))))
 
+(defn project-type-supported?
+ [project]
+ (contains? (set (keys @hooks)) (:type project)))
+
 (defn log-stage
   [stage]
-  (fn [data]
-   (println "\nStage:" stage)
+  (fn [state]
+   (println "\nStage:" stage (get-in state [:source :title]))
    #_(pprint data)))
+
 
 (defn projects->project-stream
   [projects]
   (-> (stream/from-seq projects)
-      (.take 1)
+      (.map projects/normalize)
+      (.filter project-type-supported?)
       (.flatMap parse-project)
-      #_(.doAction (log-stage "parse-project"))
+      (.doAction (log-stage "parse-project"))
       (.flatMap schedule-requests)
-      #_(.doAction (log-stage "schedule-requests"))
+      (.doAction (log-stage "schedule-requests"))
       (.flatMap format-project)
-      #_(.doAction (log-stage "format-project"))
+      (.doAction (log-stage "format-project"))
       (.flatMap cache-project)
       (.reduce [] #(conj %1 (:dest %2)))
-      #_(.doAction (log-stage "cache-project"))
+      (.doAction (log-stage "cache-project"))
       (.doError js/console.error)))
 
 
 (defn fetch!
  []
  (p/let [projects (projects/enqueue-projects)]
-  (->> projects
-       (map projects/normalize)
-       (projects->project-stream)
-       (.toPromise))))
+  (-> (stream/of projects)
+      (.flatMap projects->project-stream)
+      (.doError js/console.error)
+      (.toPromise))))
 
 (defn read-cache-file
   [filename]

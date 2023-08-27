@@ -72,12 +72,12 @@
 
 (def queue
   (-> queue-bus
-      (.flatMapFirst
+      (.flatMapConcat
         (fn [action]
           (case (:type action)
             :resource (resource action)
             :cache    (cache action))))
-      #_(.doError js/console.error)
+      (.doError js/console.error)
       (.onValue (fn [_data]
                   nil))))
 

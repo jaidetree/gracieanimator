@@ -69,7 +69,7 @@
         target-dir (.resolve path (js/process.cwd) (.join path "public" "assets" directory))
         body (.-body request)
         file-path (.join path target-dir basename)
-        url-path (.join path "assets" directory basename)]
+        url-path (.join path "/assets" directory basename)]
    (.mkdirSync fs target-dir #js {:recursive true})
    (-> (.fromWeb Readable body)
        (.pipe (fs/createWriteStream file-path)))
