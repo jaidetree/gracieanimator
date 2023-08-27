@@ -18,12 +18,18 @@
   []
   (q/enqueue
     {:type :resource
-     :requests [{:url "notion-projects"
-                 :fetch (fn [_url]
-                          (fetch-projects))}]}))
+     :requests [{:id "notion-projects"
+                 :fetch fetch-projects
+                 :reducer (fn [_ctx projects]
+                            projects)}]}))
 
 (defn normalize
   [project]
-  (let [type (get-in project [:properties :type :select :name])]
-    (assoc project :type (keyword (slugify (str/lower-case type))))))
-
+  (let [type (get-in project [:properties :type :select :name])
+        id (get-in project [:properties :id :unique-id :number])
+        title (get-in project [:properties :name :title 0 :text :content])]
+    (assoc project
+           :id    id
+           :title title
+           :type  (keyword (slugify (str/lower-case type)))
+           :slug   (str id "-" (slugify (str/lower-case title))))))

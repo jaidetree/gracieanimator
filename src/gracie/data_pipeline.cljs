@@ -1,11 +1,13 @@
 (ns gracie.data-pipeline
   (:require
     [clojure.pprint :refer [pprint]]
+    [cljs.reader :refer [read-string]]
     [promesa.core :as p]
     [framework.stream :as stream]
     [gracie.queue :as q]
     [gracie.projects2 :as projects]
-    ["fs/promises" :as fs]))
+    ["fs/promises" :as fs]
+    ["glob" :as glob]))
 
 (def hooks (atom {}))
 
@@ -20,7 +22,6 @@
 ;; - queue-requests
 ;; - format-project
 
-
 (defn defhook
   [project-type phase handler]
   (swap! hooks assoc-in [project-type phase] handler))
@@ -29,7 +30,7 @@
   [project-type phase]
   (get-in @hooks [project-type phase]))
 
-(def projects-queue (stream/bus))
+(def projects-cache (atom []))
 
 (comment
   (update-in {} [:storyboards :parse-project] conj 2))
@@ -47,12 +48,11 @@
   (let [hook-fn (get-hook (:type source) :queue-requests)]
     (stream/from-promise
       (p/let [requests (hook-fn project)
-              responses (q/enqueue {:type :resource
-                                    :requests requests})]
+              ctx (q/enqueue {:type :resource
+                              :requests requests})]
         (assoc state
                :requests requests
-               :responses responses)))))
-
+               :responses ctx)))))
 
 (defn format-project
   [{:keys [source project responses] :as state}]
@@ -70,41 +70,73 @@
                       :data dest})]
       (assoc state :cached cached))))
 
+(defn log-stage
+  [stage]
+  (fn [data]
+   (println "\nStage:" stage)
+   #_(pprint data)))
 
 (defn projects->project-stream
   [projects]
   (-> (stream/from-seq projects)
+      (.take 1)
       (.flatMap parse-project)
+      #_(.doAction (log-stage "parse-project"))
       (.flatMap schedule-requests)
-      (.format format-project)
-      (.flatMap cache-project)))
+      #_(.doAction (log-stage "schedule-requests"))
+      (.flatMap format-project)
+      #_(.doAction (log-stage "format-project"))
+      (.flatMap cache-project)
+      (.reduce [] #(conj %1 (:dest %2)))
+      #_(.doAction (log-stage "cache-project"))
+      (.doError js/console.error)))
 
-(def projects-pipeline
-  (-> projects-queue
-      (.flatMapLatest projects->project-stream)
-      (.onValue js/console.log)))
 
-(defn load!
+(defn fetch!
  []
- (p/let [[projects] (projects/enqueue-projects)
-         projects (map projects/normalize projects)]
-   (js/console.log "projects" (count projects))
-   (.writeFile fs "debug/project.edn"
-               (with-out-str
-                 (pprint (first projects)))
-               #js {:encoding "utf-8"})
-   (doseq [project projects]
-     nil)))
+ (p/let [projects (projects/enqueue-projects)]
+  (->> projects
+       (map projects/normalize)
+       (projects->project-stream)
+       (.toPromise))))
+
+(defn read-cache-file
+  [filename]
+  (stream/from-promise (.readFile fs filename #js {:encoding "utf-8"})))
+
+(defn read-from-cache
+  []
+  (let [filesp (.glob glob ".cache/**/*.edn")]
+    (-> (stream/from-promise filesp)
+        (.map clj->js)
+        (.flatMap stream/from-seq)
+        (.flatMap read-cache-file)
+        (.map read-string)
+        (.reduce [] conj)
+        (.doAction #(reset! projects-cache %))
+        (.toPromise))))
+
 
 (comment
-  (load!)
-  (println @q/request-cache)
-  (p/let [projects (q/do-request {:url "notion-projects"})]
-    (js/console.log (count projects)))
-  (-> (q/resource
-        {:requests [{:url "notion-projects"}]
-         :on-complete (fn [[projects]]
-                        (println "projects resource" (count projects)))})
-      (.onValue (fn [] nil))))
+  (read-from-cache)
+  (println @projects-cache))
+
+(defn load!
+  []
+  (p/let [projects (let [projects @projects-cache]
+                    (if (empty? projects)
+                     (read-from-cache)
+                     projects))]
+   (if (empty? projects)
+    (fetch!)
+    projects)))
+
+(comment
+  (p/-> (fetch!)
+        (pprint))
+  (p/-> (load!)
+        (pprint))
+  ;; @TODO Look into reading requests back from the cache
+  (fetch!))
 
 
