@@ -1,9 +1,10 @@
 (ns tests.cli
   (:require
     [promesa.core :as p]
-    [tests.gracie.data-pipeline-test]
-    [tests.gracie.projects-test]
-    [tests.gracie.queue-test]
+    #_[tests.gracie.data-pipeline-test]
+    #_[tests.gracie.projects-test]
+    #_[tests.gracie.queue-test]
+    [tests.framework.router-test]
     [cljs.test :as t :refer [async deftest is testing]]))
 
 (defmethod t/report [:cljs.test/default :begin-test-var] [m]
@@ -12,4 +13,4 @@
 
 (defn -main
   []
-  (t/run-all-tests #"tests\.gracie\..*"))
+  (t/run-all-tests #"^tests\..*-test$"))

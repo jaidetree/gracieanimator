@@ -61,4 +61,5 @@
   [{:keys [project responses]}]
   (let [{:keys [image-url]} responses]
    (assoc project
-          :image-url image-url))))
+          :image-url image-url
+          :thumbnail image-url))))

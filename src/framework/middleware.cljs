@@ -5,6 +5,8 @@
             [promesa.core :as p]
             ["fs/promises" :as fs]
             ["path" :as path]
+            [framework.cookies :as cookies]
+            [framework.csrf :as csrf]
             [framework.server.router :as router]
             [framework.utils :refer [urlpath->filepath file-exists?]]
             [framework.server.router2 :as router2]
@@ -14,7 +16,9 @@
 (defn wrap-default-view
   []
   (fn [req]
-    {:status 404}))
+    (if (:body req)
+      req
+      {:status 404})))
 
 (defn wrap-render-page
   [handler status-pages]
@@ -22,16 +26,19 @@
     (p/let [res (handler req)]
       (let [status (get res :status 404)]
         (cond (and (<= 200 status) (< status 300) (vector? (:body res)))
-              {:headers {:Content-Type "text/html"},
-               :status status,
+              {:headers (merge (:headers res)
+                               {:Content-Type "text/html"})
+               :status status
+               :session (:session res)
                :body (rdom/render-to-string (:body res))}
               (and (<= 200 status) (< status 300)) res
               (and (<= 300 status) (< status 400)) res
-              :else (let [view (get status-pages status)]
-                      {:headers {:Content-Type "text/html"},
-                       :status status,
-                       :body (rdom/render-to-string (view res
-                                                          (:data res)))}))))))
+              :else
+              (let [view (get status-pages status)]
+                {:headers (merge (:headers res) {:Content-Type "text/html"})
+                 :session (:session res)
+                 :status status
+                 :body (rdom/render-to-string (view res (:data res)))}))))))
 
 (defn wrap-error-view
   [handler]
@@ -42,9 +49,11 @@
 (defn wrap-logging
   [handler]
   (fn [req]
+    (println "Request:")
     (pprint req)
-    (let [res (handler req)]
-      (pprint res)
+    (p/let [res (handler req)]
+      (println "Response:")
+      (pprint (dissoc res :body))
       res)))
 
 (defn wrap-static
@@ -56,8 +65,8 @@
         (if file-exists
           (p/let [contents (.readFile fs filepath)
                   content-type (get mime-types ext)]
-            {:status 200,
-             :headers {"Content-Type" content-type},
+            {:status 200
+             :headers {"Content-Type" content-type}
              :body contents})
           (handler req))))))
 
@@ -84,27 +93,32 @@
             res (handler req)]
       (if (json-header? res) (update res :body clj->json) res))))
 
-(defn wrap-file-router
-  [handler routes-path base-view]
-  (router/route-url
-    routes-path
-    (fn [req view]
-      (if view
-        {:status 200,
-         :body (base-view req (:data req) (view req (:data req)))}
-        (handler req)))))
-
 (defn wrap-router
   [handler base routes]
   (router2/route-url
     routes
     (fn [req route]
       (if route
-       {:status 200
-        :headers {:Content-Type "text/html"}
-        :body (router2/render-route req base route)}
+        (handler
+          (merge
+            req
+            {:status  200
+             :headers (merge
+                        (:headers req)
+                        {:Content-Type "text/html"})
+             :body    (router2/render-route req base route)}))
        (handler req)))))
 
-
-
+(defn wrap-cookies
+  [handler]
+  (fn [req]
+    (let [cookie-header (get-in req [:headers "set-cookie"])
+          session (if cookie-header
+                    (cookies/cookie->hash-map cookie-header)
+                    {:csrf (csrf/create)})
+          req (assoc req :session session)]
+      (p/let [res (handler req)]
+        (if (:session res)
+          (assoc-in res [:headers :Set-Cookie] (cookies/hash-map->cookie (:session res)))
+          res)))))
 

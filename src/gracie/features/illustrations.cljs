@@ -48,7 +48,6 @@
       (js/console.error error)
       {})))
 
-
 (defhook :illustrations :queue-requests
  (fn illustrations-queue-requests
    [project]
@@ -61,4 +60,5 @@
   [{:keys [project responses]}]
   (let [{:keys [image-url]} responses]
    (assoc project
-          :image-url image-url))))
+          :image-url image-url
+          :thumbnail image-url))))

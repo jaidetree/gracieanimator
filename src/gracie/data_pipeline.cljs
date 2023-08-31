@@ -35,6 +35,10 @@
 (comment
   (update-in {} [:storyboards :parse-project] conj 2))
 
+(defn all-projects
+  []
+  (or @projects-cache []))
+
 (defn parse-project
   [project]
   (let [hook-fn (get-hook (:type project) :parse-project)]

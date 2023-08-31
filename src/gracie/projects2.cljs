@@ -33,3 +33,38 @@
            :title title
            :type  (keyword (slugify (str/lower-case type)))
            :slug   (str id "-" (slugify (str/lower-case title))))))
+
+(defn project-type?
+  [project expected-type]
+  (= (:type project) expected-type))
+
+(defn featured?
+  [project]
+  (true? (:featured project)))
+
+(defn find
+  [f coll]
+  (->> coll
+       (filter f)
+       (first)))
+
+(defn group-by-type
+  [sort-order projects]
+  (->> sort-order
+       (reduce
+         (fn [pairs target-type]
+           (let [project (find #(and (project-type? % target-type)
+                                     (featured? %))
+                               projects)]
+             (if project
+              (conj pairs [(name target-type) project])
+              pairs)))
+         [])))
+
+(comment
+  (group-by-type
+    [:storyboards
+     :illustrations
+     :sketchbook-samples
+     :comics]
+    []))
