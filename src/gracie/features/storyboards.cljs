@@ -130,12 +130,14 @@
     [{:keys [project responses]}]
     (let [{:keys [vimeo speakerdecks thumbnail pdfs]} responses]
       (merge project
+             {:thumbnail (cond
+                           thumbnail thumbnail
+                           (:thumbnail_url vimeo) (:thumbnail_url vimeo)
+                           :else nil)}
              (when vimeo
               {:vimeo vimeo})
              (when (seq speakerdecks)
                {:speakerdecks speakerdecks})
-             (when thumbnail
-               {:thumbnail thumbnail})
              (when pdfs
               {:pdfs pdfs})))))
 
