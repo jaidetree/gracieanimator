@@ -7,7 +7,7 @@
             ["path" :as path]
             [framework.cookies :as cookies]
             [framework.csrf :as csrf]
-            [framework.server.router :as router]
+            #_[framework.server.router :as router]
             [framework.utils :refer [urlpath->filepath file-exists?]]
             [framework.server.router2 :as router2]
             [reagent.dom.server :as rdom]
@@ -16,7 +16,10 @@
 (defn wrap-default-view
   []
   (fn [req]
-    (if (:body req)
+    (if (or (:body req)
+            (and (get-in req [:headers :Location])
+                 (or (= (:status req) 301)
+                     (= (:status req) 302))))
       req
       {:status 404})))
 
@@ -112,13 +115,24 @@
 (defn wrap-cookies
   [handler]
   (fn [req]
-    (let [cookie-header (get-in req [:headers "set-cookie"])
-          session (if cookie-header
-                    (cookies/cookie->hash-map cookie-header)
-                    {:csrf (csrf/create)})
+    (let [cookie-header (get-in req [:headers :cookie])
+          session (when cookie-header
+                   (cookies/cookie->hash-map cookie-header))
+          session (or session {:csrf (csrf/create)})
           req (assoc req :session session)]
       (p/let [res (handler req)]
         (if (:session res)
           (assoc-in res [:headers :Set-Cookie] (cookies/hash-map->cookie (:session res)))
           res)))))
 
+
+(defn wrap-csrf
+  [handler]
+  (fn [req]
+    (if (contains? #{:POST :PUT :PATCH} (:method req))
+      (let [expected-csrf (get-in req [:session :csrf])
+            actual-csrf (get-in req [:body :csrf])]
+        (if (= expected-csrf actual-csrf)
+          (handler (assoc-in req [:session :csrf] (csrf/create)))
+          (js/throw (js/Error. "CSRF token failed validation"))))
+      (handler req))))

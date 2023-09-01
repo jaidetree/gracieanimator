@@ -3,6 +3,7 @@
             [promesa.core :as p]
             [gracie.views.base :refer [base status-pages]]
             [gracie.routes :refer [routes]]
+            [gracie.routes.auth :as auth]
             [gracie.data-pipeline :as dp]
             [framework.env :as env]
             [framework.server :refer [server]]
@@ -14,19 +15,48 @@
 (defn wrap-data
   [handler]
   (fn [req]
-    (handler (assoc-in req [:data :projects] (all-projects)))))
+    (handler (assoc-in req [:data :projects] (dp/all-projects)))))
+
+(defn wrap-auth-handler
+  [handler]
+  (fn [req]
+    (cond
+      (and (= (:path req) "/auth/")
+           (= (:method req) :POST))
+      (handler (#'auth/handler req))
+
+      (= (:path req) "/auth/")
+      {:status 301
+       :headers {:Location "/storyboards/"}
+       :session (:session req)}
+
+      :else
+      (handler req))))
+
+(defn wrap-logout
+  [handler]
+  (fn [req]
+    (if (= (:path req) "/logout/")
+      (handler
+        {:status 301
+         :headers {:Location "/"}
+         :session (dissoc (:session req) :auth)})
+      (handler req))))
 
 (defn handler
   [req]
   (p/let [f (p/-> (#'mw/wrap-default-view)
                   (#'mw/wrap-router base routes)
+                  (#'wrap-logout)
+                  (#'wrap-auth-handler)
                   (#'wrap-data)
+                  (#'mw/wrap-csrf)
                   (#'mw/wrap-static "public")
-                  #_(#'mw/wrap-json)
-                  #_(#'mw/wrap-error-view)
+                  (#'mw/wrap-json)
+                  (#'mw/wrap-error-view)
                   (#'mw/wrap-render-page status-pages)
                   (#'mw/wrap-cookies)
-                  (#'mw/wrap-logging))]
+                  #_(#'mw/wrap-logging))]
     (f req)))
 
 (defn -main

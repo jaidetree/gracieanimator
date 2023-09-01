@@ -12,8 +12,8 @@
                    :privateKeyEncoding {:type "pkcs8"
                                         :format "pem"}})))
 
-(def keypair (generate-private-key))
-(def private-key (.createPrivateKey crypto (.-privateKey keypair)))
+(defonce keypair (generate-private-key))
+(defonce private-key (.createPrivateKey crypto (.-privateKey keypair)))
 
 (defn str->buf
   [s & [enc]]
@@ -44,12 +44,14 @@
   (let [[json-buf signature] (->> (s/split signed #"\.")
                                   (map #(str->buf % "hex")))
         verified (.verify crypto "sha3-224" json-buf private-key signature)]
-    (when (not verified)
-      (js/throw "CookieError: Could not verify signature"))
-    (-> json-buf
-        (buf->utf-8)
-        (js/JSON.parse)
-        (js->clj :keywordize-keys true))))
+    (if verified
+      (-> json-buf
+          (buf->utf-8)
+          (js/JSON.parse)
+          (js->clj :keywordize-keys true))
+      (do
+        (js/console.error "CookieError: Could not verify signature")
+        nil))))
 
 (defn serialize-pair
   [[k v]]

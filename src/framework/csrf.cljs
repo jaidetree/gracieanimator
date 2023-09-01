@@ -4,5 +4,5 @@
 
 (defn create
   []
-  (-> (.randomBytes crypto 32)
+  (-> (.randomBytes crypto 16)
       (.toString "hex")))

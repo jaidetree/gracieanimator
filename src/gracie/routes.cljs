@@ -3,6 +3,7 @@
     [gracie.routes.home :as home]
     [gracie.routes.illustrations :as illustrations]
     [gracie.routes.sketchbook-samples :as sketchbook-samples]
+    [gracie.routes.storyboards :as storyboards]
     [gracie.routes.comics :as comics]))
 
 (def routes
@@ -10,5 +11,8 @@
    "/illustrations/" #'illustrations/view
    "/sketchbook-samples/" #'sketchbook-samples/view
    "/comics/" #'comics/index-view
-   "/comics/:slug/" #'comics/single-view})
+   "/comics/:slug/" #'comics/single-view
+   "/storyboards/" #'storyboards/index-view
+   "/storyboards/category/:category-slug/" #'storyboards/category-view
+   "/storyboards/:storyboard-slug" #'storyboards/single-view})
 

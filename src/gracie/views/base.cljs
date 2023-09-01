@@ -32,7 +32,7 @@
     [:script
      {:type "text/javascript",
       :src
-        "https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"}]
+        "https://cdnjs.cloudflare.com/ajax/libs/re0act/17.0.2/umd/react.production.min.js"}]
     [:script
      {:type "text/javascript",
       :src

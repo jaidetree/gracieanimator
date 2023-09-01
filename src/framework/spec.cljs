@@ -1,5 +1,5 @@
 (ns framework.spec
-  (:refer-clojure :exclude [map])
+  (:refer-clojure :exclude [map or])
   (:require
     [clojure.core :as c]))
 
@@ -21,16 +21,17 @@
              :value (get data key)}))))))
 
 (defn spec-runner
-  [{:keys [spec-name spec-fn]} data]
+  [{:keys [spec-name spec-fn data]}]
   (let [result (spec-fn data)]
-     (if (:ok result)
-       result
-       (js/throw (js/Error.
-                   (str
-                     "ValidationError: " spec-name " failed: "
-                     "At " (:path result) " failed " (:form result)
-                     " Received " (:value result)
-                     " in " (prn-str (:context result))))))))
+    (println result)
+    (if (:ok result)
+      result
+      (throw (js/Error.
+               (str
+                 "ValidationError: " spec-name " failed: "
+                 "At " (:path result) " failed " (:form result)
+                 " Received " (:value result)
+                 " in " (prn-str (:context result))))))))
 
 
 
@@ -48,9 +49,16 @@
           :spec-fn (map* predicate-map#)
           :data data}))))
 
+(defmacro or
+  [& predicates]
+  ())
+
 (comment
   (map {:a number?})
   ((map {:a number?})
    {:a 1})
   ((map {:a number?})
+   {:a :a})
+
+  ((map {:a #(number? %)})
    {:a :a}))
