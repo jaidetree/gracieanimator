@@ -2,13 +2,12 @@
   (:require
     [clojure.pprint :refer [pprint]]
     [promesa.core :as p]
+    [framework.assets :refer [download fetch-image url->path]]
     [gracie.queue :as q]
     [gracie.data-pipeline :refer [defhook]]
     [notion.api :refer [fetch-blocks]]
-    [framework.utils :as u]
-    ["path" :as path]
-    ["stream" :refer [Readable]]
-    ["fs" :as fs]))
+    [notion.hiccup :refer [blocks->hiccup]]
+    ["path" :as path]))
 
 (defhook :storyboards :parse-project
   (fn storyboards-parse-project
@@ -63,48 +62,16 @@
         (js/console.error error)
         {}))))
 
-(defn url->path
-  [url-str]
-  (let [url (js/URL. url-str)]
-   (.-pathname url)))
-
-(defn download-asset
-  [request {:keys [name url directory]}]
-  (let [extname (.extname path (url->path url))
-        basename (str (.basename path name extname) extname)
-        target-dir (.resolve path (js/process.cwd) (.join path "public" "assets" directory))
-        body (.-body request)
-        file-path (.join path target-dir basename)
-        url-path (.join path "/assets" directory basename)]
-   (.mkdirSync fs target-dir #js {:recursive true})
-   (-> (.fromWeb Readable body)
-       (.pipe (fs/createWriteStream file-path)))
-   url-path))
-
-(defn fetch-image
-  [project image-type url]
-  (p/catch
-    (p/-> (js/fetch url)
-          (download-asset
-           {:url  url
-            :directory image-type
-            :name (:slug project)}))
-    (fn [error]
-      (js/console.warn "Failed to fetch image url" url "for storyboard" (:title project))
-      (js/console.error error)
-      {})))
-
 (defn fetch-pdf
   [project url]
   (p/catch
     (p/let [name (.basename path (url->path url))
-            pdf-url (p/-> (js/fetch url)
-                         (download-asset
-                          {:url  url
-                           :directory "pdfs"
-                           :name name}))]
+            local-url (download
+                        {:url  url
+                         :directory "pdfs"
+                         :name name})]
       {:name name
-       :url  pdf-url})
+       :url local-url})
     (fn [error]
       (js/console.warn "Failed to fetch pdf url" url "for storyboard" (:title project))
       (js/console.error error)
@@ -117,8 +84,9 @@
       []
       (when-let [block-id (:block-id project)]
         [{:id (str "notion/blocks/" block-id)
-          :fetch #(fetch-blocks {:block-id block-id})
-          :reducer #(assoc %1 :blocks %2)}])
+          :fetch #(p/-> (fetch-blocks {:block-id block-id})
+                        (blocks->hiccup))
+          :reducer #(assoc %1 :content %2)}])
       (when-let [vimeo-url (:vimeo-url project)]
         [{:id vimeo-url
           :fetch #(fetch-vimeo-oembed project vimeo-url)
@@ -140,28 +108,20 @@
 
 (defn download-thumbnail
   [project candidates]
-  (when-let [thumbnail-url (->> candidates
-                                (filter identity)
-                                (first))]
-    (q/enqueue
-      {:type :resource
-       :requests [{:id thumbnail-url
-                   :fetch #(fetch-image project "thumbnails" thumbnail-url)
-                   :reducer (fn [_ctx local-thumbnail-url]
-                              local-thumbnail-url)}]})))
-
+  (when-let [thumbnail-url (some identity candidates)]
+    (fetch-image project "storyboards" thumbnail-url)))
 
 (defhook :storyboards :format-project
   (fn storyboards-format-project
     [{:keys [project responses]}]
-    (let [{:keys [blocks vimeo speakerdecks pdfs]} responses]
+    (let [{:keys [content vimeo speakerdecks pdfs]} responses]
       (p/let [thumbnail (download-thumbnail
                           project
                           [(:thumbnail-url project)
                            (:thumbnail_url vimeo)])]
            (merge project
                   {:thumbnail thumbnail
-                   :blocks    blocks}
+                   :content   content}
                   (when vimeo
                    {:vimeo vimeo})
                   (when (seq speakerdecks)

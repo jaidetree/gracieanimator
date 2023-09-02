@@ -41,7 +41,7 @@
     (cache-request id (fetch))))
 
 (defn request->response
-  [{:keys [_id _fetch reducer] :as request}]
+  [{:keys [id _fetch reducer] :as request}]
   (p/let [response (get-or-cache-request request)]
     {:response (js->clj response :keywordize-keys true)
      :reducer reducer}))
@@ -56,11 +56,11 @@
                  (fn [ctx {:keys [response reducer]}]
                    (reducer ctx response)))
         (.doAction on-complete)
-        (.doError js/console.error))))
+        (.doError #(js/console.error %)))))
 
 (defn cache
   [{project :data :keys [on-complete] :as action}]
-  (let [basename (str (:id project) "-" (u/slugify (:title project)) ".edn")
+  (let [basename (str (:slug project) ".edn")
         dirname (.join path ".cache" (name (:type project)))
         filepath (.join path dirname basename)
         contents (with-out-str (pprint project))]
@@ -77,7 +77,7 @@
           (case (:type action)
             :resource (resource action)
             :cache    (cache action))))
-      (.doError js/console.error)
+      (.doError #(js/console.error %))
       (.onValue (fn [_data]
                   nil))))
 

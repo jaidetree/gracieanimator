@@ -1,7 +1,8 @@
 (ns notion.hiccup
-  (:require [framework.assets :refer [download]]
-            [clojure.string :as s]
-            ["path" :as path]))
+  (:require
+    [clojure.string :as s]
+    [framework.assets :refer [download url->path]]
+    ["path" :as path]))
 
 (defn annotations?
   [annotations]
@@ -28,7 +29,7 @@
             (:code annotations) [:code {:class (text-classes annotations)}
                                  content]
             (annotations? annotations)
-              [:span {:class (text-classes annotations)} content]
+            [:span {:class (text-classes annotations)} content]
             :else content))))
 
 
@@ -41,20 +42,24 @@
   (let [caption (->> image
                      (:caption)
                      (map #(get-in % [:text :content]))
-                     (s/join " "))]
+                     (s/join " "))
+        basename (.basename path (url->path url))]
     [:img
-     {:src (download "imgs" url),
+     {:src (download {:url url
+                      :directory "imgs"
+                      :name basename})
       :alt (if (s/blank? caption)
-             (let [basename (.basename path url)]
-               (subs (.basename path url) 0 (s/index-of basename "?")))
+             basename
              caption)}]))
 
 (defn image->img
   [{:keys [image], :as block}]
   (let [type (keyword (:type image))]
     (case type
-      :external [img {:url (get-in image [:external :url]), :image image}]
-      :file [img {:url (get-in image [:file :url]), :image image}])))
+      :external (img {:url (get-in image [:external :url])
+                      :image image})
+      :file (img {:url (get-in image [:file :url])
+                  :image image}))))
 
 (defn heading-1->h1
   [{:keys [heading-1], :as block}]
@@ -186,35 +191,35 @@
           (let [pair [last-type type]]
             (cond (:grouped block) (recur remaining (conj grouped block) type)
                   (= pair [:bulleted_list_item :bulleted_list_item])
-                    (recur remaining
-                           (update-in grouped
-                                      [(dec (count grouped)) :children]
-                                      conj
-                                      (assoc block :grouped true))
-                           type)
+                  (recur remaining
+                         (update-in grouped
+                                    [(dec (count grouped)) :children]
+                                    conj
+                                    (assoc block :grouped true))
+                         type)
                   (= (last pair) :bulleted_list_item)
-                    (recur remaining
-                           (conj grouped
-                                 {:type "bulleted_list",
-                                  :bulleted-list {},
-                                  :has-children true,
-                                  :children [(assoc block :grouped true)]})
-                           type)
+                  (recur remaining
+                         (conj grouped
+                               {:type "bulleted_list",
+                                :bulleted-list {},
+                                :has-children true,
+                                :children [(assoc block :grouped true)]})
+                         type)
                   (= pair [:numbered_list_item :numbered_list_item])
-                    (recur remaining
-                           (update-in grouped
-                                      [(dec (count grouped)) :children]
-                                      conj
-                                      (assoc block :grouped true))
-                           type)
+                  (recur remaining
+                         (update-in grouped
+                                    [(dec (count grouped)) :children]
+                                    conj
+                                    (assoc block :grouped true))
+                         type)
                   (= (last pair) :numbered_list_item)
-                    (recur remaining
-                           (conj grouped
-                                 {:type "numbered_list",
-                                  :numbered-list {},
-                                  :has-children true,
-                                  :children [(assoc block :grouped true)]})
-                           type)
+                  (recur remaining
+                         (conj grouped
+                               {:type "numbered_list",
+                                :numbered-list {},
+                                :has-children true,
+                                :children [(assoc block :grouped true)]})
+                         type)
                   :else (recur remaining (conj grouped block) type))))))))
 
 (defn key-element

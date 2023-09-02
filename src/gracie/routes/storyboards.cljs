@@ -235,7 +235,7 @@
             storyboard (->> projects
                            (filter #(= (:slug %) storyboard-slug))
                            (first))
-            blocks (seq (get storyboard :blocks))
+            content (seq (get storyboard :content))
             speakerdecks (seq (get storyboard :speakerdecks))
             pdfs (seq (get storyboard :pdfs))]
         [:div
@@ -252,20 +252,21 @@
               [:ul.bg-black.bg-opacity-20.p-8.md:block
                (for [pdf pdfs]
                  ^{:key (:name pdf)} [pdf-item pdf])]])
-           (when blocks
-             [:div#content.space-y-8 (blocks->hiccup blocks)])]
+           (when content
+             [:div#content.space-y-8
+              content])]
           [:aside.col-span-12.md:col-span-4.order-1.md:order-2
            [:div.space-y-4.sticky.top-8
             [category storyboard]
             (when (or speakerdecks
                       pdfs
-                      blocks)
+                      content)
              [navigation
               (when speakerdecks
                 [nav-link {:id "boards"} "Boards"])
               (when (seq (get storyboard :pdfs))
                 [nav-link {:id "pdfs"} "PDFs"])
-              (when blocks
+              (when content
                 [nav-link {:id "content"} "More"])])
             (when (or speakerdecks pdfs)
               [quick-links storyboard])]]]]))))

@@ -1,11 +1,13 @@
 (ns gracie.data-pipeline
   (:require
     [clojure.pprint :refer [pprint]]
+    [clojure.string :as s]
     [cljs.reader :refer [read-string]]
     [promesa.core :as p]
     [framework.stream :as stream]
     [gracie.queue :as q]
     [gracie.projects2 :as projects]
+    [gracie.pages :as pages]
     ["fs/promises" :as fs]
     ["glob" :as glob]))
 
@@ -30,14 +32,19 @@
   [project-type phase]
   (get-in @hooks [project-type phase]))
 
-(def projects-cache (atom []))
+(def cache (atom {:pages []
+                  :projects []}))
 
 (comment
   (update-in {} [:storyboards :parse-project] conj 2))
 
 (defn all-projects
   []
-  (or @projects-cache []))
+  (get @cache :projects []))
+
+(defn all-pages
+  []
+  (get @cache :pages []))
 
 (defn parse-project
   [project]
@@ -99,20 +106,43 @@
       (.flatMap cache-project)
       (.reduce [] #(conj %1 (:dest %2)))
       (.doAction (log-stage "cache-project"))
-      (.doError js/console.error)))
+      (.doError #(js/console.error %))))
 
+(defn cache-page
+  [page]
+  (stream/from-promise
+    (p/let [cached (q/enqueue
+                     {:type :cache
+                      :data page})]
+      page)))
+
+(defn pages->page-stream
+  [pages]
+  (-> (stream/from-seq pages)
+      (.flatMap cache-page)))
 
 (defn fetch!
  []
- (p/let [projects (projects/enqueue-projects)]
-  (-> (stream/of projects)
-      (.flatMap projects->project-stream)
-      (.doError js/console.error)
-      (.toPromise))))
+ (p/let [[projects pages] (p/all
+                            [(projects/enqueue-projects)
+                             (pages/enqueue-pages)])]
+   (-> (stream/of projects)
+       (.flatMap projects->project-stream)
+       (.concat (pages->page-stream pages))
+       (.doError #(js/console.error %))
+       (.toPromise))))
 
 (defn read-cache-file
   [filename]
   (stream/from-promise (.readFile fs filename #js {:encoding "utf-8"})))
+
+(defn group-by-type
+  [pages-and-projects]
+  (->> pages-and-projects
+       (group-by
+         #(if (= (:type %) :pages)
+            :pages
+            :projects))))
 
 (defn read-from-cache
   []
@@ -123,17 +153,21 @@
         (.flatMap read-cache-file)
         (.map read-string)
         (.reduce [] conj)
-        (.doAction #(reset! projects-cache %))
+        (.doAction
+          (fn [files]
+            (let [{:keys [projects pages]} (group-by-type files)]
+              (reset! cache {:projects projects
+                             :pages    pages}))))
         (.toPromise))))
 
 
 (comment
   (read-from-cache)
-  (println @projects-cache))
+  (pprint @cache))
 
 (defn load!
   []
-  (p/let [projects (let [projects @projects-cache]
+  (p/let [projects (let [projects (all-projects)]
                     (if (empty? projects)
                      (read-from-cache)
                      projects))]
@@ -141,13 +175,19 @@
     (fetch!)
     projects)))
 
+(defn clear-cache!
+  []
+  (reset! cache {:projects []
+                 :pages []}))
+
 (comment
   (p/-> (fetch!)
         (pprint))
   (p/-> (load!)
         (pprint))
-  (reset! projects-cache [])
+  (clear-cache!)
   (load!)
+  (pprint @cache)
   ;; @TODO Look into reading requests back from the cache
   (fetch!))
 
