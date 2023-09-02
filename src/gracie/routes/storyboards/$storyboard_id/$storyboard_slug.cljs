@@ -63,12 +63,6 @@
 (defn view
   [req {:keys [storyboard id slug blocks]}]
   [:div
-   #_[:div#login-page
-      [:form.max-w-xl.m-auto
-       {:method "POST", :action "/.netlify/functions/login"}
-       [:input.bg-white.bg-opacity-20.px-4.text-lg.text-white.w-full
-        {:type "password", :name "password"}]
-       [:div.text-center [:button {:type "submit"} "Login"]]]]
    [:div#storyboard-page.grid.grid-cols-12.gap-8
     [:main.col-span-full.md:col-span-8.space-y-16.order-2.md:order-1
      [:div#animatic.space-y-8 [:h1 (:title storyboard)]

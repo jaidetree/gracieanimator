@@ -146,6 +146,8 @@
         (pprint))
   (p/-> (load!)
         (pprint))
+  (reset! projects-cache [])
+  (load!)
   ;; @TODO Look into reading requests back from the cache
   (fetch!))
 

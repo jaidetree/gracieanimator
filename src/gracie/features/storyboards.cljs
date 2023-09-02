@@ -2,7 +2,9 @@
   (:require
     [clojure.pprint :refer [pprint]]
     [promesa.core :as p]
+    [gracie.queue :as q]
     [gracie.data-pipeline :refer [defhook]]
+    [notion.api :refer [fetch-blocks]]
     [framework.utils :as u]
     ["path" :as path]
     ["stream" :refer [Readable]]
@@ -12,6 +14,7 @@
   (fn storyboards-parse-project
     [original-project]
     {:id               (get original-project :id)
+     :block-id         (get original-project :block-id)
      :slug             (get original-project :slug)
      :title            (get original-project :title)
      :type             (get original-project :type)
@@ -38,7 +41,8 @@
       (p/-> request
             (.json)
             (js->clj :keywordize-keys true)
-            (update :thumbnail_url #(str % ".jpg")))
+            (update :thumbnail_url #(str % ".jpg"))
+            (assoc :url url))
       (fn [error]
         (js/console.warn "Failed to fetch vimeo url" url " for storyboard" (:title project))
         (js/console.error error)
@@ -52,7 +56,8 @@
     (p/catch
       (p/-> request
             (.json)
-            (js->clj :keywordize-keys true))
+            (js->clj :keywordize-keys true)
+            (assoc :url url))
       (fn [error]
         (js/console.warn "Failed to fetch speakerdeck url" vimeo-api-url "for storyboard" (:title project))
         (js/console.error error)
@@ -65,7 +70,8 @@
 
 (defn download-asset
   [request {:keys [name url directory]}]
-  (let [basename (str name (.extname path (url->path url)))
+  (let [extname (.extname path (url->path url))
+        basename (str (.basename path name extname) extname)
         target-dir (.resolve path (js/process.cwd) (.join path "public" "assets" directory))
         body (.-body request)
         file-path (.join path target-dir basename)
@@ -91,11 +97,14 @@
 (defn fetch-pdf
   [project url]
   (p/catch
-    (p/-> (js/fetch url)
-          (download-asset
-           {:url  url
-            :directory "pdfs"
-            :name (.basename path (url->path url))}))
+    (p/let [name (.basename path (url->path url))
+            pdf-url (p/-> (js/fetch url)
+                         (download-asset
+                          {:url  url
+                           :directory "pdfs"
+                           :name name}))]
+      {:name name
+       :url  pdf-url})
     (fn [error]
       (js/console.warn "Failed to fetch pdf url" url "for storyboard" (:title project))
       (js/console.error error)
@@ -106,6 +115,10 @@
     [project]
     (concat
       []
+      (when-let [block-id (:block-id project)]
+        [{:id (str "notion/blocks/" block-id)
+          :fetch #(fetch-blocks {:block-id block-id})
+          :reducer #(assoc %1 :blocks %2)}])
       (when-let [vimeo-url (:vimeo-url project)]
         [{:id vimeo-url
           :fetch #(fetch-vimeo-oembed project vimeo-url)
@@ -120,24 +133,39 @@
         {:id pdf-url
          :fetch #(fetch-pdf project pdf-url)
          :reducer #(update %1 :pdfs conj %2)}))
-      (when-let [thumbnail-url (:thumbnail-url project)]
-        [{:id thumbnail-url
-          :fetch #(fetch-image project "thumbnails" thumbnail-url)
-          :reducer #(assoc %1 :thumbnail %2)}]))))
+      #_(when-let [thumbnail-url (:thumbnail-url project)]
+          [{:id thumbnail-url
+            :fetch #(fetch-image project "thumbnails" thumbnail-url)
+            :reducer #(assoc %1 :thumbnail %2)}]))))
+
+(defn download-thumbnail
+  [project candidates]
+  (when-let [thumbnail-url (->> candidates
+                                (filter identity)
+                                (first))]
+    (q/enqueue
+      {:type :resource
+       :requests [{:id thumbnail-url
+                   :fetch #(fetch-image project "thumbnails" thumbnail-url)
+                   :reducer (fn [_ctx local-thumbnail-url]
+                              local-thumbnail-url)}]})))
+
 
 (defhook :storyboards :format-project
   (fn storyboards-format-project
     [{:keys [project responses]}]
-    (let [{:keys [vimeo speakerdecks thumbnail pdfs]} responses]
-      (merge project
-             {:thumbnail (cond
-                           thumbnail thumbnail
-                           (:thumbnail_url vimeo) (:thumbnail_url vimeo)
-                           :else nil)}
-             (when vimeo
-              {:vimeo vimeo})
-             (when (seq speakerdecks)
-               {:speakerdecks speakerdecks})
-             (when pdfs
-              {:pdfs pdfs})))))
+    (let [{:keys [blocks vimeo speakerdecks pdfs]} responses]
+      (p/let [thumbnail (download-thumbnail
+                          project
+                          [(:thumbnail-url project)
+                           (:thumbnail_url vimeo)])]
+           (merge project
+                  {:thumbnail thumbnail
+                   :blocks    blocks}
+                  (when vimeo
+                   {:vimeo vimeo})
+                  (when (seq speakerdecks)
+                    {:speakerdecks speakerdecks})
+                  (when pdfs
+                   {:pdfs pdfs}))))))
 

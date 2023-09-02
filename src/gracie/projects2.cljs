@@ -30,6 +30,7 @@
         title (get-in project [:properties :name :title 0 :text :content])]
     (assoc project
            :id    id
+           :block-id (get project :id)
            :title title
            :type  (keyword (slugify (str/lower-case type)))
            :slug   (str id "-" (slugify (str/lower-case title))))))

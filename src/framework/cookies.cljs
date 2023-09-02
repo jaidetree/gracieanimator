@@ -60,12 +60,13 @@
 (defn cookie->str
   [cookie]
   (->> cookie
-       (map
+       (keep
          (fn [[kw v]]
            (let [key (name kw)]
-            (if (and (boolean? v) (true? v))
-              [key]
-              [key v]))))
+            (cond
+              (and (boolean? v) (true? v)) [key]
+              (boolean? v)                 nil
+              :else                        [key v]))))
        (map serialize-pair)
        (s/join ";")))
 
@@ -74,7 +75,7 @@
   (let [signed (sign data)
         cookie [[:grace.session signed]
                 [:Path "/"]
-                [:SameSite "Strict"]
+                [:SameSite "Lax"]
                 [:Secure (= js/process.env.NODE_ENV "production")]
                 [:HttpOnly true]
                 [:MaxAge (* 60 60 24 60)]]]
