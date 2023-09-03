@@ -107,9 +107,9 @@
                 result (view-fn req (:data req {}))]
           (if (map? result) ;; Result was a response object
             (let [req (merge req
-                             {:status 200
-                              :headers (merge (:headers req)
-                                              {:Content-Type "text/html"})}
+                             #_{:status 200
+                                :headers (merge (:headers req)
+                                                {:Content-Type "text/html"})}
                              result)]
               (if (:view req)
                 (handler (assoc req :body (root-layout-fn req (:data req {}) (:view req))))
@@ -117,9 +117,7 @@
             (handler        ;; Result was a hiccup view
               (merge req
                      {:status  200
-                      :headers (merge
-                                 (:headers req)
-                                 {:Content-Type "text/html"})
+                      :headers {:Content-Type "text/html"}
                       :body    (root-layout-fn req (:data req {}) result)}))))
         (handler req)))))
 
@@ -146,3 +144,15 @@
           (handler (assoc-in req [:session :csrf] (csrf/create)))
           (js/throw (js/Error. "CSRF token failed validation"))))
       (handler req))))
+
+(defn wrap-cache-policy
+  [handler]
+  (fn [req]
+    (p/let [res (handler req)]
+      (println "RESPONSE HEADERS")
+      (pprint (:headers res))
+      (if (and (contains? #{:POST :PUT :PATCH :DELETE} (:method req))
+               (or (not (get-in res [:headers :Cache-Control]))
+                   (not (get-in res [:headers "Cache-Control"]))))
+        (assoc-in res [:headers :Cache-Control] "no-store")
+        res))))

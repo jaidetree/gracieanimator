@@ -54,6 +54,7 @@
                   (#'mw/wrap-error-view)
                   (#'mw/wrap-render-page status-pages)
                   (#'mw/wrap-cookies)
+                  (#'mw/wrap-cache-policy)
                   #_(#'mw/wrap-logging))]
     (f req)))
 
