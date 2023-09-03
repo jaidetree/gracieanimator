@@ -2,39 +2,38 @@
 	"name": "gracieanimator",
 	"version": "1.0.0",
 	"description": "Website for Gracie Animator",
-	"main": "index.js",
-	"repository": "https://github.com/eccentric-j/gracieanimator.git",
+	"repository": "https://github.com/jaidetree/gracieanimator.git",
 	"author": "Jay <jayzawrotny@gmail.com>",
 	"license": "CC-BY-NC-ND-4.0",
 	"private": true,
 	"scripts": {
 		"nbb": "./node_modules/.bin/nbb -cp src",
 		"dev": "concurrently -n css,dev yarn:dev:css yarn:dev:server",
-		"build": "yarn nbb -m gracie.tasks.build",
+		"build": "concurrently -n css,cache yarn:build:css yarn:build:cache",
 		"build:css": "yarn tailwindcss -i ./src/theme/tailwind.css -o ./public/css/stylesheet.css",
+		"build:cache": "yarn nbb -m gracie.tasks.build-cache",
 		"dev:css": "yarn build:css --watch",
 		"dev:server": "yarn nbb -m gracie.dev.server",
 		"repl": "concurrently -n css,repl yarn:dev:css \"yarn nbb nrepl-server :port 1337\"",
 		"deploy": "netlify deploy --site luminous-semifreddo-a1547d --dir build/",
 		"test": "yarn nbb -m tests.cli",
-		"test:watch": "yarn nodemon -w src -e cljs -x \"yarn test\""
+		"test:watch": "yarn nodemon -w src -e cljs -x \"yarn test\"",
+		"start": "yarn build && yarn nbb -m gracie.server"
 	},
 	"dependencies": {
-		"baconjs": "^3.0.17",
-		"glob": "^10.3.3",
-		"jsonwebtoken": "^8.5.1",
-		"nbb": "^1.2.178"
-	},
-	"devDependencies": {
 		"@notionhq/client": "^2.2.3",
+		"baconjs": "^3.0.17",
 		"concurrently": "^7.0.0",
 		"dotenv": "^16.0.0",
 		"express": "^4.17.3",
-		"netlify-cli": "^12.12.1",
-		"node-fetch": "^3.2.1",
-		"nodemon": "^3.0.1",
+		"glob": "^10.3.3",
+		"nbb": "^1.2.178",
 		"react": "^17.0.2",
 		"react-dom": "^17.0.2",
 		"tailwindcss": "^3.0.23"
+	},
+	"devDependencies": {
+		"node-fetch": "^3.2.1",
+		"nodemon": "^3.0.1"
 	}
 }

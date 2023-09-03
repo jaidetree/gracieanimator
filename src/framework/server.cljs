@@ -31,6 +31,8 @@
 (defn server
   [app handler]
   (-> app
+      (.disable "x-powered-by")
+      (.set "trust proxy" 1)
       (.use (.urlencoded express))
       (.use (fn [req res _next]
               (-> (p/let [req (req->hash-map req)

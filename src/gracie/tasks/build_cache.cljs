@@ -1,6 +1,6 @@
-(ns tests.gracie.load-projects
+(ns gracie.tasks.build-cache
   (:require
-    [clojure.pprint :refer [pprint]]
+    #_[clojure.pprint :refer [pprint]]
     [promesa.core :as p]
     [gracie.data-pipeline :as dp]
     [gracie.features.storyboards]
@@ -9,6 +9,7 @@
     [gracie.features.comics]))
 
 (defn -main
-  [& args]
-  (p/-> (dp/fetch!)
-        (pprint)))
+  [& _args]
+  (p/do
+    (dp/fetch!)
+    (println "Cache built in .cache")))

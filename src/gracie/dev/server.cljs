@@ -5,6 +5,7 @@
     [gracie.views.base :refer [base status-pages]]
     [gracie.routes :refer [routes]]
     [gracie.data-pipeline :as dp]
+    [gracie.middleware :as gmw]
     [framework.env :as env]
     [framework.server :refer [server]]
     [framework.middleware :as mw]
@@ -13,41 +14,12 @@
 
 (defonce app-ref (atom nil))
 
-(defn wrap-data
-  [handler]
-  (fn [req]
-    (handler (-> req
-                 (assoc-in [:data :projects] (dp/all-projects))
-                 (assoc-in [:data :pages] (dp/all-pages))))))
-
-(defn wrap-dynamic-page-router
-  [handler]
-  (fn [req]
-    (let [path-slug (u/slugify (:path req))
-          pages (get-in req [:data :pages])
-          page (->> pages
-                    (some #(when (= (:slug %) path-slug) %)))]
-      (if page
-        {:headers (assoc (:headers req)
-                         :Content-Type "text/html")
-         :session (:session req)
-         :status 200
-         :body
-         (base
-           req (:data req)
-           [:div
-            [:h1.mb-8
-             (:title page)]
-            (into [:div] (:content page))])}
-        (handler req)))))
-
-
 (defn handler
   [req]
   (p/let [f (p/-> (#'mw/wrap-default-view)
                   (#'mw/wrap-router base routes)
-                  (#'wrap-dynamic-page-router)
-                  (#'wrap-data)
+                  (#'gmw/wrap-dynamic-page-router)
+                  (#'gmw/wrap-data)
                   (#'mw/wrap-csrf)
                   (#'mw/wrap-static "public")
                   (#'mw/wrap-json)
@@ -61,7 +33,7 @@
 (defn -main
   []
   (let [app (express)
-        port (env/optional :APP_PORT 3000)]
+        port (env/optional :PORT 3000)]
     (doto app (server (fn [] (deref #'handler))))
     (reset! app-ref (.listen app
                              port
