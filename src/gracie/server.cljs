@@ -30,7 +30,6 @@
   (dp/load!)
   (let [app (express)
         port (env/required :PORT)]
-    (println port)
     (doto app
       (server (constantly handler-promise))
       (.listen port "0.0.0.0"

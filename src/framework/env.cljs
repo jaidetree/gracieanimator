@@ -36,7 +36,6 @@
                           (read-ini-file "/etc/secrets/.env"))]
     (some->> (s/split contents #"\n")
              (map parse-ini-line)
-             (println (s/join "\n"))
              (s/join "\n")
              (wrap-pairs)
              (edn/read-string)

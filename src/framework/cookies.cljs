@@ -1,19 +1,12 @@
 (ns framework.cookies
   (:require
     [clojure.string :as s]
+    [framework.env :as env]
     ["crypto" :as crypto]))
 
-(def generate-key-pair-sync (.-generateKeyPairSync crypto))
-
-(defn generate-private-key
-  []
-  (generate-key-pair-sync
-    "ec" (clj->js {:namedCurve "secp256k1"
-                   :privateKeyEncoding {:type "pkcs8"
-                                        :format "pem"}})))
-
-(defonce keypair (generate-private-key))
-(defonce private-key (.createPrivateKey crypto (.-privateKey keypair)))
+(defonce private-key (->> :GRACIE_COOKIE_PRIVATE_KEY
+                          (env/required)
+                          (crypto/createPrivateKey)))
 
 (defn str->buf
   [s & [enc]]
