@@ -61,5 +61,4 @@
             "Deploy in progress, fetching updated content from CMS. Will redirect once complete, in about 1 minute."]]})
       {:status 302
        :session (:session req)
-       :headers {:Location "/"}
-       :body "Redirecting"})))
+       :headers {:Location "/"}})))

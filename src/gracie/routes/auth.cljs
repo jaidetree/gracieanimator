@@ -5,8 +5,8 @@
 
 (def expected-password (env/required "GRACIE_STORYBOARDS_PASSWORD"))
 
-(defn handler
-  [req]
+(defn post
+  [req _data]
   (let [body (:body req)]
     (if (= (:password body) expected-password)
       {:status 301
@@ -15,3 +15,18 @@
                        {:auth (-> (.randomBytes crypto 16) (.toString "hex"))})}
       {:status 302
        :headers {:Location (or (:redirect body) "/")}})))
+
+(defn view
+  [req data]
+  (case (:method req)
+    :POST (post req data)
+    {:status 302
+     :headers {:Location "/storyboards/"}
+     :session (:session req)}))
+
+(defn logout
+  [req _data]
+  {:status 302
+   :headers {:Location "/"}
+   :session (dissoc (:session req) :auth)})
+

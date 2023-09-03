@@ -1,5 +1,6 @@
 (ns gracie.routes
   (:require
+    [gracie.routes.auth :as auth]
     [gracie.routes.home :as home]
     [gracie.routes.illustrations :as illustrations]
     [gracie.routes.sketchbook-samples :as sketchbook-samples]
@@ -16,5 +17,7 @@
    "/storyboards/"                         #'storyboards/index-view
    "/storyboards/category/:category-slug/" #'storyboards/category-view
    "/storyboards/:storyboard-slug/"        #'storyboards/single-view
+   "/auth/"                                #'auth/view
+   "/logout/"                              #'auth/logout
    "/deploy/:deploy-key/"                  #'deploy/view})
 
