@@ -52,9 +52,11 @@
 (defn wrap-logging
   [handler]
   (fn [req]
-    (println "->" (:method req) (:path req))
-    (p/let [res (handler req)]
-      (println "<-" (:method req) (:path req))
+    #_(println "->" (:method req) (:path req))
+    (p/let [start (js/performance.now)
+            res (handler req)
+            end  (js/performance.now)]
+      (println (:method req) (:path req) (str (.toFixed (- end start) 2) "ms"))
       res)))
 
 (defn wrap-static

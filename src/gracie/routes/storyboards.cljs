@@ -55,17 +55,51 @@
   (require-password
     (fn [req {:keys [projects]}]
       (let [categories (group-by-category projects)]
-        [:main
-         [:h1.text-center.md:text-left "Storyboards"]
-         [:div.space-y-16
-          (for [[slug {:keys [category storyboards]}] categories]
+        {:status 200
+         :title "Storyboards"
+         :session (:session req)
+         :view
+          [:main
+           [:h1.text-center.md:text-left "Storyboards"]
+           [:div.space-y-16
+            (for [[slug {:keys [category storyboards]}] categories]
+             [:section.mt-8
+              {:key category}
+              [:header.text-center.md:text-left
+               [:h2
+                [:a
+                 {:href (str "/storyboards/category/" slug)}
+                 category]]]
+              [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
+               (for [storyboard storyboards]
+                 (let [url (str "/storyboards/" (:slug storyboard) "/")]
+                   [:li.max-w-xs.w-full
+                    {:key url}
+                    [project-thumb
+                     {:project storyboard
+                      :url url}
+                     (:title storyboard)]]))]])]]}))))
+
+(def category-view
+  (require-password
+    (fn [req {:keys [projects]}]
+      (let [categories (group-by-category projects)
+            category-slug (get-in req [:params :category-slug])
+            {:keys [category storyboards]} (get categories category-slug)]
+        {:status 200
+         :session (:session req)
+         :title (str category " | Storyboards")
+         :view
+         [:main
+          [:h1.text-center.md:text-left
+           [:a
+            {:href "/storyboards/"}
+            "Storyboards"]
+           [:span.mx-4.font-thin "/"]
+           category]
+          [:div.space-y-16
            [:section.mt-8
             {:key category}
-            [:header.text-center.md:text-left
-             [:h2
-              [:a
-               {:href (str "/storyboards/category/" slug)}
-               category]]]
             [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
              (for [storyboard storyboards]
                (let [url (str "/storyboards/" (:slug storyboard) "/")]
@@ -74,33 +108,7 @@
                   [project-thumb
                    {:project storyboard
                     :url url}
-                   (:title storyboard)]]))]])]]))))
-
-(def category-view
-  (require-password
-    (fn [req {:keys [projects]}]
-      (let [categories (group-by-category projects)
-            category-slug (get-in req [:params :category-slug])
-            {:keys [category storyboards]} (get categories category-slug)]
-        [:main
-         [:h1.text-center.md:text-left
-          [:a
-           {:href "/storyboards/"}
-           "Storyboards"]
-          [:span.mx-4.font-thin "/"]
-          category]
-         [:div.space-y-16
-          [:section.mt-8
-           {:key category}
-           [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
-            (for [storyboard storyboards]
-              (let [url (str "/storyboards/" (:slug storyboard) "/")]
-                [:li.max-w-xs.w-full
-                 {:key url}
-                 [project-thumb
-                  {:project storyboard
-                   :url url}
-                  (:title storyboard)]]))]]]]))))
+                   (:title storyboard)]]))]]]]}))))
 
 (defn pdf-icon
   []
@@ -235,38 +243,42 @@
             content (seq (get storyboard :content))
             speakerdecks (seq (get storyboard :speakerdecks))
             pdfs (seq (get storyboard :pdfs))]
-        [:div
-         [:div#storyboard-page.grid.grid-cols-12.gap-8
-          [:main.col-span-full.md:col-span-8.space-y-16.order-2.md:order-1
-           [:div#animatic.space-y-8 [:h1 (:title storyboard)]
-            [vimeo-video storyboard]]
-           (when speakerdecks
-             [:div#boards.space-y-8 [:h2 "Boards"]
-              (for [[idx deck] (map-indexed vector speakerdecks)]
-                ^{:key idx} [speakerdeck deck])])
-           (when pdfs
-             [:div#pdfs.space-y-8 [:h2 "PDFs"]
-              [:ul.bg-black.bg-opacity-20.p-8.md:block
-               (for [pdf pdfs]
-                 ^{:key (:name pdf)} [pdf-item pdf])]])
-           (when content
-             [:div#content.space-y-8
-              content])]
-          [:aside.col-span-12.md:col-span-4.order-1.md:order-2
-           [:div.space-y-4.sticky.top-8
-            [category storyboard]
-            (when (or speakerdecks
-                      pdfs
-                      content)
-             [navigation
-              (when speakerdecks
-                [nav-link {:id "boards"} "Boards"])
-              (when (seq (get storyboard :pdfs))
-                [nav-link {:id "pdfs"} "PDFs"])
-              (when content
-                [nav-link {:id "content"} "More"])])
-            (when (or speakerdecks pdfs)
-              [quick-links storyboard])]]]]))))
+        {:status 200
+         :session (:session req)
+         :title (str (:title storyboard) " | Storyboards")
+         :view
+         [:div
+          [:div#storyboard-page.grid.grid-cols-12.gap-8
+           [:main.col-span-full.md:col-span-8.space-y-16.order-2.md:order-1
+            [:div#animatic.space-y-8 [:h1 (:title storyboard)]
+             [vimeo-video storyboard]]
+            (when speakerdecks
+              [:div#boards.space-y-8 [:h2 "Boards"]
+               (for [[idx deck] (map-indexed vector speakerdecks)]
+                 ^{:key idx} [speakerdeck deck])])
+            (when pdfs
+              [:div#pdfs.space-y-8 [:h2 "PDFs"]
+               [:ul.bg-black.bg-opacity-20.p-8.md:block
+                (for [pdf pdfs]
+                  ^{:key (:name pdf)} [pdf-item pdf])]])
+            (when content
+              [:div#content.space-y-8
+               content])]
+           [:aside.col-span-12.md:col-span-4.order-1.md:order-2
+            [:div.space-y-4.sticky.top-8
+             [category storyboard]
+             (when (or speakerdecks
+                       pdfs
+                       content)
+              [navigation
+               (when speakerdecks
+                 [nav-link {:id "boards"} "Boards"])
+               (when (seq (get storyboard :pdfs))
+                 [nav-link {:id "pdfs"} "PDFs"])
+               (when content
+                 [nav-link {:id "content"} "More"])])
+             (when (or speakerdecks pdfs)
+               [quick-links storyboard])]]]]}))))
 
 
 

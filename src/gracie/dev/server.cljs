@@ -33,7 +33,7 @@
 (defn -main
   []
   (let [app (express)
-        port (env/optional :PORT 3000)]
+        port (env/optional :PORT 8000)]
     (doto app (server (fn [] (deref #'handler))))
     (reset! app-ref (.listen app
                              port

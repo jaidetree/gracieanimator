@@ -8,12 +8,16 @@
   [req {:keys [projects]}]
   (let [images (->> projects
                     (filter #(projects/project-type? % :sketchbook-samples)))]
-    [:div
-     [:h1.mb-8 "Sketchbook Samples"]
-     [:div.sketchbook-samples.space-y-8
-      (for [image images]
-        [:img
-         {:src (:image-url image) :alt (:title image)}])
+    {:status 200
+     :session (:session req)
+     :title "Sketchbook Samples"
+     :view
+     [:div
+      [:h1.mb-8 "Sketchbook Samples"]
+      [:div.sketchbook-samples.space-y-8
+       (for [image images]
+         [:img
+          {:key (:slug image)
+           :src (:image-url image)
+           :alt (:title image)}])]]}))
 
-      #_[:pre
-         (u/pprint-str illustrations)]]]))

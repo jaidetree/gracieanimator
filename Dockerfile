@@ -25,7 +25,14 @@ COPY --link package-lock.json package.json ./
 RUN npm ci --include=dev
 
 # Copy application code
-COPY --link . .
+COPY --link src src
+COPY --link public/css public/css
+COPY --link public/imgs public/imgs
+COPY --link nbb.edn nbb.edn
+COPY --link package.json package.json
+COPY --link package-lock.json package-lock.json
+COPY --link tailwind.config.js tailwind.config.js
+COPY --link node_modules node_modules
 
 # Build application
 # RUN npm run build

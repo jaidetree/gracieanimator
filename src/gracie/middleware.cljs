@@ -25,10 +25,11 @@
          :session (:session req)
          :status 200
          :body
-         (base
-           req (:data req)
-           [:div
-            [:h1.mb-8
-             (:title page)]
-            (into [:div] (:content page))])}
+         (let [req (assoc req :title (:title page))]
+           (base
+             req (:data req)
+             [:div
+              [:h1.mb-8
+               (:title page)]
+              (into [:div] (:content page))]))}
         (handler req)))))

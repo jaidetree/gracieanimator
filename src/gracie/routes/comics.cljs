@@ -7,16 +7,21 @@
   [req {:keys [projects]}]
   (let [comics (->> projects
                     (filter #(projects/project-type? % :comics)))]
-    [:div [:h1.mb-8 "Comics"]
-     [:div.comics.grid.grid-cols-12.gap-8
-      (for [comic comics]
-        [:a.col-span-4.text-center
-         {:href (str "/comics/" (:slug comic) "/")}
-         [:img.object-scale-down.h-80.m-auto
-          {:src (:thumbnail comic)
-           :alt (:title comic)}]
-         [:span.font-body.font-light.text-lg.uppercase
-          (:title comic)]])]]))
+    {:status 200
+     :session (:session req)
+     :title "Comics"
+     :view
+     [:div [:h1.mb-8 "Comics"]
+      [:div.comics.grid.grid-cols-12.gap-8
+       (for [comic comics]
+         [:a.col-span-4.text-center
+          {:key (:slug comic)
+           :href (str "/comics/" (:slug comic) "/")}
+          [:img.object-scale-down.h-80.m-auto
+           {:src (:thumbnail comic)
+            :alt (:title comic)}]
+          [:span.font-body.font-light.text-lg.uppercase
+           (:title comic)]])]]}))
 
 (defn wrap-forward
   [idx last-idx]
@@ -55,33 +60,36 @@
        comics (->> projects
                    (filter #(projects/project-type? % :comics)))
        {:keys [comic prev next]} (select-comic comics slug)]
-
-   [:div.comic
-     [:hgroup
-       [:a.inline-block.mb-2.uppercase.font-light
-        {:href "/comics/"}
-        "← comics"]
-       [:h1.mb-8 (:title comic)]]
-     [:img.mb-8.mx-auto
-      {:class "w-[80%] h-auto"
-       :src (:image-url comic)
-       :alt (:title comic)}]
-     [:div.flex.flex-row.justify-between.p-4
-      {:class "bg-black/10"}
-      [:a.flex.flex-row.items-center.gap-2
-       {:href (str "/comics/" (:slug prev) "/")}
-       [:img.object-scale-down.h-20
-        {:src (:thumbnail prev)
-         :alt (:title prev)}]
-       [:span.text-lg.font-bold.uppercase
-        "prev:"]
-       (:title prev)]
-      [:a.flex.flex-row.items-center.gap-2
-       {:href (str "/comics/" (:slug next) "/")}
-       [:span.text-lg.font-bold.uppercase
-         "next"]
-       (:title next)
-       [:img.object-scale-down.h-20
-        {:src (:thumbnail next)
-         :alt (:title next)}]]]]))
+   {:status 200
+    :session (:session req)
+    :title (str (:title comic) " | Comics")
+    :view
+    [:div.comic
+      [:hgroup
+        [:a.inline-block.mb-2.uppercase.font-light
+         {:href "/comics/"}
+         "← comics"]
+        [:h1.mb-8 (:title comic)]]
+      [:img.mb-8.mx-auto
+       {:class "w-[80%] h-auto"
+        :src (:image-url comic)
+        :alt (:title comic)}]
+      [:div.flex.flex-row.justify-between.p-4
+       {:class "bg-black/10"}
+       [:a.flex.flex-row.items-center.gap-2
+        {:href (str "/comics/" (:slug prev) "/")}
+        [:img.object-scale-down.h-20
+         {:src (:thumbnail prev)
+          :alt (:title prev)}]
+        [:span.text-lg.font-bold.uppercase
+         "prev:"]
+        (:title prev)]
+       [:a.flex.flex-row.items-center.gap-2
+        {:href (str "/comics/" (:slug next) "/")}
+        [:span.text-lg.font-bold.uppercase
+          "next"]
+        (:title next)
+        [:img.object-scale-down.h-20
+         {:src (:thumbnail next)
+          :alt (:title next)}]]]]}))
 
