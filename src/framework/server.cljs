@@ -36,13 +36,10 @@
               (-> (p/let [req (req->hash-map req)
                           handler (handler)
                           res-map (handler req)]
-                    #_(println
-                        "RESPONSE:"
-                        (select-keys res-map [:headers :status]))
                     (set-headers res res-map)
+                    (.status res (:status res-map 200))
                     (when (:body res-map)
                       (set-body res res-map))
-                    (.status res (:status res-map 200))
                     (.end res))
                   (p/catch (fn [error]
                              (js/console.error error)

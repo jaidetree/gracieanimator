@@ -40,15 +40,6 @@
           {:view-fn view-fn
            :params (:params result)})))))
 
-
-(defn render-route
-  [req root {:keys [view-fn params]}]
-  (let [req (assoc req :params params)]
-    (root req
-          (:data req {})
-          (view-fn req (:data req {})))))
-
-
 (defn route-url
   [routes f]
   (let [routes (for [[route-path handler] routes]

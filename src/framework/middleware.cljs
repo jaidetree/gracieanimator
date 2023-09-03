@@ -56,7 +56,7 @@
     (pprint req)
     (p/let [res (handler req)]
       (println "Response:")
-      (pprint (dissoc res :body))
+      (pprint (select-keys res [:status :path :headers :meta]))
       res)))
 
 (defn wrap-static
@@ -97,20 +97,31 @@
       (if (json-header? res) (update res :body clj->json) res))))
 
 (defn wrap-router
-  [handler base routes]
+  [handler root-layout-fn routes]
   (router2/route-url
     routes
     (fn [req route]
       (if route
-        (handler
-          (merge
-            req
-            {:status  200
-             :headers (merge
-                        (:headers req)
-                        {:Content-Type "text/html"})
-             :body    (router2/render-route req base route)}))
-       (handler req)))))
+        (p/let [{:keys [view-fn params]} route
+                req (assoc req :params params)
+                result (view-fn req (:data req {}))]
+          (if (map? result) ;; Result was a response object
+            (let [req (merge req
+                             {:status 200
+                              :headers (merge (:headers req)
+                                              {:Content-Type "text/html"})}
+                             result)]
+              (if (:view req)
+                (handler (assoc req :body (root-layout-fn req (:data req {}) (:view req))))
+                (handler req)))
+            (handler        ;; Result was a hiccup view
+              (merge req
+                     {:status  200
+                      :headers (merge
+                                 (:headers req)
+                                 {:Content-Type "text/html"})
+                      :body    (root-layout-fn req (:data req {}) result)}))))
+        (handler req)))))
 
 (defn wrap-cookies
   [handler]
@@ -124,7 +135,6 @@
         (if (:session res)
           (assoc-in res [:headers :Set-Cookie] (cookies/hash-map->cookie (:session res)))
           res)))))
-
 
 (defn wrap-csrf
   [handler]

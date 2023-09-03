@@ -2,6 +2,7 @@
   (:require
     [promesa.core :as p]
     [framework.stream :as stream]
+    [framework.env :as env]
     [gracie.data-pipeline :as dp]))
 
 (defonce deploy-bus (stream/bus))
@@ -45,9 +46,20 @@
      :d "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"}]])
 
 (defn view
-  []
-  (.push deploy-bus (js/Date.now))
-  [:main.text-center.space-y-8
-   [spinner]
-   [:p
-    "Deploy in progress, fetching updated content from CMS. Will redirect once complete."]])
+  [req {:keys []}]
+  (let [deploy-key (get-in req [:params :deploy-key])]
+    (if (= deploy-key (env/required "GRACIE_DEPLOY_KEY"))
+      (do
+        (.push deploy-bus (js/Date.now))
+        {:status 200
+         :headers {:Refresh "60;/"
+                   :Content-Type "text/html"}
+         :view
+          [:main.text-center.space-y-8
+           [spinner]
+           [:p
+            "Deploy in progress, fetching updated content from CMS. Will redirect once complete, in about 1 minute."]]})
+      {:status 302
+       :session (:session req)
+       :headers {:Location "/"}
+       :body "Redirecting"})))

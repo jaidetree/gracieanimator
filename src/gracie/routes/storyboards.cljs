@@ -51,6 +51,31 @@
                                      :storyboards storyboards}]))
        (into {})))
 
+(def index-view
+  (require-password
+    (fn [req {:keys [projects]}]
+      (let [categories (group-by-category projects)]
+        [:main
+         [:h1.text-center.md:text-left "Storyboards"]
+         [:div.space-y-16
+          (for [[slug {:keys [category storyboards]}] categories]
+           [:section.mt-8
+            {:key category}
+            [:header.text-center.md:text-left
+             [:h2
+              [:a
+               {:href (str "/storyboards/category/" slug)}
+               category]]]
+            [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
+             (for [storyboard storyboards]
+               (let [url (str "/storyboards/" (:slug storyboard) "/")]
+                 [:li.max-w-xs.w-full
+                  {:key url}
+                  [project-thumb
+                   {:project storyboard
+                    :url url}
+                   (:title storyboard)]]))]])]]))))
+
 (def category-view
   (require-password
     (fn [req {:keys [projects]}]
@@ -69,41 +94,13 @@
            {:key category}
            [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
             (for [storyboard storyboards]
-              (let [url (str "/storyboards/"
-                             (:slug storyboard))]
+              (let [url (str "/storyboards/" (:slug storyboard) "/")]
                 [:li.max-w-xs.w-full
                  {:key url}
                  [project-thumb
                   {:project storyboard
                    :url url}
                   (:title storyboard)]]))]]]]))))
-
-(def index-view
-  (require-password
-    (fn [req {:keys [projects]}]
-      (let [categories (group-by-category projects)]
-        [:main
-         [:h1.text-center.md:text-left "Storyboards"]
-         [:div.space-y-16
-          (for [[slug {:keys [category storyboards]}] categories]
-           [:section.mt-8
-            {:key category}
-            [:header.text-center.md:text-left
-             [:h2
-              [:a
-               {:href (str "/storyboards/category/" slug)}
-               category]]]
-            [:ul.flex.flex-wrap.gap-4.mt-8.justify-center.md:justify-start
-             (for [storyboard storyboards]
-               (let [url (str "/storyboards/"
-                              (:slug storyboard))]
-                 [:li.max-w-xs.w-full
-                  {:key url}
-                  [project-thumb
-                   {:project storyboard
-                    :url url}
-                   (:title storyboard)]]))]])]]))))
-
 
 (defn pdf-icon
   []

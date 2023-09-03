@@ -57,7 +57,7 @@
                     (some #(when (= (:slug %) path-slug) %)))]
       (if page
         {:headers (assoc (:headers req)
-                       :Content-Type "text/html")
+                         :Content-Type "text/html")
          :session (:session req)
          :status 200
          :body

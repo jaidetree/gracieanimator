@@ -8,13 +8,13 @@
     [gracie.routes.deploy :as deploy]))
 
 (def routes
-  {"/" #'home/view
-   "/illustrations/" #'illustrations/view
-   "/sketchbook-samples/" #'sketchbook-samples/view
-   "/comics/" #'comics/index-view
-   "/comics/:slug/" #'comics/single-view
-   "/storyboards/" #'storyboards/index-view
+  {"/"                                     #'home/view
+   "/illustrations/"                       #'illustrations/view
+   "/sketchbook-samples/"                  #'sketchbook-samples/view
+   "/comics/"                              #'comics/index-view
+   "/comics/:slug/"                        #'comics/single-view
+   "/storyboards/"                         #'storyboards/index-view
    "/storyboards/category/:category-slug/" #'storyboards/category-view
-   "/storyboards/:storyboard-slug" #'storyboards/single-view
-   "/deploy/" #'deploy/view})
+   "/storyboards/:storyboard-slug/"        #'storyboards/single-view
+   "/deploy/:deploy-key/"                  #'deploy/view})
 

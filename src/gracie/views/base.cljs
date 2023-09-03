@@ -8,7 +8,7 @@
    [:nav.flex.flex-row.gap-4.site-nav.justify-center.md:justify-start
     [:a {:href "/"} "Portfolio"]
     (for [{:keys [slug title]} pages]
-      [:a {:key slug, :href (str "/" slug)} title])]])
+      [:a {:key slug, :href (str "/" slug "/")} title])]])
 
 (defn base
   [req {:keys [pages]} & children]
