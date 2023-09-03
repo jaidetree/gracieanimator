@@ -15,10 +15,10 @@
 		"dev:css": "yarn build:css --watch",
 		"dev:server": "yarn nbb -m gracie.dev.server",
 		"repl": "concurrently -n css,repl yarn:dev:css \"yarn nbb nrepl-server :port 1337\"",
-		"deploy": "netlify deploy --site luminous-semifreddo-a1547d --dir build/",
+		"deploy": "yarn nbb -m gracie.tasks.deploy",
 		"test": "yarn nbb -m tests.cli",
 		"test:watch": "yarn nodemon -w src -e cljs -x \"yarn test\"",
-		"start": "yarn build && yarn nbb -m gracie.server"
+		"start": "yarn nbb -m gracie.server"
 	},
 	"dependencies": {
 		"@notionhq/client": "^2.2.3",
@@ -33,6 +33,7 @@
 		"tailwindcss": "^3.0.23"
 	},
 	"devDependencies": {
+		"@flydotio/dockerfile": "^0.4.8",
 		"node-fetch": "^3.2.1",
 		"nodemon": "^3.0.1"
 	}

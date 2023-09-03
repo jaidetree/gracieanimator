@@ -1,0 +1,15 @@
+.env
+.log
+/.nrepl-port
+public/css/stylesheet.css
+yarn-error.log
+.cpcache
+build
+
+# Local Netlify folder
+.netlify
+public/imgs/comics
+public/imgs/illustrations
+public/imgs/sketchbook-samples
+public/imgs/storyboards
+assets/

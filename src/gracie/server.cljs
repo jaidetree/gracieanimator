@@ -4,6 +4,7 @@
     [framework.env :as env]
     [framework.middleware :as mw]
     [framework.server :refer [server]]
+    [gracie.data-pipeline :as dp]
     [gracie.middleware :as gmw]
     [gracie.routes :refer [routes]]
     [gracie.views.base :refer [base status-pages]]
@@ -17,20 +18,21 @@
         (mw/wrap-csrf)
         (mw/wrap-static "public")
         (mw/wrap-json)
-        (mw/wrap-error-view)
         (mw/wrap-render-page status-pages)
         (mw/wrap-cookies)
         (mw/wrap-cache-policy)
-        (mw/wrap-logging)))
+        (mw/wrap-logging)
+        (mw/wrap-error-view)))
+
 
 (defn -main
   [& _args]
+  (dp/load!)
   (let [app (express)
         port (env/required :PORT)]
+    (println port)
     (doto app
-      (server (fn [req]
-                (p/let [handler handler-promise]
-                  (handler req))))
-      (.listen port
+      (server (constantly handler-promise))
+      (.listen port "0.0.0.0"
                (fn []
                  (println "Server started on port" port))))))

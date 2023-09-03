@@ -52,11 +52,9 @@
 (defn wrap-logging
   [handler]
   (fn [req]
-    (println "Request:")
-    (pprint req)
+    (println "->" (:method req) (:path req))
     (p/let [res (handler req)]
-      (println "Response:")
-      (pprint (select-keys res [:status :path :headers :meta]))
+      (println "<-" (:method req) (:path req))
       res)))
 
 (defn wrap-static
@@ -149,8 +147,6 @@
   [handler]
   (fn [req]
     (p/let [res (handler req)]
-      (println "RESPONSE HEADERS")
-      (pprint (:headers res))
       (if (and (contains? #{:POST :PUT :PATCH :DELETE} (:method req))
                (or (not (get-in res [:headers :Cache-Control]))
                    (not (get-in res [:headers "Cache-Control"]))))
