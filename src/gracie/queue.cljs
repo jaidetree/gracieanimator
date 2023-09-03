@@ -8,9 +8,6 @@
     ["fs/promises" :as fs]
     ["path" :as path]))
 
-(def request-cache
-  (atom {}))
-
 (def Bus (.-Bus bacon))
 
 (def queue-bus (Bus.))
@@ -21,28 +18,9 @@
     (fn [resolve]
       (.push queue-bus (assoc action :on-complete resolve)))))
 
-(defn cached?
-  [id]
-  (contains? @request-cache id))
-
-(defn get-cached
-  [id]
-  (get @request-cache id))
-
-(defn cache-request
-  [id promise]
-  (swap! request-cache assoc id promise)
-  promise)
-
-(defn get-or-cache-request
-  [{:keys [id fetch]}]
-  (if (cached? id)
-    (get-cached id)
-    (cache-request id (fetch))))
-
 (defn request->response
-  [{:keys [id _fetch reducer] :as request}]
-  (p/let [response (get-or-cache-request request)]
+  [{:keys [id fetch reducer] :as request}]
+  (p/let [response (fetch)]
     {:response (js->clj response :keywordize-keys true)
      :reducer reducer}))
 

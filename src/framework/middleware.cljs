@@ -1,17 +1,18 @@
 (ns framework.middleware
-  (:require [nbb.core :as nbb]
-            [cljs.pprint :refer [pprint]]
-            [clojure.string :as s]
-            [promesa.core :as p]
-            ["fs/promises" :as fs]
-            ["path" :as path]
-            [framework.cookies :as cookies]
-            [framework.csrf :as csrf]
-            #_[framework.server.router :as router]
-            [framework.utils :refer [urlpath->filepath file-exists?]]
-            [framework.server.router2 :as router2]
-            [reagent.dom.server :as rdom]
-            [framework.server.mime-types :refer [mime-types]]))
+  (:require
+    [nbb.core :as nbb]
+    [cljs.pprint :refer [pprint]]
+    [clojure.string :as s]
+    [promesa.core :as p]
+    ["fs/promises" :as fs]
+    ["path" :as path]
+    [framework.cookies :as cookies]
+    [framework.csrf :as csrf]
+    #_[framework.server.router :as router]
+    [framework.utils :refer [urlpath->filepath file-exists?]]
+    [framework.server.router2 :as router2]
+    [reagent.dom.server :as rdom]
+    [framework.server.mime-types :refer [mime-types]]))
 
 (defn wrap-default-view
   []

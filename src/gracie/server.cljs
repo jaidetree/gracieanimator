@@ -34,4 +34,5 @@
       (server (constantly handler-promise))
       (.listen port "0.0.0.0"
                (fn []
-                 (println "Server started on port" port))))))
+                 (println "Server listening on port" port))))
+    nil))
