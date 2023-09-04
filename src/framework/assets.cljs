@@ -44,13 +44,13 @@
     url-path))
 
 (defn fetch-image
-  [project directory url]
+  [project directory url & {:keys [name]}]
   (p/catch
     (p/promise
       (download
         {:url  url
          :directory directory
-         :name (:slug project)}))
+         :name (or name (:slug project))}))
     (fn [error]
       (js/console.warn (str "Failed to fetch image url " url " for " (name (:type project)) " " (:title project)))
       (js/console.error error)

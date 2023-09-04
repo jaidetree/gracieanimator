@@ -13,19 +13,36 @@
    :type             (get original-project :type)
    :featured         (= (get-in original-project [:properties :featured :checkbox]) true)
    :published        (= (get-in original-project [:properties :published :checkbox]) true)
-   :image-url        (get-in original-project [:properties :image :files 0 :file :url])}))
+   :images           (for [file (get-in original-project [:properties :image :files])]
+                       (get-in file [:file :url]))}))
 
 (defhook :comics :queue-requests
  (fn comics-queue-requests
    [project]
-   [{:id (:image-url project)
-     :fetch #(fetch-image project "comics" (:image-url project))
-     :reducer #(assoc %1 :image-url %2)}]))
+   (for [[idx image-url] (map-indexed vector (:images project))]
+     {:id image-url
+      :fetch #(fetch-image project "comics" image-url
+                           :name (str (:slug project) "-page-" (inc idx)))
+      :reducer #(update %1 :images conj %2)})))
 
 (defhook :comics :format-project
  (fn comics-format-project
   [{:keys [project responses]}]
-  (let [{:keys [image-url]} responses]
-   (assoc project
-          :image-url image-url
-          :thumbnail image-url))))
+  (let [{:keys [images]} responses
+        images (vec (sort-by #(-> (re-find #"-(\d+)\.[a-z]+$" %)
+                                  (second)
+                                  #_(js/Number))
+                             images))]
+   (-> project
+       (assoc :pages     images
+              :thumbnail (first images))
+       (dissoc :images)))))
+
+(comment
+  (vec (sort-by #(-> (re-find #"-(\d+)\.[a-z]+$" %)
+                     (second)
+                     (js/Number))
+                '("52-dumpling-eternal-page-4.png"
+                   "52-dumpling-eternal-page-2.png"
+                   "52-dumpling-eternal-page-1.png"
+                   "52-dumpling-eternal-page-3.png"))))

@@ -180,6 +180,13 @@
   (reset! cache {:projects []
                  :pages []}))
 
+(defn reload!
+  []
+  (p/do
+    (clear-cache!)
+    (fetch!)
+    (load!)))
+
 (comment
   (p/-> (fetch!)
         (pprint))

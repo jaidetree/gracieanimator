@@ -26,8 +26,8 @@ RUN npm ci --include=dev
 
 # Copy application code
 COPY --link src src
+COPY --link public/cljs public/cljs
 COPY --link public/css public/css
-COPY --link public/imgs public/imgs
 COPY --link nbb.edn nbb.edn
 COPY --link package.json package.json
 COPY --link package-lock.json package-lock.json

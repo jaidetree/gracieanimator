@@ -23,6 +23,9 @@
      {:rel "preconnect",
       :href "https://fonts.gstatic.com",
       :crossOrigin "true"}]
+    [:script
+     {:src "https://cdn.jsdelivr.net/npm/scittle@0.6.15/dist/scittle.js"
+      :type "application/javascript"}]
     [:link
      {:rel "stylesheet",
       :href
@@ -34,7 +37,7 @@
    (when-let [script-seq (seq (:scripts req))]
      (for [[idx script] (map-indexed vector script-seq)]
        ^{:key idx} [:script
-                    (merge {:type (or (:type script) "text/scittle")}
+                    (merge {:type (or (:type script) "application/x-scittle")}
                            (when (:src script)
                              {:src (:src script)}))
                     (if (:content script)
