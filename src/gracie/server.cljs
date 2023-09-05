@@ -4,6 +4,7 @@
     [framework.env :as env]
     [framework.middleware :as mw]
     [framework.server :refer [server]]
+    [gracie.core]
     [gracie.data-pipeline :as dp]
     [gracie.middleware :as gmw]
     [gracie.routes :refer [routes]]

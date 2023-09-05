@@ -2,6 +2,7 @@
   (:require
     [clojure.pprint :refer [pprint]]
     [promesa.core :as p]
+    [gracie.core]
     [gracie.views.base :refer [base status-pages]]
     [gracie.routes :refer [routes]]
     [gracie.data-pipeline :as dp]
@@ -55,6 +56,8 @@
 (dp/load!)
 
 (comment
+  (set! (.. js/process.env -NODE_ENV) "production")
+  js/process.env.NODE_ENV
   (let [app @app-ref] (.close app (fn [] (println "Server closed"))))
   (println "Starting up")
   (-main)

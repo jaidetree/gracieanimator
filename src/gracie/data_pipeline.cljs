@@ -11,7 +11,7 @@
     ["fs/promises" :as fs]
     ["glob" :as glob]))
 
-(def hooks (atom {}))
+(defonce hooks (atom {}))
 
 ;; project-types
 ;; - storyboards
@@ -88,7 +88,7 @@
 (defn log-stage
   [stage]
   (fn [state]
-   (println "\nStage:" stage (get-in state [:source :title]))
+   (js/console.log "\nStage:" stage (get-in state [:source :title]))
    #_(pprint data)))
 
 
@@ -128,7 +128,7 @@
                              (pages/enqueue-pages)])]
    (-> (stream/of projects)
        (.flatMap projects->project-stream)
-       (.concat (pages->page-stream pages))
+       (.merge (pages->page-stream pages))
        (.doError #(js/console.error %))
        (.toPromise))))
 
@@ -192,6 +192,7 @@
         (pprint))
   (p/-> (load!)
         (pprint))
+  (pprint @hooks)
   (clear-cache!)
   (load!)
   (pprint @cache)

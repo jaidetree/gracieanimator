@@ -23,9 +23,12 @@
 (defonce deploy-pipeline
   (-> deploy-bus
       (.filter #(= (env/optional :NODE_ENV "development") "production"))
-      (.throttle (* 1000 60 2))
+      #_(.throttle (* 1000 60 2))
       (.flatMapFirst deploy-stream)
       (.onValue println)))
+
+(comment
+  (= (env/optional :NODE_ENV "development") "production"))
 
 #_(defn spinner
     []
