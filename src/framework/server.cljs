@@ -1,7 +1,8 @@
 (ns framework.server
   (:require
     [promesa.core :as p]
-    ["express$default" :as express]))
+    ["express$default" :as express]
+    ["stream" :refer [Readable]]))
 
 (defn str->url [url-str] (js/URL. (str "http://" url-str)))
 
@@ -26,7 +27,14 @@
 
 (defn set-headers [res res-map] (.set res (clj->js (:headers res-map))))
 
-(defn set-body [res res-map] (.send res (:body res-map)))
+(defn set-body
+  [res res-map]
+  (let [body (:body res-map)]
+    (cond
+      (instance? Readable body) (.pipe body res)
+      body (do
+             (.send res body)
+             (.end res)))))
 
 (defn server
   [app handler]
@@ -42,7 +50,7 @@
                     (.status res (:status res-map 200))
                     (when (:body res-map)
                       (set-body res res-map))
-                    (.end res))
+                    #_(.end res))
                   (p/catch (fn [error]
                              (js/console.error error)
                              (.send res (.toString error))

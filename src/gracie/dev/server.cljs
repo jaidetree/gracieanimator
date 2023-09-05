@@ -9,7 +9,6 @@
     [framework.env :as env]
     [framework.server :refer [server]]
     [framework.middleware :as mw]
-    [framework.utils :as u]
     ["express$default" :as express]))
 
 (defonce app-ref (atom nil))

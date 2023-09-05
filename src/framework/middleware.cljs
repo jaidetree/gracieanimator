@@ -4,7 +4,8 @@
     [cljs.pprint :refer [pprint]]
     [clojure.string :as s]
     [promesa.core :as p]
-    ["fs/promises" :as fs]
+    ["fs/promises" :as fsp]
+    ["fs" :as fs]
     ["path" :as path]
     [framework.cookies :as cookies]
     [framework.csrf :as csrf]
@@ -67,11 +68,12 @@
           ext (subs (.extname path filepath) 1)]
       (p/let [file-exists (file-exists? filepath)]
         (if file-exists
-          (p/let [contents (.readFile fs filepath)
+          (p/let [read-stream (.createReadStream fs filepath)
                   content-type (get mime-types ext)]
             {:status 200
-             :headers {"Content-Type" content-type}
-             :body contents})
+             :headers {:Content-Type content-type
+                       :Cache-Control (str "private, max-age=" (* 60 60 24) ", immutable")}
+             :body read-stream})
           (handler req))))))
 
 (defn json-header?

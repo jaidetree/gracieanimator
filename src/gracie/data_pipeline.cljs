@@ -146,7 +146,7 @@
 
 (defn read-from-cache
   []
-  (let [filesp (.glob glob ".cache/**/*.edn")]
+  (let [filesp (.glob glob ".cache/**/*.edn" #js {:ignore ".cache/responses"})]
     (-> (stream/from-promise filesp)
         (.map clj->js)
         (.flatMap stream/from-seq)
