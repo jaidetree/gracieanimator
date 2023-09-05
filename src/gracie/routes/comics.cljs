@@ -13,7 +13,7 @@
      :title "Comics"
      :view
      [:div [:h1.mb-8 "Comics"]
-      [:div.comics.grid.grid-cols-12.gap-8
+      [:div.comics.grid.grid-cols-6.lg:grid-cols-12.gap-8
        (for [comic comics]
          [:div.col-span-6.text-center
           {:key (:slug comic)
@@ -46,7 +46,6 @@
   (if (>= idx 0)
     idx
     last-idx))
-
 
 (defn select-comic
   [comics slug]
