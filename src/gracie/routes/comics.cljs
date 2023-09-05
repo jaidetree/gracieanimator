@@ -1,6 +1,7 @@
 (ns gracie.routes.comics
   (:require
     [clojure.pprint :refer [pprint]]
+    [reagent.core :as r]
     [gracie.projects2 :as projects]))
 
 (defn index-view
@@ -65,51 +66,68 @@
 (comment
   (mod 3 2))
 
+(defn chevron-left-icon
+  []
+  [:svg.pointer-events-none
+   {:xmlns "http://www.w3.org/2000/svg",
+    :fill "none",
+    :viewBox "0 0 24 24",
+    :strokeWidth "1.5",
+    :stroke "currentColor",
+    :class "w-full h-full"}
+   [:path
+    {:strokeLinecap "round",
+     :strokeLinejoin"round",
+     :d "M15.75 19.5L8.25 12l7.5-7.5"}]])
+
+(defn chevron-right-icon
+  []
+  [:svg.pointer-events-none
+   {:xmlns "http://www.w3.org/2000/svg",
+    :fill "none",
+    :viewBox "0 0 24 24",
+    :strokeWidth "1.5",
+    :stroke "currentColor",
+    :class "w-full h-full"}
+   [:path
+    {:strokeLinecap "round",
+     :strokeLinejoin"round",
+     :d "M8.25 4.5l7.5 7.5-7.5 7.5"}]])
+
+(defn nav
+  [{:keys [class href id]} & children]
+  (into
+    [:a.absolute.top-0.bottom-0.my-auto.block.w-12.h-12.z-10.rounded-full
+     {:class (r/class-names
+               "bg-black/10 lg:bg-transparent"
+               class)
+      :id id
+      :href href}]
+    children))
+
 (defn prev-link
   [{:keys [slug current-page pages]}]
   (let [page-num (dec current-page)]
-    [:a.fixed.top-0.bottom-0.left-4.lg:left-20.m-auto.w-12.h-12.z-10.rounded-full
-      {:class (str
-                "bg-black/10 lg:bg-transparent"
-                (when-not (< 0 page-num)
-                  " hidden"))
-       :id "prev-comic"
-       :href (if (= page-num 1)
+    [nav
+     {:class (r/class-names
+               (when (= 1 page-num) "hidden")
+               "-left-4 lg:left-20")
+      :id "prev-comic"
+      :href (if (= page-num 1)
                (str "/comics/" slug "/")
                (str "/comics/" slug "/page/" page-num "/"))}
-      [:svg.pointer-events-none
-       {:xmlns "http://www.w3.org/2000/svg",
-        :fill "none",
-        :viewBox "0 0 24 24",
-        :strokeWidth "1.5",
-        :stroke "currentColor",
-        :class "w-full h-full"}
-       [:path
-         {:strokeLinecap "round",
-          :strokeLinejoin"round",
-          :d "M15.75 19.5L8.25 12l7.5-7.5"}]]]))
+     [chevron-left-icon]]))
 
 (defn next-link
   [{:keys [slug current-page pages]}]
   (let [page-num (inc current-page)]
-    [:a.fixed.top-0.bottom-0.right-4.lg:right-20.m-auto.w-12.h-12.z-10.rounded-full
-      {:class (str
-                "bg-black/10 lg:bg-transparent"
-               (when-not (<= page-num (count pages))
-                 " hidden"))
-       :id "next-comic"
-       :href (str "/comics/" slug "/page/" page-num "/")}
-      [:svg.pointer-events-none
-       {:xmlns "http://www.w3.org/2000/svg",
-        :fill "none",
-        :viewBox "0 0 24 24",
-        :strokeWidth "1.5",
-        :stroke "currentColor",
-        :class "w-full h-full"}
-       [:path
-        {:strokeLinecap "round",
-         :strokeLinejoin "round",
-         :d "M8.25 4.5l7.5 7.5-7.5 7.5"}]]]))
+    [nav
+     {:class (r/class-names
+               (when (= page-num (count pages)) "hidden")
+               "-right-4 lg:right-20")
+      :id "next-comic"
+      :href (str "/comics/" slug "/page/" page-num "/")}
+     [chevron-right-icon]])) ; #'gracie.routes.comics/next-link
 
 (defn single-view
  [req {:keys [projects]}]
@@ -129,10 +147,10 @@
          {:href "/comics/"}
          "← comics"]
         [:h1.mb-8 (:title comic)]]
-      [:div.relative.m-auto
+      [:div.relative.mx-auto.p-8.lg:py-4.mb-4
        {:id "comic-ui"
-        :class "w-[80%] lg:w-full"}
-       [:img.mb-8.mx-auto.w-full
+        :class "w-full bg-black/10"}
+       [:img.mb-8.mx-auto.w-full.max-w-xl
         {:class "h-auto"
          :id    "comic-viewer"
          :src (get-in comic [:pages (dec current-page)])
@@ -183,6 +201,3 @@
 
 ;; IDEAS
 ;; - Show the grid of comics below with this comic omitted
-;; - Use client-side code to replace the main image for faster nav
-;; - Cache responses with ring middleware. It can take cache strategies
-;;   so storyboard pages can be treated differently depending on auth
