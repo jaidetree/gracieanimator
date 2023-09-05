@@ -13,9 +13,9 @@
      :title "Comics"
      :view
      [:div [:h1.mb-8 "Comics"]
-      [:div.comics.grid.grid-cols-6.lg:grid-cols-12.gap-8
+      [:div.comics.grid.grid-cols-6.lg:grid.lg:grid-cols-12.gap-8
        (for [comic comics]
-         [:div.col-span-6.text-center
+         [:div.text-center.col-span-6
           {:key (:slug comic)
            :class "bg-black/10 p-4"}
           [:a.text-center.block
@@ -33,7 +33,7 @@
                :href (str "/comics/" (:slug comic) "/page/" (inc idx) "/")}
               [:img.object-scale-down.w-full
                {:src page
-                :alt page}]])]])]]}))
+                :alt page}]])]])]]})) ; #'gracie.routes.comics/index-view
 
 (defn wrap-forward
   [idx last-idx]
