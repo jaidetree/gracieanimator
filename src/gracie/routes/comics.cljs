@@ -109,7 +109,7 @@
   (let [page-num (dec current-page)]
     [nav
      {:class (r/class-names
-               (when (= 1 page-num) "hidden")
+               (when (= 0 page-num) "hidden")
                "-left-4 lg:left-20")
       :id "prev-comic"
       :href (if (= page-num 1)
@@ -122,7 +122,7 @@
   (let [page-num (inc current-page)]
     [nav
      {:class (r/class-names
-               (when (= page-num (count pages)) "hidden")
+               (when (> page-num (count pages)) "hidden")
                "-right-4 lg:right-20")
       :id "next-comic"
       :href (str "/comics/" slug "/page/" page-num "/")}
