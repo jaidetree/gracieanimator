@@ -22,20 +22,32 @@
   (try
     (read-file filename)
     (catch js/Error error
-      (js/console.error error)
-      "")))
+      (println "Could not read .env file" filename)
+      #_(js/console.error error)
+      nil)))
+
+(defn pe
+  [env]
+  (println env)
+  env)
 
 (def env
-  (->> (s/split (read-ini-file ".env") #"\n")
-       (map parse-ini-line)
-       (s/join "\n")
-       (wrap-pairs)
-       (edn/read-string)
-       (into {})))
+  (when-let [contents (or (read-ini-file ".env")
+                          (read-ini-file "/etc/secrets/.env"))]
+    (some->> (s/split contents #"\n")
+             (map parse-ini-line)
+             (s/join "\n")
+             (wrap-pairs)
+             (edn/read-string)
+             (into {})
+             #_(pe))))
 
 (defn optional
   [key default]
-  (let [value (get env (keyword key) ::not-found)]
+  (let [kw (keyword key)
+        value (or (aget js/process.env (name kw))
+                  (get env kw)
+                  ::not-found)]
     (if (= value ::not-found)
       (do
         (js/console.warn (str "Optional: Could not find ENV var " key))
@@ -44,7 +56,10 @@
 
 (defn required
   [key]
-  (let [value (get env (keyword key) ::not-found)]
-    (if (= value ::not-found)
+  (let [kw (keyword key)
+        value (or (aget js/process.env (name kw))
+                  (get env kw)
+                  ::not-found)]
+    (when (= value ::not-found)
       (throw (js/Error. (str "Required: Could not find ENV var " key))))
-      value))
+    value))

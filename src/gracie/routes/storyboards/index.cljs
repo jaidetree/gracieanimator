@@ -47,5 +47,5 @@
              [project-thumb
               {:project storyboard
                :url url}
-              (:title storyboard)]]))]
-       ])]])
+              (:title storyboard)]]))]])]])
+

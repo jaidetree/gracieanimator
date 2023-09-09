@@ -1,4 +1,4 @@
-(ns gracie.tasks.queue-test
+(ns tests.framework.queue-test
   (:require
     [promesa.core :as p]
     [framework.queue :as queue]))
