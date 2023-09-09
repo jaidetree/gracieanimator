@@ -1,6 +1,7 @@
 (ns framework.stream
   (:require
-    ["baconjs" :as bacon]))
+    ["baconjs" :as bacon]
+    ["stream" :refer [PassThrough]]))
 
 (def Bus (.-Bus bacon))
 
@@ -13,6 +14,8 @@
 (defn next
   [x]
   (new (.-Next bacon) x))
+
+(def never (.-never bacon))
 
 (defn error
   [x]
@@ -38,3 +41,31 @@
   [promise]
   (.fromPromise bacon promise true))
 
+(defn to-readable
+  [source]
+  (let [dest (PassThrough. #js {:objectMode true})
+        unsub (.subscribe source
+                          (fn [event]
+                            (cond
+                              (.-isError event) (.push dest (.-value event))
+                              (.-isEnd event) (.end dest)
+                              (.-hasValue event) (.write dest (.-value event)))))]
+    (.once dest "finish" unsub)
+    (.once dest "error" unsub)
+    dest))
+
+(defn pipe
+  [source dest]
+  (let [unsub (.subscribe source
+                          (fn [event]
+                            (cond
+                              (.-isError event) (.push dest (.-value event))
+                              (.-isEnd event) (.end dest)
+                              (.-hasValue event) (.write dest (.-value event)))))]
+    (.once dest "finish" unsub)
+    (.once dest "error" unsub)
+    dest))
+
+(defn merge-all
+  [streams]
+  (.mergeAll bacon (clj->js streams)))

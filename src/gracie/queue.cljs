@@ -46,7 +46,7 @@
    (p/do
      (.mkdir fs dirname #js {:recursive true})
      (.writeFile fs filepath contents #js {:encoding "utf-8"})
-     (on-complete contents))))
+     (on-complete filepath))))
 
 (def queue
   (-> queue-bus

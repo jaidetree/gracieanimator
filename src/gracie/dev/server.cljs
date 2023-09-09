@@ -57,6 +57,7 @@
 
 (comment
   (set! (.. js/process.env -NODE_ENV) "production")
+  (set! (.. js/process.env -PORT) 8000)
   js/process.env.NODE_ENV
   (let [app @app-ref] (.close app (fn [] (println "Server closed"))))
   (println "Starting up")

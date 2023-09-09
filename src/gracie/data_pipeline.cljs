@@ -46,6 +46,18 @@
   []
   (get @cache :pages []))
 
+;; - The fetch function should take a stream
+;; - Or a callback function to send a copy of the actions feed to
+;; - Replace the log with status message actions
+;; - Update fetch to send :init and :complete actions
+(def actions (stream/bus))
+
+(def unsub-actions
+  (-> actions
+      (.onValue #(doto %
+                   (println)
+                   (js/console.log)))))
+
 (defn parse-project
   [project]
   (let [hook-fn (get-hook (:type project) :parse-project)]
@@ -86,27 +98,36 @@
  (contains? (set (keys @hooks)) (:type project)))
 
 (defn log-stage
-  [stage]
+  [log stage & [extra-fields-fn]]
   (fn [state]
-   (js/console.log "\nStage:" stage (get-in state [:source :title]))
-   #_(pprint data)))
+   (log {:type :stage
+         :payload (merge
+                    {:stage stage
+                     :id (get-in state [:source :id])
+                     :title (get-in state [:source :title])
+                     :type (get-in state [:source :type])}
+                    (when extra-fields-fn
+                      (extra-fields-fn state)))})))
 
 
 (defn projects->project-stream
-  [projects]
+  [projects log]
   (-> (stream/from-seq projects)
       (.map projects/normalize)
       (.filter project-type-supported?)
       (.flatMap parse-project)
-      (.doAction (log-stage "parse-project"))
+      (.doAction (log-stage log "parse-project"))
       (.flatMap schedule-requests)
-      (.doAction (log-stage "schedule-requests"))
+      (.doAction (log-stage log "schedule-requests"))
       (.flatMap format-project)
-      (.doAction (log-stage "format-project"))
+      (.doAction (log-stage log "format-project"))
       (.flatMap cache-project)
+      (.doAction (log-stage log "cache-project"
+                            (fn [state]
+                              {:cached (get state :cached)})))
       (.reduce [] #(conj %1 (:dest %2)))
-      (.doAction (log-stage "cache-project"))
-      (.doError #(js/console.error %))))
+      (.doError #(log {:type :error
+                       :payload {:message (.-message %)}}))))
 
 (defn cache-page
   [page]
@@ -114,23 +135,40 @@
     (p/let [cached (q/enqueue
                      {:type :cache
                       :data page})]
-      page)))
+      {:page page
+       :cached cached})))
 
 (defn pages->page-stream
-  [pages]
+  [pages log]
   (-> (stream/from-seq pages)
-      (.flatMap cache-page)))
+      (.flatMap cache-page)
+      (.doAction
+        #(log {:type :stage
+               :payload {:stage "cache-page"
+                         :id (get-in % [:page :id])
+                         :title (get-in % [:page :title])
+                         :type :page
+                         :cached (get-in % [:cached])}}))))
+
 
 (defn fetch!
- []
+ [log]
  (p/let [[projects pages] (p/all
                             [(projects/enqueue-projects)
                              (pages/enqueue-pages)])]
-   (-> (stream/of projects)
-       (.flatMap projects->project-stream)
-       (.merge (pages->page-stream pages))
-       (.doError #(js/console.error %))
+   (log {:type :start
+         :payload {:total (+ (* (count projects) 4)
+                             (count pages))
+                   :projects (count projects)
+                   :pages    (count pages)
+                   :status "Processing pages and projects..."}})
+   (-> (stream/merge-all
+         [(projects->project-stream projects log)
+          (pages->page-stream pages log)])
+       (.doError #(log {:type :error
+                        :payload {:message (.-message %)}}))
        (.toPromise))))
+
 
 (defn read-cache-file
   [filename]
@@ -165,6 +203,11 @@
   (read-from-cache)
   (pprint @cache))
 
+(defn log
+  [action]
+  (println action)
+  (js/console.log (prn-str action)))
+
 (defn load!
   []
   (p/let [projects (let [projects (all-projects)]
@@ -172,7 +215,7 @@
                      (read-from-cache)
                      projects))]
    (if (empty? projects)
-    (fetch!)
+    (fetch! log)
     projects)))
 
 (defn clear-cache!
@@ -184,19 +227,20 @@
   []
   (p/do
     (clear-cache!)
-    (fetch!)
+    (fetch! log)
     (load!)))
 
 (comment
-  (p/-> (fetch!)
+  (p/-> (fetch! log)
         (pprint))
   (p/-> (load!)
         (pprint))
   (pprint @hooks)
   (clear-cache!)
   (load!)
+  (reload!)
   (pprint @cache)
   ;; @TODO Look into reading requests back from the cache
-  (fetch!))
+  (fetch! log))
 
 

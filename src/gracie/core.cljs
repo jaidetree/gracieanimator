@@ -3,6 +3,10 @@
     [gracie.features.storyboards]
     [gracie.features.comics]
     [gracie.features.illustrations]
-    [gracie.features.sketchbook-samples]))
+    [gracie.features.sketchbook-samples]
+    [gracie.data-pipeline :as dp]))
+
+(comment
+  (println @dp/hooks))
 
 

@@ -20,5 +20,6 @@
    "/storyboards/:storyboard-slug/"        #'storyboards/single-view
    "/auth/"                                #'auth/view
    "/logout/"                              #'auth/logout
-   "/deploy/:deploy-key/"                  #'deploy/view})
+   "/deploy/:deploy-key/"                  #'deploy/view
+   "/deploy/log/"                          #'deploy/log-view})
 
