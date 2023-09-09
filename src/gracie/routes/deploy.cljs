@@ -44,7 +44,8 @@
                        :elapsed (/ (- end-time start-time)
                                    1000)
                        :status "Update complete! Redirecting to updated home page in 5 seconds."}})
-          (.end action-log))))))
+          (.end action-log)
+          (reset! action-log-ref nil))))))
 
 (def deploy-pipeline
   (-> deploy-bus

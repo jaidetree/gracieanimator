@@ -8,8 +8,12 @@
     [gracie.features.sketchbook-samples]
     [gracie.features.comics]))
 
+(defn log
+  [action]
+  (prn action))
+
 (defn -main
   [& _args]
   (p/do
-    (dp/fetch!)
+    (dp/fetch! log)
     (println "Cache built in .cache")))
