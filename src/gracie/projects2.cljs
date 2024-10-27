@@ -12,7 +12,9 @@
   (notion/fetch-db-entries
     {:db-id (env/required "CMS_STORYBOARDS_ID"),
      :filter {:property "Published",
-              :checkbox {:equals true}}}))
+              :checkbox {:equals true}}
+     :sorts [{:property "Order"
+              :direction "ascending"}]}))
 
 (defn enqueue-projects
   []
@@ -33,7 +35,8 @@
            :block-id (get project :id)
            :title title
            :type  (keyword (slugify (str/lower-case type)))
-           :slug   (str id "-" (slugify (str/lower-case title))))))
+           :slug   (str id "-" (slugify (str/lower-case title)))
+           :order (get-in project [:properties :order :number]))))
 
 (defn project-type?
   [project expected-type]

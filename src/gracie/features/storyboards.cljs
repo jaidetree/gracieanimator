@@ -19,6 +19,7 @@
      :type             (get original-project :type)
      :featured         (= (get-in original-project [:properties :featured :checkbox]) true)
      :published        (= (get-in original-project [:properties :published :checkbox]) true)
+     :order            (get original-project :order)
      :category         (get-in original-project [:properties :category :select :name])
      :vimeo-url        (get-in original-project [:properties :vimeo-url :url])
      :thumbnail-url    (get-in original-project [:properties :thumbnail :files 0 :file :url])

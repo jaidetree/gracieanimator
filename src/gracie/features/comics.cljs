@@ -13,6 +13,7 @@
    :type             (get original-project :type)
    :featured         (= (get-in original-project [:properties :featured :checkbox]) true)
    :published        (= (get-in original-project [:properties :published :checkbox]) true)
+   :order            (get original-project :order)
    :images           (for [file (get-in original-project [:properties :image :files])]
                        (get-in file [:file :url]))}))
 

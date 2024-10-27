@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+flyctl deploy --build-secret _env="$(cat .env)"

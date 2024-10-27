@@ -191,6 +191,7 @@
         (.flatMap read-cache-file)
         (.map read-string)
         (.reduce [] conj)
+        (.map #(sort-by :order %))
         (.doAction
           (fn [files]
             (let [{:keys [projects pages]} (group-by-type files)]
@@ -221,7 +222,7 @@
 (defn clear-cache!
   []
   (reset! cache {:projects []
-                 :pages []}))
+                 :pages    []}))
 
 (defn reload!
   []
