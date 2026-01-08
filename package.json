@@ -1,40 +1,40 @@
 {
-	"name": "gracieanimator",
-	"version": "1.0.0",
-	"description": "Website for Gracie Animator",
-	"repository": "https://github.com/jaidetree/gracieanimator.git",
-	"author": "Jay <jayzawrotny@gmail.com>",
-	"license": "CC-BY-NC-ND-4.0",
-	"private": true,
-	"scripts": {
-		"nbb": "./node_modules/.bin/nbb -cp src",
-		"dev": "concurrently -n css,dev yarn:dev:css yarn:dev:server",
-		"build": "concurrently -n css,cache yarn:build:css yarn:build:cache",
-		"build:css": "yarn tailwindcss -i ./src/theme/tailwind.css -o ./public/css/stylesheet.css",
-		"build:cache": "yarn nbb -m gracie.tasks.build-cache",
-		"dev:css": "yarn build:css --watch",
-		"dev:server": "yarn nbb -m gracie.dev.server",
-		"repl": "concurrently -n css,repl yarn:dev:css \"yarn nbb nrepl-server :port 1337\"",
-		"deploy": "yarn nbb -m gracie.tasks.deploy",
-		"test": "yarn nbb -m tests.cli",
-		"test:watch": "yarn nodemon -w src -e cljs -x \"yarn test\"",
-		"start": "yarn nbb -m gracie.server"
-	},
-	"dependencies": {
-		"@notionhq/client": "^2.2.3",
-		"baconjs": "^3.0.17",
-		"concurrently": "^7.0.0",
-		"dotenv": "^16.0.0",
-		"express": "^4.17.3",
-		"glob": "^10.3.3",
-		"nbb": "^1.2.178",
-		"react": "^17.0.2",
-		"react-dom": "^17.0.2",
-		"tailwindcss": "^3.0.23"
-	},
-	"devDependencies": {
-		"@flydotio/dockerfile": "^0.4.8",
-		"node-fetch": "^3.2.1",
-		"nodemon": "^3.0.1"
-	}
+  "name": "gracieanimator",
+  "version": "1.0.0",
+  "description": "Website for Gracie Animator",
+  "repository": "https://github.com/jaidetree/gracieanimator.git",
+  "author": "Jay <jayzawrotny@gmail.com>",
+  "license": "CC-BY-NC-ND-4.0",
+  "private": true,
+  "scripts": {
+    "nbb": "./node_modules/.bin/nbb -cp src",
+    "dev": "concurrently -n css,dev npm:dev:css npm:dev:server",
+    "build": "concurrently -n css,cache npm:build:css npm:build:cache",
+    "build:css": "tailwindcss -i ./src/theme/tailwind.css -o ./public/css/stylesheet.css",
+    "build:cache": "npx nbb -m gracie.tasks.build-cache",
+    "dev:css": "npm run build:css --watch",
+    "dev:server": "npx nbb -m gracie.dev.server",
+    "repl": "concurrently -n css,repl npm:dev:css \"npm run nbb nrepl-server :port 1337\"",
+    "deploy": "./scripts/deploy",
+    "test": "npx nbb -m tests.cli",
+    "test:watch": "npx nodemon -w src -e cljs -x \"yarn test\"",
+    "start": "npx nbb -m gracie.server"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.3",
+    "baconjs": "^3.0.17",
+    "concurrently": "^7.0.0",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "glob": "^10.3.3",
+    "nbb": "^1.2.178",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "tailwindcss": "^3.0.23"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.4.8",
+    "node-fetch": "^3.2.1",
+    "nodemon": "^3.0.1"
+  }
 }

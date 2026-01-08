@@ -1,19 +1,19 @@
 (ns framework.middleware
   (:require
-    [nbb.core :as nbb]
-    [cljs.pprint :refer [pprint]]
-    [clojure.string :as s]
-    [promesa.core :as p]
-    ["fs/promises" :as fsp]
-    ["fs" :as fs]
-    ["path" :as path]
-    [framework.cookies :as cookies]
-    [framework.csrf :as csrf]
-    #_[framework.server.router :as router]
-    [framework.utils :refer [urlpath->filepath file-exists?]]
-    [framework.server.router2 :as router2]
-    [reagent.dom.server :as rdom]
-    [framework.server.mime-types :refer [mime-types]]))
+   [nbb.core :as nbb]
+   [cljs.pprint :refer [pprint]]
+   [clojure.string :as s]
+   [promesa.core :as p]
+   ["fs/promises" :as fsp]
+   ["fs" :as fs]
+   ["path" :as path]
+   [framework.cookies :as cookies]
+   [framework.csrf :as csrf]
+   #_[framework.server.router :as router]
+   [framework.utils :refer [urlpath->filepath file-exists?]]
+   [framework.server.router2 :as router2]
+   [reagent.dom.server :as rdom]
+   [framework.server.mime-types :refer [mime-types]]))
 
 (defn wrap-default-view
   []
@@ -35,7 +35,9 @@
                                {:Content-Type "text/html"})
                :status status
                :session (:session res)
-               :body (rdom/render-to-string (:body res))}
+               :body (str
+                      "<!doctype html>\n"
+                      (rdom/render-to-string (:body res)))}
               (and (<= 200 status) (< status 300)) res
               (and (<= 300 status) (< status 400)) res
               :else
@@ -43,7 +45,8 @@
                 {:headers (merge (:headers res) {:Content-Type "text/html"})
                  :session (:session res)
                  :status status
-                 :body (rdom/render-to-string (view res (:data res)))}))))))
+                 :body (str "<!doctype html>\n"
+                            (rdom/render-to-string (view res (:data res))))}))))))
 
 (defn wrap-error-view
   [handler]
@@ -102,34 +105,34 @@
 (defn wrap-router
   [handler root-layout-fn routes]
   (router2/route-url
-    routes
-    (fn [req route]
-      (if route
-        (p/let [{:keys [view-fn params]} route
-                req (assoc req :params params)
-                result (view-fn req (:data req {}))]
-          (if (map? result) ;; Result was a response object
-            (let [req (merge req
-                             #_{:status 200
-                                :headers (merge (:headers req)
-                                                {:Content-Type "text/html"})}
-                             result)]
-              (if (:view req)
-                (handler (assoc req :body (root-layout-fn req (:data req {}) (:view req))))
-                (handler req)))
-            (handler        ;; Result was a hiccup view
-              (merge req
-                     {:status  200
-                      :headers {:Content-Type "text/html"}
-                      :body    (root-layout-fn req (:data req {}) result)}))))
-        (handler req)))))
+   routes
+   (fn [req route]
+     (if route
+       (p/let [{:keys [view-fn params]} route
+               req (assoc req :params params)
+               result (view-fn req (:data req {}))]
+         (if (map? result) ;; Result was a response object
+           (let [req (merge req
+                            #_{:status 200
+                               :headers (merge (:headers req)
+                                               {:Content-Type "text/html"})}
+                            result)]
+             (if (:view req)
+               (handler (assoc req :body (root-layout-fn req (:data req {}) (:view req))))
+               (handler req)))
+           (handler        ;; Result was a hiccup view
+            (merge req
+                   {:status  200
+                    :headers {:Content-Type "text/html"}
+                    :body    (root-layout-fn req (:data req {}) result)}))))
+       (handler req)))))
 
 (defn wrap-cookies
   [handler]
   (fn [req]
     (let [cookie-header (get-in req [:headers :cookie])
           session (when cookie-header
-                   (cookies/cookie->hash-map cookie-header))
+                    (cookies/cookie->hash-map cookie-header))
           session (or session {:csrf (csrf/create)})
           req (assoc req :session session)]
       (p/let [res (handler req)]

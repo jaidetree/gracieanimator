@@ -1,9 +1,9 @@
 (ns gracie.routes.deploy
   (:require
-    [promesa.core :as p]
-    [framework.stream :as stream]
-    [framework.env :as env]
-    [gracie.data-pipeline :as dp]))
+   [promesa.core :as p]
+   [framework.stream :as stream]
+   [framework.env :as env]
+   [gracie.data-pipeline :as dp]))
 
 (def deploy-bus (stream/bus))
 (def action-log-ref (atom nil))
@@ -12,9 +12,9 @@
   [action-log]
   (-> action-log
       (.onValue
-        (fn [event]
-          (println event)
-          (js/console.log (prn-str event))))))
+       (fn [event]
+         (println event)
+         (js/console.log (prn-str event))))))
 
 (defn deploy-stream
   [start-time]
@@ -26,26 +26,26 @@
                     :status "Deploy started..."}})
     (subscribe-to-log action-log)
     (stream/from-promise
-      (p/do
-        (dp/fetch! log)
-        (log {:type :status
-              :payload "Fetched and stored all pages and projects"})
-        (dp/clear-cache!)
-        (log {:type :status
-              :payload "Cleared previous cache of content"})
-        (dp/load!)
-        (log {:type :status
-              :payload "Loaded updated pages and projects into cache"})
-        (let [end-time (js/Date.now)]
-          (log
-            {:type :complete
-             :payload {:start start-time
-                       :end end-time
-                       :elapsed (/ (- end-time start-time)
-                                   1000)
-                       :status "Update complete! Redirecting to updated home page in 5 seconds."}})
-          (.end action-log)
-          (reset! action-log-ref nil))))))
+     (p/do
+       (dp/fetch! log)
+       (log {:type :status
+             :payload "Fetched and stored all pages and projects"})
+       (dp/clear-cache!)
+       (log {:type :status
+             :payload "Cleared previous cache of content"})
+       (dp/load!)
+       (log {:type :status
+             :payload "Loaded updated pages and projects into cache"})
+       (let [end-time (js/Date.now)]
+         (log
+          {:type :complete
+           :payload {:start start-time
+                     :end end-time
+                     :elapsed (/ (- end-time start-time)
+                                 1000)
+                     :status "Update complete! Redirecting to updated home page in 5 seconds."}})
+         (.end action-log)
+         (reset! action-log-ref nil))))))
 
 (def deploy-pipeline
   (-> deploy-bus
@@ -98,17 +98,18 @@
          :headers (merge {:Content-Type "text/html"})
          :scripts [{:src "https://cdn.jsdelivr.net/npm/baconjs@3.0.17/dist/Bacon.min.js"
                     :type "application/javascript"}
-                   {:src "/cljs/deploy.cljs"}]
+                   {:src "/cljs/deploy.cljs"
+                    :type "application/x-scittle"}]
          :view
-          [:main.text-center.space-y-8
-           [spinner]
-           [progress-bar]
-           [:p
-            {:id "status"}
-            "Fetching pages and projects..."]
-           [:div.text-left
-            [:pre
-             [:code#log.block.text-xs.h-80.overflow-auto]]]]})
+         [:main.text-center.space-y-8
+          [spinner]
+          [progress-bar]
+          [:p
+           {:id "status"}
+           "Fetching pages and projects..."]
+          [:div.text-left
+           [:pre
+            [:code#log.block.text-xs.h-80.overflow-auto]]]]})
 
       {:status 302
        :session (:session req)
@@ -121,19 +122,19 @@
 (defn log-view
   [req {:keys []}]
   (if-let [action-log @action-log-ref]
-   {:status 200
-    :headers {:Cache-Control "no-store"
-              :Content-Type  "text/event-stream"}
-    :body (-> action-log
-              (.map serialize-action)
-              (stream/to-readable))}
-   {:status 200
-    :headers {:Cache-Control "no-store"
-              :Content-Type  "text/event-stream"
-              :Connnection   "keep-alive"}
-    :body (-> (stream/of {:type :end :message "Deploy is not in-progress"})
-              (.map serialize-action)
-              (stream/to-readable))}))
+    {:status 200
+     :headers {:Cache-Control "no-store"
+               :Content-Type  "text/event-stream"}
+     :body (-> action-log
+               (.map serialize-action)
+               (stream/to-readable))}
+    {:status 200
+     :headers {:Cache-Control "no-store"
+               :Content-Type  "text/event-stream"
+               :Connnection   "keep-alive"}
+     :body (-> (stream/of {:type :end :message "Deploy is not in-progress"})
+               (.map serialize-action)
+               (stream/to-readable))}))
 
 (comment
   js/process.env.NODE_ENV

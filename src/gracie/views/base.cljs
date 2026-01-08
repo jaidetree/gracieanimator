@@ -29,26 +29,24 @@
     [:link
      {:rel "stylesheet",
       :href
-        "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Work+Sans:ital,wght@0,100;0,300;0,400;0,600;0,700;0,800;1,400&display=block"}]
-    [:link {:rel "stylesheet", :href "/css/stylesheet.css"}]]
-   (when-let [meta-seq (seq (:meta req))]
-     (for [[idx meta-props] (map-indexed vector meta-seq)]
-       ^{:key idx} [:meta meta-props]))
-   (when-let [script-seq (seq (:scripts req))]
-     (for [[idx script] (map-indexed vector script-seq)]
-       ^{:key idx} [:script
-                    (merge {:type (or (:type script) "application/x-scittle")}
-                           (when (:src script)
-                             {:src (:src script)}))
-                    (if (:content script)
-                      (:content script)
-                      "")]))
+      "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Work+Sans:ital,wght@0,100;0,300;0,400;0,600;0,700;0,800;1,400&display=block"}]
+    [:link {:rel "stylesheet", :href "/css/stylesheet.css"}]
+    (when-let [meta-seq (seq (:meta req))]
+      (for [[idx meta-props] (map-indexed vector meta-seq)]
+        ^{:key idx} [:meta meta-props]))]
    [:body.bg-primary.text-white
+    (when-let [script-seq (seq (:scripts req))]
+      (for [[idx script] (map-indexed vector script-seq)]
+        ^{:key idx} [:script
+                     (merge {:type (or (:type script) "application/x-scittle")}
+                            (when (:src script)
+                              {:src (:src script)}))
+                     (if (:content script)
+                       (:content script)
+                       "")]))
     [:div.max-w-5xl.m-auto.my-8.p-4.md:p-0.md:my-16 [site-header {:pages pages}]
      (-> [:div.page]
          (into children))]]])
-
-
 
 (defn error-404
   [req data]

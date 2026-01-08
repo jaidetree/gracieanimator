@@ -1,29 +1,29 @@
 (ns gracie.projects2
   (:require
-    [clojure.string :as str]
-    [notion.api :as notion]
-    [framework.env :as env]
-    [gracie.queue :as q]
-    [framework.utils :refer [slugify]]))
-
+   [clojure.pprint :refer [pprint]]
+   [clojure.string :as str]
+   [notion.api :as notion]
+   [framework.env :as env]
+   [gracie.queue :as q]
+   [framework.utils :refer [slugify]]))
 
 (defn fetch-projects
   []
   (notion/fetch-db-entries
-    {:db-id (env/required "CMS_STORYBOARDS_ID"),
-     :filter {:property "Published",
-              :checkbox {:equals true}}
-     :sorts [{:property "Order"
-              :direction "ascending"}]}))
+   {:db-id (env/required "CMS_STORYBOARDS_ID"),
+    :filter {:property "Published",
+             :checkbox {:equals true}}
+    :sorts [{:property "Order"
+             :direction "ascending"}]}))
 
 (defn enqueue-projects
   []
   (q/enqueue
-    {:type :resource
-     :requests [{:id "notion-projects"
-                 :fetch fetch-projects
-                 :reducer (fn [_ctx projects]
-                            projects)}]}))
+   {:type :resource
+    :requests [{:id "notion-projects"
+                :fetch fetch-projects
+                :reducer (fn [_ctx projects]
+                           projects)}]}))
 
 (defn normalize
   [project]
@@ -56,19 +56,19 @@
   [sort-order projects]
   (->> sort-order
        (reduce
-         (fn [pairs target-type]
-           (let [project (find #(and (project-type? % target-type)
-                                     (featured? %))
-                               projects)]
-             (if project
+        (fn [pairs target-type]
+          (let [project (find #(and (project-type? % target-type)
+                                    (featured? %))
+                              projects)]
+            (if project
               (conj pairs [(name target-type) project])
               pairs)))
-         [])))
+        [])))
 
 (comment
   (group-by-type
-    [:storyboards
-     :illustrations
-     :sketchbook-samples
-     :comics]
-    []))
+   [:storyboards
+    :illustrations
+    :sketchbook-samples
+    :comics]
+   []))

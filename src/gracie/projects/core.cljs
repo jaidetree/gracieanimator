@@ -1,10 +1,11 @@
 (ns gracie.projects.core
-  (:require [cljs.pprint :refer [pprint]]
-            [promesa.core :as p]
-            [notion.api :as notion]
-            [framework.env :as env]
-            [framework.utils :as u]))
-
+  (:require
+   [cljs.pprint :refer [pprint]]
+   [clojure.string :as s]
+   [promesa.core :as p]
+   [notion.api :as notion]
+   [framework.env :as env]
+   [framework.utils :as u]))
 
 (defn format-pdf
   [file]
@@ -20,15 +21,47 @@
                            (js/encodeURIComponent url)
                            "&width=1280&height=720")
         params (clj->js {:headers
-                           {"Referer"
-                              "https://gracieanimator.squarespace.com"}})]
+                         {"Referer"
+                          "https://gracieanimator.squarespace.com"}})]
     (-> (p/-> (js/fetch vimeo-api-url params)
               (.json)
               (js->clj :keywordize-keys true)
               (normalize-thumbnail))
         (p/catch (fn [error] (js/console.error error) {})))))
 
-(defn fetch-video [vimeo-url] (if vimeo-url (fetch-vimeo-oembed vimeo-url) nil))
+(defn fetch-youtube-oembed
+  [url]
+  (let [yt-api-url (str "https://youtube.com/oembed?url="
+                        (js/encodeURIComponent url)
+                        "&width=1280&height=720&format=json")
+        params (clj->js {:headers
+                         {"Referer"
+                          "https://gracieanimator.squarespace.com"}})]
+    (-> (p/-> (js/fetch yt-api-url params)
+              (.json)
+              (js->clj :keywordize-keys true)
+              (normalize-thumbnail)
+              (doto pprint))
+        (p/catch (fn [error] (js/console.error error) {})))))
+
+(defn vimeo-url?
+  [vimeo-url]
+  (s/includes? vimeo-url "vimeo.com"))
+
+(defn youtube-url?
+  [vimeo-url]
+  (s/includes? vimeo-url "youtube.com"))
+
+(defn fetch-video
+  [vimeo-url]
+  (cond
+    (and vimeo-url (vimeo-url? vimeo-url))
+    (fetch-vimeo-oembed vimeo-url)
+
+    (and vimeo-url (youtube-url? youtube-url))
+    (fetch-youtube-oembed youtub-url)
+
+    nil))
 
 (defn fetch-speakerdeck-oembed
   [url]
@@ -58,7 +91,7 @@
     ;; Fetch these resources in parallel
     (p/let [[video speakerdecks] (p/all [(fetch-video vimeo-url)
                                          (fetch-speakerdecks
-                                           speakerdeck-urls)])]
+                                          speakerdeck-urls)])]
       {:id (get project :id),
        :uid (get-in fields [:uid :formula :string]),
        :pdfs (->> (get-in fields [:pdf :files])
@@ -127,8 +160,8 @@
 (defn fetch-pages
   []
   (p/->> (notion/fetch-db-entries
-           {:db-id (env/required "CMS_PAGES_ID"),
-            :filter {:and [{:property "Published", :checkbox {:equals true}}]},
-            :sorts [{:property "Order", :direction "ascending"}]})
+          {:db-id (env/required "CMS_PAGES_ID"),
+           :filter {:and [{:property "Published", :checkbox {:equals true}}]},
+           :sorts [{:property "Order", :direction "ascending"}]})
          (map format-page)
          (p/all)))
