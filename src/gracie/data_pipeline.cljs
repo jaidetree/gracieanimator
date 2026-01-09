@@ -1,15 +1,15 @@
 (ns gracie.data-pipeline
   (:require
-    [clojure.pprint :refer [pprint]]
-    [clojure.string :as s]
-    [cljs.reader :refer [read-string]]
-    [promesa.core :as p]
-    [framework.stream :as stream]
-    [gracie.queue :as q]
-    [gracie.projects2 :as projects]
-    [gracie.pages :as pages]
-    ["fs/promises" :as fs]
-    ["glob" :as glob]))
+   [clojure.pprint :refer [pprint]]
+   [clojure.string :as s]
+   [cljs.reader :refer [read-string]]
+   [promesa.core :as p]
+   [framework.stream :as stream]
+   [gracie.queue :as q]
+   [gracie.projects2 :as projects]
+   [gracie.pages :as pages]
+   ["fs/promises" :as fs]
+   ["glob" :as glob]))
 
 (defonce hooks (atom {}))
 
@@ -55,16 +55,16 @@
 (def unsub-actions
   (-> actions
       (.onValue #(doto %
-                   (println)
+                   #_(println)
                    (js/console.log)))))
 
 (defn parse-project
   [project]
   (let [hook-fn (get-hook (:type project) :parse-project)]
     (stream/from-promise
-      (p/let [parsed (hook-fn project)]
-        {:source   project
-         :project  parsed}))))
+     (p/let [parsed (hook-fn project)]
+       {:source   project
+        :project  parsed}))))
 
 (defn schedule-requests
   [{:keys [source project] :as state}]
@@ -81,34 +81,33 @@
   [{:keys [source project responses] :as state}]
   (let [hook-fn (get-hook (:type project) :format-project)]
     (stream/from-promise
-      (p/let [formatted (hook-fn {:project project
-                                  :responses responses})]
-        (assoc state :dest formatted)))))
+     (p/let [formatted (hook-fn {:project project
+                                 :responses responses})]
+       (assoc state :dest formatted)))))
 
 (defn cache-project
   [{:keys [dest] :as state}]
   (stream/from-promise
-    (p/let [cached (q/enqueue
-                     {:type :cache
-                      :data dest})]
-      (assoc state :cached cached))))
+   (p/let [cached (q/enqueue
+                   {:type :cache
+                    :data dest})]
+     (assoc state :cached cached))))
 
 (defn project-type-supported?
- [project]
- (contains? (set (keys @hooks)) (:type project)))
+  [project]
+  (contains? (set (keys @hooks)) (:type project)))
 
 (defn log-stage
   [log stage & [extra-fields-fn]]
   (fn [state]
-   (log {:type :stage
-         :payload (merge
+    (log {:type :stage
+          :payload (merge
                     {:stage stage
                      :id (get-in state [:source :id])
                      :title (get-in state [:source :title])
                      :type (get-in state [:source :type])}
                     (when extra-fields-fn
                       (extra-fields-fn state)))})))
-
 
 (defn projects->project-stream
   [projects log]
@@ -132,43 +131,41 @@
 (defn cache-page
   [page]
   (stream/from-promise
-    (p/let [cached (q/enqueue
-                     {:type :cache
-                      :data page})]
-      {:page page
-       :cached cached})))
+   (p/let [cached (q/enqueue
+                   {:type :cache
+                    :data page})]
+     {:page page
+      :cached cached})))
 
 (defn pages->page-stream
   [pages log]
   (-> (stream/from-seq pages)
       (.flatMap cache-page)
       (.doAction
-        #(log {:type :stage
-               :payload {:stage "cache-page"
-                         :id (get-in % [:page :id])
-                         :title (get-in % [:page :title])
-                         :type :page
-                         :cached (get-in % [:cached])}}))))
-
+       #(log {:type :stage
+              :payload {:stage "cache-page"
+                        :id (get-in % [:page :id])
+                        :title (get-in % [:page :title])
+                        :type :page
+                        :cached (get-in % [:cached])}}))))
 
 (defn fetch!
- [log]
- (p/let [[projects pages] (p/all
+  [log]
+  (p/let [[projects pages] (p/all
                             [(projects/enqueue-projects)
                              (pages/enqueue-pages)])]
-   (log {:type :start
-         :payload {:total (+ (* (count projects) 4)
-                             (count pages))
-                   :projects (count projects)
-                   :pages    (count pages)
-                   :status "Processing pages and projects..."}})
-   (-> (stream/merge-all
+    (log {:type :start
+          :payload {:total (+ (* (count projects) 4)
+                              (count pages))
+                    :projects (count projects)
+                    :pages    (count pages)
+                    :status "Processing pages and projects..."}})
+    (-> (stream/merge-all
          [(projects->project-stream projects log)
           (pages->page-stream pages log)])
-       (.doError #(log {:type :error
-                        :payload {:message (.-message %)}}))
-       (.toPromise))))
-
+        (.doError #(log {:type :error
+                         :payload {:message (.-message %)}}))
+        (.toPromise))))
 
 (defn read-cache-file
   [filename]
@@ -178,9 +175,9 @@
   [pages-and-projects]
   (->> pages-and-projects
        (group-by
-         #(if (= (:type %) :pages)
-            :pages
-            :projects))))
+        #(if (= (:type %) :pages)
+           :pages
+           :projects))))
 
 (defn read-from-cache
   []
@@ -193,12 +190,11 @@
         (.reduce [] conj)
         (.map #(sort-by :order %))
         (.doAction
-          (fn [files]
-            (let [{:keys [projects pages]} (group-by-type files)]
-              (reset! cache {:projects projects
-                             :pages    pages}))))
+         (fn [files]
+           (let [{:keys [projects pages]} (group-by-type files)]
+             (reset! cache {:projects projects
+                            :pages    pages}))))
         (.toPromise))))
-
 
 (comment
   (read-from-cache)
@@ -206,18 +202,18 @@
 
 (defn log
   [action]
-  (println action)
-  (js/console.log (prn-str action)))
+  (prn action)
+  #_(js/console.log (prn-str action)))
 
 (defn load!
   []
   (p/let [projects (let [projects (all-projects)]
-                    (if (empty? projects)
-                     (read-from-cache)
-                     projects))]
-   (if (empty? projects)
-    (fetch! log)
-    projects)))
+                     (if (empty? projects)
+                       (read-from-cache)
+                       projects))]
+    (if (empty? projects)
+      (fetch! log)
+      projects)))
 
 (defn clear-cache!
   []

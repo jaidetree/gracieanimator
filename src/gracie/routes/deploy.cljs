@@ -13,8 +13,8 @@
   (-> action-log
       (.onValue
        (fn [event]
-         (println event)
-         (js/console.log (prn-str event))))))
+         (prn event)
+         #_(js/console.log (prn-str event))))))
 
 (defn deploy-stream
   [start-time]
