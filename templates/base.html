@@ -1,0 +1,29 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{% if page_title %}{{ page_title }} | {% endif %}Grace Space{% endblock %}</title>
+  <link rel="icon" href="{% static 'img/site-icon.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Work+Sans:ital,wght@0,100..800;1,400&display=block">
+  <link rel="stylesheet" href="{% static 'css/stylesheet.css' %}">
+</head>
+<body class="bg-primary text-white">
+  <div class="max-w-5xl m-auto my-8 p-4 md:p-0 md:my-16">
+    <header class="md:flex md:flex-row justify-between items-center mb-8 md:mb-16 site-header">
+      <h1 class="site-title text-center md:text-left"><a href="/">The Grace Space</a></h1>
+      <nav class="flex flex-row gap-4 site-nav justify-center md:justify-start">
+        <a href="/">Portfolio</a>
+        {% for nav in nav_pages %}
+          <a href="{{ nav.get_absolute_url }}">{{ nav.title }}</a>
+        {% endfor %}
+      </nav>
+    </header>
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

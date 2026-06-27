@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!--
+  Server-error page. Deliberately self-contained: no {% load %}, no static
+  files, no DB queries, and no request/context dependencies — so it renders
+  even when those are exactly what's broken.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Something went wrong | Grace Space</title>
+  <style>
+    body {
+      margin: 0;
+      background: #9E2820;
+      color: #fff;
+      font-family: "Open Sans", Arial, Helvetica, sans-serif;
+    }
+    .wrap { max-width: 64rem; margin: 4rem auto; padding: 1rem; }
+    h1 {
+      font-family: "Work Sans", "Arial Black", sans-serif;
+      text-transform: uppercase;
+      font-size: 2.25rem;
+    }
+    a { color: rgba(255, 255, 255, 0.8); }
+    a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Hey it&rsquo;s a&hellip; uh&hellip; &ldquo;oh no&rdquo;</h1>
+    <p>Something went wrong on our end. Please try again in a moment.</p>
+    <p><a href="/">Back to the portfolio</a></p>
+  </div>
+</body>
+</html>

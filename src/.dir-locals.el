@@ -1,1 +1,0 @@
-((clojurescript-mode (mode . clojure)))

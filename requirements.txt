@@ -1,0 +1,12 @@
+# Core
+Django==5.1.4
+psycopg[binary]==3.2.3
+dj-database-url==2.3.0
+django-environ==0.11.2
+whitenoise==6.8.2
+gunicorn==23.0.0
+
+# Test harness
+pytest==8.3.4
+pytest-django==4.9.0
+factory-boy==3.3.1
