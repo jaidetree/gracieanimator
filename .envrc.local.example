@@ -1,0 +1,13 @@
+# Copy to .envrc.local for personal overrides (gitignored). Sourced by .envrc
+# after the committed defaults, so anything here wins. All optional — local dev
+# works with zero overrides. Run `direnv allow` after editing.
+
+# A real signing key (dev uses an insecure built-in default otherwise).
+# export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(50))')"
+
+# Point at a different Postgres, or change the local cluster's port.
+# export PGPORT="5433"
+# export DATABASE_URL="postgres:///gracie"
+
+# Exercise production hardening locally (https redirect, manifest static, etc.).
+# export APP_ENV="production"

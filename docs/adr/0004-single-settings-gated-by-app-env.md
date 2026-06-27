@@ -44,3 +44,9 @@ locally without enabling the https redirect.
 - `test` currently behaves identically to `development`; a dedicated `test`
   branch is justified only once a genuinely test-only setting appears (e.g. a
   faster password hasher).
+- Config is read from the process environment only — there is no `.env` file and
+  settings no longer call `environ.read_env`. Local values come from a committed
+  `.envrc` (defaults) plus a gitignored `.envrc.local` (overrides), both exported
+  by direnv; production reads platform config vars. Consequently `manage.py` and
+  `pytest` must run inside the direnv-activated shell (already required for the
+  venv and Postgres).

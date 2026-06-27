@@ -1,4 +1,5 @@
-# Environment
+# Environment — .envrc is committed; personal overrides + legacy dotenv are not
+.envrc.local
 .env
 
 # Python

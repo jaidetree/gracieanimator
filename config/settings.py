@@ -1,7 +1,8 @@
 """
 Django settings for The Grace Space.
 
-All configuration is read from environment variables (see .env.example).
+All configuration is read from the environment, exported by direnv from
+`.envrc` (+ a gitignored `.envrc.local`); see `.envrc.local.example`.
 `APP_ENV` (development | test | production) flips environment-specific
 behaviour; it defaults to production when unset.
 """
@@ -14,9 +15,6 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env()
-# Load .env for standalone `manage.py` use. direnv also exports these, but
-# reading the file here keeps management commands working outside the shell.
-environ.Env.read_env(BASE_DIR / ".env")
 
 # Deployment environment, NODE_ENV-style. Unset resolves to production so an
 # unconfigured deploy is hardened by default; .envrc exports "development" for
