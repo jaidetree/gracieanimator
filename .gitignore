@@ -10,7 +10,8 @@ __pycache__/
 
 # Django
 /staticfiles/
-/static/css/stylesheet.css
+# static/css/stylesheet.css is committed (built by `make build`/`make dev`),
+# so prod's git-push deploy + collectstatic ships current styles. See README.
 
 # Local Postgres cluster
 /.pg/
