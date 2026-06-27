@@ -13,6 +13,44 @@ Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all op
 
 Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
 
+## Project board
+
+Issues are tracked on the **Gracie Animator Django Migration** GitHub Project (project #7, owner `jaidetree`). The board groups by a single-select **Status** field with these options:
+
+`Backlog` → `Ready` → `In progress` → `In review` → `Done`
+
+Identifiers (stable; only change if the board is rebuilt):
+
+| Item | ID |
+| --- | --- |
+| Project ID | `PVT_kwHOAAkB2c4BbxyK` |
+| Status field ID | `PVTSSF_lAHOAAkB2c4BbxyKzhWf1GQ` |
+| `In progress` option | `47fc9ee4` |
+| `In review` option | `df73e18b` |
+| `Done` option | `98236657` |
+
+### Move an issue to a status
+
+- **Starting work**: move the issue to `In progress` (option `47fc9ee4`).
+- **Finishing work**: move it to `In review` (option `df73e18b`) — this signals the change awaits manual testing by a human. Only a human moves an issue to `Done`.
+
+`gh project item-edit` needs the *project item ID*, not the issue number. Look it up, then edit:
+
+```bash
+PROJECT_ID="PVT_kwHOAAkB2c4BbxyK"
+STATUS_FIELD="PVTSSF_lAHOAAkB2c4BbxyKzhWf1GQ"
+IN_REVIEW="df73e18b"
+N=<issue-number>
+
+ITEM_ID=$(gh project item-list 7 --owner jaidetree --format json \
+  | python3 -c "import json,sys; print(next(i['id'] for i in json.load(sys.stdin)['items'] if i.get('content',{}).get('number')==$N))")
+
+gh project item-edit --project-id "$PROJECT_ID" --id "$ITEM_ID" \
+  --field-id "$STATUS_FIELD" --single-select-option-id "$IN_REVIEW"
+```
+
+Swap `--single-select-option-id` for another option ID from the table above to move to a different status.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
