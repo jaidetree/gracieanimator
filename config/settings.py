@@ -2,21 +2,30 @@
 Django settings for The Grace Space.
 
 All configuration is read from environment variables (see .env.example).
-`DEBUG` flips development vs production behaviour.
+`APP_ENV` (development | test | production) flips environment-specific
+behaviour; it defaults to production when unset.
 """
 from pathlib import Path
 
 import dj_database_url
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = environ.Env(DEBUG=(bool, False))
+env = environ.Env()
 # Load .env for standalone `manage.py` use. direnv also exports these, but
 # reading the file here keeps management commands working outside the shell.
 environ.Env.read_env(BASE_DIR / ".env")
 
-DEBUG = env("DEBUG")
+# Deployment environment, NODE_ENV-style. Unset resolves to production so an
+# unconfigured deploy is hardened by default; .envrc exports "development" for
+# local work and config/test_settings.py injects "test" for the suite.
+APP_ENV = env("APP_ENV", default="production")
+IS_PROD = APP_ENV == "production"
+
+# DEBUG follows the environment but can be overridden explicitly.
+DEBUG = env.bool("DEBUG", default=not IS_PROD)
 SECRET_KEY = env("SECRET_KEY", default="dev-insecure-change-me")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
@@ -64,7 +73,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
-        default=env("DATABASE_URL", default="postgres:///gracie?host=.pg"),
+        # No host in the URL: psycopg falls back to PGHOST (an absolute path to
+        # the project-local socket dir, exported by .envrc). A relative
+        # `host=.pg` would be treated as a DNS name, not a socket dir.
+        default=env("DATABASE_URL", default="postgres:///gracie"),
         conn_max_age=600,
     )
 }
@@ -90,7 +102,7 @@ STORAGES = {
         # Manifest hashing only in prod; plain storage keeps dev/tests simple.
         "BACKEND": (
             "django.contrib.staticfiles.storage.StaticFilesStorage"
-            if DEBUG
+            if not IS_PROD
             else "whitenoise.storage.CompressedManifestStaticFilesStorage"
         )
     },
@@ -98,8 +110,16 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Production hardening (off in dev so http://localhost works).
-if not DEBUG:
+# Production hardening, gated on APP_ENV (not DEBUG) so a dev can run with
+# DEBUG off locally without triggering the https redirect.
+if IS_PROD:
+    # Because production is the default (unset) environment, fail loudly rather
+    # than boot a public deploy with insecure placeholders.
+    if SECRET_KEY == "dev-insecure-change-me":
+        raise ImproperlyConfigured("SECRET_KEY must be set when APP_ENV=production")
+    if "*" in ALLOWED_HOSTS:
+        raise ImproperlyConfigured("ALLOWED_HOSTS must not be '*' when APP_ENV=production")
+
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
     SESSION_COOKIE_SECURE = True
