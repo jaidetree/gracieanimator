@@ -34,7 +34,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "imagekit",
     "pages",
+    "portfolio",
 ]
 
 MIDDLEWARE = [
@@ -94,6 +96,13 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Uploaded media (artwork). Local filesystem for now; Slice 3 swaps the default
+# storage backend to Cloudflare R2 (django-storages), at which point imagekit
+# generates renditions against R2 instead.
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {

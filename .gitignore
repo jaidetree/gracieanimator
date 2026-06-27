@@ -13,6 +13,9 @@ __pycache__/
 # static/css/stylesheet.css is committed (built by `make build`/`make dev`),
 # so prod's git-push deploy + collectstatic ships current styles. See README.
 
+# Uploaded media + imagekit renditions are local-only (R2 in prod, Slice 3).
+/media/
+
 # Local Postgres cluster
 /.pg/
 
