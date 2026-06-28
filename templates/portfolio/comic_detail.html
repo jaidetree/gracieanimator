@@ -11,9 +11,11 @@
          src="{{ page.image.url }}"
          alt="{{ comic.title }} page {{ page_number }}">
   </div>
-  {# Thumbnail strip: every page, aspect-respecting, so a visitor can jump to a
-     page and see where they are. The selected page is at full opacity; the rest
-     are dimmed and lift to full opacity on hover (300ms). #}
+  {% comment %}
+    Thumbnail strip: every page, aspect-respecting, so a visitor can jump to a
+    page and see where they are. The selected page is at full opacity; the rest
+    are dimmed and lift to full opacity on hover (300ms).
+  {% endcomment %}
   <div class="comic__pages grid grid-cols-4 md:grid-cols-6 gap-2 mb-4">
     {% for p in pages %}
       <a class="comic__page transition-opacity duration-300 {% if forloop.counter == page_number %}comic__page--selected opacity-100{% else %}opacity-50 hover:opacity-100{% endif %}"

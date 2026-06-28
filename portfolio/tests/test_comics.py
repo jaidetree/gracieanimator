@@ -105,6 +105,13 @@ def test_detail_shows_every_page_in_an_aspect_respecting_grid(client):
     assert "h-auto" in body
 
 
+def test_detail_renders_no_raw_template_comment(client):
+    # Multi-line {# #} comments aren't stripped by Django and leak as text.
+    comic = make_comic(n_pages=2)
+    body = client.get(f"/comics/{comic.slug}/").content.decode()
+    assert "Thumbnail strip" not in body
+
+
 def test_selected_page_is_full_opacity_others_dimmed_with_hover_transition(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/page/2/").content.decode()
