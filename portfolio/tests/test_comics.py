@@ -85,13 +85,36 @@ def test_index_shows_only_published_comics(client):
     assert hidden.title not in body
 
 
-# --- detail seam: full resolution, page navigation, bounds ---
+# --- detail seam: page grid, selection, full resolution, navigation, bounds ---
 
 def test_detail_serves_full_resolution_original(client):
     comic = make_comic(n_pages=2)
     cover = comic.cover_page
     body = client.get(f"/comics/{comic.slug}/").content.decode()
     assert cover.image.url in body
+
+
+def test_detail_shows_every_page_in_an_aspect_respecting_grid(client):
+    comic = make_comic(n_pages=3)
+    pages = comic.ordered_pages
+    body = client.get(f"/comics/{comic.slug}/").content.decode()
+    assert "comic__pages" in body and "grid" in body
+    # Unselected pages render their width-constrained, aspect-respecting rendition.
+    assert pages[1].grid_image.url in body
+    assert pages[2].grid_image.url in body
+    assert "h-auto" in body
+
+
+def test_selected_page_is_full_opacity_others_dimmed_with_hover_transition(client):
+    comic = make_comic(n_pages=3)
+    body = client.get(f"/comics/{comic.slug}/page/2/").content.decode()
+    assert "comic__page--selected" in body
+    assert "opacity-100" in body  # selected page
+    assert "opacity-50" in body  # dimmed pages
+    # Dimmed pages lift to full opacity on hover, transitioning over 300ms.
+    assert "hover:opacity-100" in body
+    assert "transition-opacity" in body
+    assert "duration-300" in body
 
 
 def test_first_page_has_next_but_no_previous(client):

@@ -72,11 +72,16 @@ def comics_index(request):
 
 
 def comic_detail(request, slug, page=1):
-    """A single comic page (1-based) with no-JS previous/next navigation.
+    """A large view of the selected page above an aspect-respecting thumbnail
+    strip of every page, one selected (1-based).
 
-    ``/comics/<slug>/`` is page 1 (the cover); ``/comics/<slug>/page/<n>/``
-    addresses page n. Out-of-range pages 404. Page 1's canonical URL is the bare
-    detail URL, so the previous link from page 2 points there.
+    The large image is the selected page at full resolution; the thumbnails let a
+    visitor jump to any page and see where they are (selected at full opacity,
+    the rest dimmed). No-JS previous/next links and the per-page routes also
+    drive selection. ``/comics/<slug>/`` selects page 1 (the cover);
+    ``/comics/<slug>/page/<n>/`` selects page n. Out-of-range pages 404. Page 1's
+    canonical URL is the bare detail URL, so the previous link from page 2 points
+    there.
     """
     comic = get_object_or_404(Comic, slug=slug, published=True)
     pages = list(comic.ordered_pages)
@@ -87,6 +92,7 @@ def comic_detail(request, slug, page=1):
         "portfolio/comic_detail.html",
         {
             "comic": comic,
+            "pages": pages,
             "page": pages[page - 1],
             "page_number": page,
             "page_count": len(pages),
