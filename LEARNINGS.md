@@ -2,6 +2,34 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## oembed boundary (Slice 5)
+
+- **Single HTTP seam with stdlib `urllib`, mocked at the imported name.** The
+  oembed client (`portfolio/oembed.py`) is the one place external provider HTTP
+  happens (ADR-0002). It uses `urllib.request` (no `requests` dependency) and
+  tests patch `portfolio.oembed.urlopen` — the name *as imported into the
+  module*, not `urllib.request.urlopen` — so endpoint construction and JSON
+  parsing are exercised, not just an internal stub. `urllib` raises `HTTPError`
+  (a `URLError` subclass) for non-2xx, so one `except URLError` cleanly covers
+  both network-down and provider-4xx/5xx as `OEmbedError`.
+- **Vimeo oembed real-world quirks (carried from the legacy stack, unverified
+  against live here):** Vimeo's `thumbnail_url` comes back *extension-less* and
+  404s unless `.jpg` is appended; Vimeo also gates oembed on a whitelisted
+  `Referer` (`https://gracieanimator.squarespace.com`). YouTube/Speakerdeck need
+  neither. Confirm these against live providers when the storyboard-save consumer
+  wires `fetch()` in.
+
+## Local test env (Slice 5)
+
+- **The shell's `.envrc.local` leaks staging env into the test run.** It exports
+  `DATABASE_URL` (remote RDS, no createdb perm → `pytest` dies with "permission
+  denied to create database", `SystemExit: 2` on every DB test) and `R2_*`
+  staging vars (→ `R2_ENABLED` True, failing `test_storage`). `config.settings`
+  defaults to local `postgres:///gracie` only when `DATABASE_URL` is unset. Run
+  the suite with those vars stripped:
+  `env -u DATABASE_URL -u R2_BUCKET_NAME python -m pytest`. (`make test` assumes
+  the plain direnv/Nix shell without the `.local` overrides.)
+
 ## Model abstraction (Slice 4)
 
 - **imagekit `ImageSpecField`s are descriptors, not DB columns**, so they never
