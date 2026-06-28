@@ -3,6 +3,7 @@ import pytest
 from portfolio.tests.factories import (
     IllustrationFactory,
     SketchbookSampleFactory,
+    StoryboardFactory,
     make_comic,
 )
 
@@ -53,7 +54,7 @@ def test_published_but_not_featured_never_selected(client):
 
 
 def test_orders_illustration_then_sketchbook_then_comic(client):
-    # Storyboards aren't modeled yet, so they're absent; the remaining three
+    # No featured storyboard here, so that type is absent; the remaining three
     # keep their canonical relative order.
     IllustrationFactory(featured=True, published=True)
     SketchbookSampleFactory(featured=True, published=True)
@@ -64,6 +65,15 @@ def test_orders_illustration_then_sketchbook_then_comic(client):
         < body.index("Sketchbook Samples")
         < body.index("Comics")
     )
+
+
+def test_featured_storyboard_leads_the_grid(client):
+    # Storyboards are first in FEATURED_TYPES, so a featured one leads.
+    StoryboardFactory(featured=True, published=True)
+    IllustrationFactory(featured=True, published=True)
+    body = _body(client)
+    assert 'href="/storyboards/"' in body
+    assert body.index("Storyboards") < body.index("Illustrations")
 
 
 # --- thumbnails link to section pages (HTTP seam) ---
