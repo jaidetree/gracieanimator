@@ -1,4 +1,4 @@
-"""End-to-end coverage for the in-place comic page-swapper (Slice 7).
+"""End-to-end coverage for the in-place comic page-swapper.
 
 Opt-in: marked ``e2e`` and deselected by default (pytest.ini). Run with a real
 browser via ``pytest -m e2e`` after ``playwright install chromium``. Strip the
@@ -30,15 +30,15 @@ pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
 LARGE_IMAGE = "img.comic__page-large"
 
 
-def _wait_for_htmx(page):
-    """The htmx script is deferred; boosting only works once it has loaded."""
-    page.wait_for_function("() => window.htmx !== undefined")
+def _wait_for_alpine(page):
+    """The Alpine script is deferred; reactivity only works once it has loaded."""
+    page.wait_for_function("() => window.Alpine !== undefined")
 
 
 def test_next_swaps_the_page_in_place_and_pushes_the_url(live_server, page):
     comic = make_comic(n_pages=3)
     page.goto(f"{live_server.url}/comics/{comic.slug}/")
-    _wait_for_htmx(page)
+    _wait_for_alpine(page)
 
     # Sentinels: a window flag (wiped by any full reload) and a property on the
     # <h1>, which lives *outside* #comic-viewer. Both surviving proves the swap
@@ -63,7 +63,7 @@ def test_next_swaps_the_page_in_place_and_pushes_the_url(live_server, page):
 def test_previous_swaps_back_in_place(live_server, page):
     comic = make_comic(n_pages=3)
     page.goto(f"{live_server.url}/comics/{comic.slug}/page/2/")
-    _wait_for_htmx(page)
+    _wait_for_alpine(page)
     page.evaluate("window.__noReload = true")
 
     page.click("a.comic__prev")
@@ -79,4 +79,4 @@ def test_direct_page_url_is_deep_linkable(live_server, page):
     page.goto(f"{live_server.url}/comics/{comic.slug}/page/3/")
     # The last page has a previous chevron but no next one.
     expect(page.locator("a.comic__prev")).to_be_visible()
-    expect(page.locator("a.comic__next")).to_have_count(0)
+    expect(page.locator("a.comic__next")).to_be_hidden()

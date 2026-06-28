@@ -184,25 +184,21 @@ def test_unpublished_comic_detail_404(client):
     assert client.get(f"/comics/{comic.slug}/").status_code == 404
 
 
-# --- in-place page swapper (HTMX) wiring ---
+# --- in-place page swapper (Alpine) wiring ---
 
-# The swapper is progressive enhancement: prev/next/thumbnail links inside a
-# #comic-viewer wrapper are hx-boosted into an AJAX GET, filtered to the freshly
-# rendered #comic-viewer, and swapped in place with the href pushed onto history.
-# The plain hrefs (asserted elsewhere) remain the no-JS fallback. These checks
-# pin the wiring structurally; the browser behaviour is covered by the E2E test.
+# The swapper is progressive enhancement: Alpine holds reactive state (current
+# image URL + page index). Thumbnail and chevron clicks update state and push
+# the URL onto history without a server round-trip. The plain hrefs remain the
+# no-JS fallback. These checks pin the wiring structurally; browser behaviour
+# is covered by the E2E test.
 
 
-def test_detail_boosts_the_viewer_for_in_place_swapping(client):
+def test_detail_mounts_alpine_viewer(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/").content.decode()
-    viewer = re.search(r'<div id="comic-viewer"[^>]*>', body).group(0)
-    assert 'hx-boost="true"' in viewer
-    # Boosted links replace only the viewer fragment and push the URL.
-    assert 'hx-target="#comic-viewer"' in viewer
-    assert 'hx-select="#comic-viewer"' in viewer
-    assert 'hx-swap="outerHTML"' in viewer
-    assert 'hx-push-url="true"' in viewer
+    assert 'id="comic-viewer"' in body
+    assert "x-data=\"comicViewer(" in body
+    assert "function comicViewer(" in body
 
 
 def test_swapper_wraps_chevrons_and_thumbnails_but_not_the_sibling_bar(client):
@@ -213,17 +209,17 @@ def test_swapper_wraps_chevrons_and_thumbnails_but_not_the_sibling_bar(client):
     body = client.get(f"/comics/{middle.slug}/page/2/").content.decode()
     open_at = body.index('id="comic-viewer"')
     close_at = body.index("<!-- /#comic-viewer -->")
-    # Chevrons and the thumbnail strip swap in place: inside the wrapper.
+    # Chevrons and the thumbnail strip are inside the Alpine wrapper.
     assert open_at < body.index("comic__prev") < close_at
     assert open_at < body.index("comic__pages") < close_at
     # The sibling bar navigates to a different comic: outside the wrapper.
     assert body.index("comic__siblings") > close_at
 
 
-def test_base_loads_htmx(client):
+def test_base_loads_alpine(client):
     comic = make_comic(n_pages=1)
     body = client.get(f"/comics/{comic.slug}/").content.decode()
-    assert "js/htmx.min.js" in body
+    assert "js/alpine.min.js" in body
 
 
 # --- sibling (prev/next comic) navigation ---

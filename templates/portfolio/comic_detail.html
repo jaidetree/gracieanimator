@@ -6,52 +6,69 @@
     <h1 class="mb-8">{{ comic.title }}</h1>
   </hgroup>
   {% comment %}
-    In-place page swapper: every prev/next/thumbnail link inside this wrapper is
-    boosted into an AJAX GET whose response is filtered to the freshly rendered
-    #comic-viewer and swapped in place, with the link's href pushed onto history
-    (shareable/deep-linkable). The plain hrefs are the no-JS fallback; the server
-    re-renders each page in full, so the chevrons' server-side prev/next
-    conditionals stay correct after a swap. Back-link and sibling bar live outside
-    the wrapper so they navigate normally rather than swapping a single page.
+    In-place page swapper: Alpine holds the current image URL and page index as
+    reactive state. Thumbnail and chevron clicks update state and push the URL
+    onto history without a server round-trip. The plain hrefs remain the no-JS
+    fallback. The sibling bar lives outside the viewer so it navigates normally.
   {% endcomment %}
+  <script>
+    function comicViewer(initialImage, initialPage, pages) {
+      return {
+        currentImage: initialImage,
+        currentPage: initialPage,
+        pages: pages,
+        goTo(index) {
+          this.currentImage = this.pages[index].imageUrl;
+          this.currentPage = index + 1;
+          history.pushState(null, '', this.pages[index].href);
+        },
+      };
+    }
+  </script>
   <div id="comic-viewer"
-       hx-boost="true"
-       hx-target="#comic-viewer"
-       hx-select="#comic-viewer"
-       hx-swap="outerHTML"
-       hx-push-url="true">
+       x-data="comicViewer(
+         '{{ page.image.url|escapejs }}',
+         {{ page_number }},
+         [{% for p in pages %}{imageUrl:'{{ p.image.url|escapejs }}',href:'{% if forloop.counter == 1 %}{% url 'comic_detail' comic.slug %}{% else %}{% url 'comic_page' comic.slug forloop.counter %}{% endif %}'}{% if not forloop.last %},{% endif %}{% endfor %}]
+       )">
   <div class="comic__viewer relative mx-auto p-8 lg:py-4 mb-4 bg-black/10">
     <img class="comic__page-large mb-8 mx-auto w-full max-w-xl h-auto"
+         :src="currentImage"
          src="{{ page.image.url }}"
-         alt="{{ comic.title }} page {{ page_number }}">
-    {% if has_previous %}
-      <a class="comic__prev absolute top-0 bottom-0 my-auto block w-12 h-12 p-2 z-10 rounded-full bg-black/10 lg:bg-transparent -left-4 lg:left-20 transition"
-         aria-label="Previous page"
-         href="{% if previous_number == 1 %}{% url 'comic_detail' comic.slug %}{% else %}{% url 'comic_page' comic.slug previous_number %}{% endif %}">
-        <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-        </svg>
-      </a>
-    {% endif %}
-    {% if has_next %}
-      <a class="comic__next absolute top-0 bottom-0 my-auto block w-12 h-12 p-2 z-10 rounded-full bg-black/10 lg:bg-transparent -right-4 lg:right-20 transition"
-         aria-label="Next page"
-         href="{% url 'comic_page' comic.slug next_number %}">
-        <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-      </a>
-    {% endif %}
+         alt="{{ comic.title }}">
+    <a class="comic__prev absolute top-0 bottom-0 my-auto block w-12 h-12 p-2 z-10 rounded-full bg-black/10 lg:bg-transparent -left-4 lg:left-20 transition"
+       x-show="currentPage > 1"
+       style="{% if page_number == 1 %}display:none{% endif %}"
+       href="{% if previous_number == 1 %}{% url 'comic_detail' comic.slug %}{% else %}{% url 'comic_page' comic.slug previous_number %}{% endif %}"
+       :href="pages[currentPage - 2]?.href"
+       aria-label="Previous page"
+       @click.prevent="goTo(currentPage - 2)">
+      <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+      </svg>
+    </a>
+    <a class="comic__next absolute top-0 bottom-0 my-auto block w-12 h-12 p-2 z-10 rounded-full bg-black/10 lg:bg-transparent -right-4 lg:right-20 transition"
+       x-show="currentPage < pages.length"
+       style="{% if page_number == page_count %}display:none{% endif %}"
+       href="{% url 'comic_page' comic.slug next_number %}"
+       :href="pages[currentPage]?.href"
+       aria-label="Next page"
+       @click.prevent="goTo(currentPage)">
+      <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+      </svg>
+    </a>
   </div>
   {% comment %}
-    Thumbnail strip: every page, aspect-respecting, so a visitor can jump to a
-    page and see where they are. The selected page is at full opacity; the rest
-    are dimmed and lift to full opacity on hover (300ms).
+    Thumbnail strip: every page, aspect-respecting. Selected state is set
+    server-side on initial render and kept reactive by Alpine thereafter.
   {% endcomment %}
   <div class="comic__pages grid grid-cols-4 md:grid-cols-6 gap-2 mb-4">
     {% for p in pages %}
-      <a class="comic__page transition-opacity duration-300 {% if forloop.counter == page_number %}comic__page--selected opacity-100{% else %}opacity-50 hover:opacity-100{% endif %}"
-         href="{% if forloop.counter == 1 %}{% url 'comic_detail' comic.slug %}{% else %}{% url 'comic_page' comic.slug forloop.counter %}{% endif %}">
+      <a class="comic__page transition-opacity duration-300"
+         :class="currentPage === {{ forloop.counter }} ? 'comic__page--selected opacity-100' : 'opacity-50 hover:opacity-100'"
+         href="{% if forloop.counter == 1 %}{% url 'comic_detail' comic.slug %}{% else %}{% url 'comic_page' comic.slug forloop.counter %}{% endif %}"
+         @click.prevent="goTo({{ forloop.counter0 }})">
         <img class="object-scale-down w-full" src="{{ p.grid_image.url }}"
              alt="{{ comic.title }} page {{ forloop.counter }}">
       </a>
