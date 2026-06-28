@@ -11,6 +11,59 @@ Session memory for the Django migration. Newest first. Prune when stale.
 > `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
 > (CI has the *inverse* problem — see Slice 14.)
 
+## WYSIWYG rich body (Slice 12)
+
+- **"Sanitized HTML" and "embeds supported" fight at the allowlist.** A default
+  nh3/bleach allowlist strips exactly what this slice must keep — `<iframe>`
+  isn't in `nh3.ALLOWED_TAGS` (though `figure`/`figcaption`/`img`/`span` are),
+  and CKEditor's wrappers (`<figure class="image">`, `<figure class="media">
+  <div data-oembed-url><iframe>`) need `class`/`data-oembed-url`. So the
+  sanitizer (`richtext.sanitize_html`) extends nh3's defaults rather than
+  replacing them. The load-bearing tests assert a valid image **and** embed
+  *survive* `save()`, plus that an embed **renders as `<iframe>`** on the public
+  page — a script-stripping test passes even while images/embeds silently vanish.
+- **`nh3.clean` manages `a@rel` itself** (`link_rel="noopener noreferrer"`);
+  listing `"rel"` in the `a` attributes raises `ValueError` at call time. Omit it.
+- **CKEditor `mediaEmbed.previewsInData: True` stores the provider `<iframe>`**
+  in the body (renderable); the default stores `<oembed url>`, which browsers do
+  not render — the public page would show nothing. This setting (not render-time
+  conversion) is what makes body embeds appear.
+- **Editor wired via an admin `ModelForm`, not `CKEditor5Field` on the model** —
+  keeps `body` a plain `TextField` (the only migration is a no-op `help_text`
+  AlterField) and the editor an admin-only concern. **But ruff's `DJ` select
+  bans BOTH `fields="__all__"` (DJ007) and `exclude` (DJ006)**, so the form must
+  *enumerate* `fields`. A form's `Meta.fields` restricts what the **admin**
+  shows (the admin reads `form.base_fields`), so list every editable field, and
+  declare `body = forms.CharField(widget=CKEditor5Widget(...))` explicitly so
+  the widget rides on a declared field (declared fields survive
+  `modelform_factory`). For a `SortableProjectAdmin` subclass, **omit `order`**
+  from the form's `fields` — its `get_fields` re-appends order on the change form
+  and omits it on the auto-numbered add form (Slice 17); putting order in the
+  form fields disrupts that.
+- **The django-ckeditor-5 upload view writes to `STORAGES["default"]`** (via
+  `get_django_storage`, which rebuilds the backend from the default STORAGES
+  `OPTIONS`, else falls back to `default_storage`) → R2 in prod automatically,
+  local FS in dev/tests. It's **staff-gated** by default
+  (`CKEDITOR_5_FILE_UPLOAD_PERMISSION`). Test it env-stripped; assert via
+  `get_django_storage().exists(name)` (the same storage the view used), **not**
+  `(tmp_path / name).exists()` — `default_storage.location` is a process-cached
+  `cached_property`, so a late `settings.MEDIA_ROOT` override may not reach it.
+- **A `help_text`-only field change still generates a migration.** Django tracks
+  `help_text` in migration state, so `makemigrations --check` fails until you
+  emit the (DB-no-op) `AlterField`.
+- **CKEditor returns `<p>&nbsp;</p>` for a "blank" doc**, which a tag-based
+  sanitizer keeps → `{% if body %}` goes truthy → an empty `#content` section
+  and a phantom "More" nav link (contradicting Slice 10's
+  `test_detail_without_body_omits_more_nav`). `sanitize_html` collapses
+  visually-empty HTML (strip tags + `&nbsp;`/whitespace, but media tags count as
+  content) to `""`. The package's unused `CKEditor5Field._is_empty_html` does
+  the same — we don't inherit it because the widget is on the form, not a field.
+- **`ModelAdmin.get_fields(req, obj)` for a model with an FK to a *registered*
+  admin builds the real form**, which calls `related_modeladmin.has_add_permission(request)`
+  → needs `request.user`. A bare `RequestFactory().get(...)` (no `.user`) blows
+  up. Storyboard→Category trips this; the older `ORDERED_ADMINS` get_fields tests
+  don't, because Illustration/Sketchbook/Comic have no FK to a registered admin.
+
 ## Storyboard password gate (Slice 9)
 
 - **`override_settings` can't ride in a `pytestmark` list** — pytest tries to
