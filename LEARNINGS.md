@@ -2,6 +2,20 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## Model abstraction (Slice 4)
+
+- **imagekit `ImageSpecField`s are descriptors, not DB columns**, so they never
+  appear in migrations. To DRY two structurally-identical types (Illustration /
+  SketchbookSample per ADR-0003), extract a shared abstract base
+  (`ImageProject(Project)`) holding the renditions (`gallery_image`,
+  `thumbnail_rendition`) and `derived_thumbnail_url` — but **keep the `image`
+  field on each concrete subclass** so each gets its own `upload_to` namespace.
+  Moving only the spec fields up is migration-free for the existing type;
+  unifying `image` onto the base with a callable `upload_to` would instead emit
+  an `AlterField` rewriting the existing upload path. Verify with
+  `makemigrations --dry-run` (expect only the new model's migration). The
+  unchanged existing test suite is the guard that spec-field-on-abstract works.
+
 ## Storage / R2 (Slice 3)
 
 - **Gate the media storage backend on `R2_BUCKET_NAME` presence, not `APP_ENV`.**
