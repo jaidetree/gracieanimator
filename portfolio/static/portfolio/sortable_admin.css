@@ -1,0 +1,6 @@
+/* Narrow the drag handle on sortable changelists. Sizing the _reorder_ column
+   doesn't shrink the grip — the handle div sets its own width — so target the
+   .drag.handle element inside the cell. */
+table#result_list tbody td.field-_reorder_ .drag.handle {
+	width: 1rem;
+}

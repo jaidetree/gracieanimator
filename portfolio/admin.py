@@ -37,6 +37,10 @@ class SortableProjectAdmin(SortableAdminMixin, admin.ModelAdmin):
     ordering = ("order", "title")
     prepopulated_fields = {"slug": ("title",)}
 
+    class Media:
+        # Narrow sortable2's 50px-wide drag-handle column.
+        css = {"all": ("portfolio/sortable_admin.css",)}
+
     def get_fields(self, request, obj=None):
         fields = list(super().get_fields(request, obj))
         if obj is not None and "order" not in fields:
