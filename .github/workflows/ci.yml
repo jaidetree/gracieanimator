@@ -1,12 +1,12 @@
 name: CI
 
-# Runs the test suite, then lint, on the Django rebuild branch and its PRs.
-# (The legacy ClojureScript stack on `main` is built by deploy.yml.)
+# Runs the test suite, then lint, on the Django rebuild branch and on `main`
+# (which the rebuild will eventually merge into), plus their PRs.
 on:
   push:
-    branches: [django]
+    branches: [django, main]
   pull_request:
-    branches: [django]
+    branches: [django, main]
 
 jobs:
   test:
