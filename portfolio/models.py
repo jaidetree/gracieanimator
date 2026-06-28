@@ -15,6 +15,34 @@ def thumbnail_upload_to(instance, filename):
     return f"{instance._meta.model_name}/thumbnails/{filename}"
 
 
+class Category(models.Model):
+    """A grouping label for Storyboards only (e.g. ``/storyboards/category/<slug>/``).
+
+    Stands alone — no Storyboard consumer yet (a later slice). Slug is derived
+    from the name when left blank.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        help_text="Auto-generated from the name; override for a custom URL.",
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "categories"
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
 class Project(models.Model):
     """Abstract base for every portfolio piece (ADR-0003).
 

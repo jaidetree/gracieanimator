@@ -1,6 +1,16 @@
 from django.contrib import admin
 
-from .models import Illustration, SketchbookSample
+from .models import Category, Illustration, SketchbookSample
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    """Storyboard grouping labels; slug prepopulated from the name."""
+
+    list_display = ("name", "slug")
+    search_fields = ("name",)
+    ordering = ("name",)
+    prepopulated_fields = {"slug": ("name",)}
 
 
 class ImageProjectAdmin(admin.ModelAdmin):
