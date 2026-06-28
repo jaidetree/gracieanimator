@@ -2,6 +2,31 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## Homepage featured grid (Slice 11)
+
+- **An ordered registry of `(model, url_name)` is the seam for a cross-model,
+  partially-built selection.** The homepage selects one featured+published piece
+  per type ordered storyboards → illustrations → sketchbook → comics, but the
+  Storyboard model doesn't exist yet (Slice 8 / #10 still open). `FEATURED_TYPES`
+  lists only the three built types; `featured_projects()` loops it and skips
+  empties. Storyboards slot in as a one-line first entry when #10 lands — so the
+  slice ships 3-of-4 honestly without faking the missing model. The
+  "combines the four models" / storyboard-first-ordering ACs are *not* fully
+  satisfied until then; don't tick them as done.
+- **"Falls back gracefully when a type has no featured piece" drops out of the
+  registry, it isn't a separate branch.** A type with no eligible piece (or a
+  type not yet in the registry at all) simply contributes nothing to the list —
+  same mechanism covers both "no featured yet" and "model doesn't exist".
+- **`.first()` on `filter(published=True, featured=True)` makes "one per type"
+  deterministic for free** via `Project.Meta.ordering = ["order", "title"]` — the
+  lowest-`order` featured piece wins, so several featured pieces of one type need
+  no extra tie-break flag.
+- **`thumbnail_url` is not uniformly square across types, so normalize in CSS.**
+  Image types give a 400² `ResizeToFill` square; Comic gives a fit-width portrait
+  (`cover.grid_image`, `ResizeToFit(600)` on tall pages). `aspect-square
+  object-cover` on the `<img>` keeps the grid even with no model change — the
+  square treatment `THUMBNAIL_SIZE`'s comment already anticipated for this surface.
+
 ## Comic type / multi-image projects (Slice 6)
 
 - **"Full resolution in detail" means the original, not a capped rendition.**
