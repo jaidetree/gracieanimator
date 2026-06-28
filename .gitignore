@@ -23,3 +23,6 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Claude Code — per-user local settings only (shared config can still be committed)
+.claude/settings.local.json
