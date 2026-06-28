@@ -105,7 +105,7 @@ def test_detail_shows_every_page_in_an_aspect_respecting_grid(client):
     # Unselected pages render their width-constrained, aspect-respecting rendition.
     assert pages[1].grid_image.url in body
     assert pages[2].grid_image.url in body
-    assert "h-auto" in body
+    assert "object-scale-down" in body
 
 
 def test_detail_renders_no_raw_template_comment(client):
