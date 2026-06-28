@@ -151,6 +151,12 @@ def test_comic_page_inline_loads_order_script():
     assert "portfolio/comic_page_order.js" in ComicPageInline.Media.js
 
 
+def test_comic_page_inline_shows_no_blank_row_by_default():
+    # No always-present extra row: it would render order 0 (prefill can't touch
+    # it without forcing an image-required error). Rows are added on demand.
+    assert ComicPageInline.extra == 0
+
+
 @pytest.mark.django_db
 def test_new_pages_number_sequentially_from_one():
     comic = ComicFactory(order=0)

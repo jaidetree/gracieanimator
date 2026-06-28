@@ -65,10 +65,16 @@ class ComicPageInline(admin.TabularInline):
     A small admin script (``comic_page_order.js``) pre-fills the order field in
     a newly added inline row in the browser; ``ComicAdmin.save_formset`` is the
     server-side backstop that numbers any page still left at 0 on save.
+
+    ``extra = 0``: an always-present blank row can't be prefilled on load —
+    setting its order would mark the empty form "changed" and trigger an
+    image-required error on save. Pages are added on demand via "Add another",
+    which fires ``formset:added`` so the prefill runs on a row the editor means
+    to fill.
     """
 
     model = ComicPage
-    extra = 1
+    extra = 0
     fields = ("order", "image")
     ordering = ("order", "id")
 

@@ -23,6 +23,13 @@ Session memory for the Django migration. Newest first. Prune when stale.
   count+1 also collides on any delete-gap. Max-over-all + 1 slots cleanly at the
   end. ComicPage numbering is scoped per comic and assigned in form order so
   several rows added at once get distinct increasing values.
+- **You can't prefill the always-present `extra` inline row on page load.**
+  Setting `order` on an otherwise-empty extra form makes `has_changed()` True,
+  so Django stops skipping it and runs full validation → "image: This field is
+  required" blocks the save (verified: order=6+no image → invalid; order=0 →
+  valid/skipped). Fix is `extra = 0` — no blank row sits showing 0, and pages
+  are added on demand via "Add another", which fires `formset:added` so the
+  prefill runs on a row the editor actually means to fill.
 - **Django 5 fires a native `formset:added` event** (`event.target` is the new
   row), replacing the old jQuery `formset:added` with a `$row` arg. App static
   (`portfolio/static/portfolio/…`) is picked up by AppDirectoriesFinder; wire it
