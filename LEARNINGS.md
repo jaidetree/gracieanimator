@@ -2,7 +2,52 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
-## Auto-increment order field (Slice 16)
+## Drag-and-drop sortable admin (Slice 17)
+
+- **`django-admin-sortable2` fully *owns* the sort field — it doesn't just add a
+  handle.** On the changelist `get_list_display` replaces the sort field with the
+  `_reorder_` handle (or inserts it at index 0 when the field is absent), and
+  `get_fields` strips the sort field from the change form; the inline forces the
+  field to a `HiddenInput`; `save_model`/`save_new` auto-number new rows to the
+  end. So Slice 16's whole order-UX layer (`OrderedAdminMixin`,
+  `ComicAdmin.save_formset`, `comic_page_order.js`) became redundant and was
+  removed — the library now assigns order.
+- **Handle-on-the-left = OMIT the sort field from `list_display`.** Keeping
+  `order` in `list_display` makes sortable2 swap it *in place* (handle lands
+  mid-table); dropping it makes sortable2 insert `_reorder_` at index 0. The
+  issue wanted the handle on the left, so `list_display` excludes `order`.
+- **To retain a typeable number, re-add the sort field in `get_fields` for an
+  existing object only** (`obj is not None`). That gives a manual order input on
+  the change form while the add form omits it (new pieces auto-number to the
+  end). The **inline can't keep a numeric input** — sortable2 hard-codes its
+  order widget to `HiddenInput`; inlines are drag-only.
+- **The sort field must NOT stay in `list_editable`** once sortable2 owns it: it
+  isn't a displayed column, so an inline input has nowhere to render. Other
+  fields (`published`/`featured`) coexist fine in `list_editable` beside drag.
+- **sortable2's drag only reindexes the *moved span*, not the whole
+  collection.** Its `onEnd` JS (`adminsortable2.js`) computes the rows between
+  old/new index, anchors them to the neighbour's order, and POSTs only those to
+  `{"updatedItems": [[pk, order], …]}`; gaps elsewhere survive (hence its
+  `manage.py reorder` command). To satisfy "clean up the *entire* collection,"
+  override `_update_order`: call `super()`, then `bulk_update` every row to
+  `1..N` by current order. `order` has no unique constraint, so no collision.
+- **The bulk reorder endpoint is testable headlessly** via pytest-django's
+  `admin_client`: `reverse("admin:<app>_<model>_sortable_update")`, POST JSON
+  `{"updatedItems": [[pk, neworder], …]}` (GET → 405). Beats trying to drive the
+  JS. Render-level checks (`class="drag handle"` present, `_reorder_` before
+  `title` in HTML, `name="order"` on the change form) catch the wiring the
+  structural asserts miss.
+- **A `SortableInlineAdminMixin` inline asserts its parent ModelAdmin is a
+  `SortableAdminBase`** (in `__init__`), so the parent must use
+  `SortableAdminMixin`. Use `SortableTabularInline` (not bare
+  `SortableInlineAdminMixin` + `TabularInline`) — only the former sets the
+  sortable row template that renders the handles. Add `"adminsortable2"` to
+  `INSTALLED_APPS` for its templates/static.
+
+## Auto-increment order field (Slice 16) — superseded by Slice 17 for the admin UX
+
+> Slice 17 replaced this layer with drag-and-drop; the Django facts below still
+> hold, but `OrderedAdminMixin` / `save_formset` / `comic_page_order.js` are gone.
 
 - **A `PositiveIntegerField(default=0)` renders its admin form input as
   `value="0"`, not empty** — the non-callable model default propagates to the
