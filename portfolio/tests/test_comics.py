@@ -219,9 +219,11 @@ def test_sibling_bar_omits_missing_direction_at_the_ends(client):
     last = make_comic(n_pages=1, order=1, title="Last Comic")
     first_body = client.get(f"/comics/{first.slug}/").content.decode()
     last_body = client.get(f"/comics/{last.slug}/").content.decode()
-    # First comic: a next sibling but no previous.
+    # First comic: a next sibling but no previous; next stays on the right.
     assert "comic__sibling--next" in first_body
     assert "comic__sibling--prev" not in first_body
+    next_link = re.search(r'<a class="comic__sibling comic__sibling--next[^"]*"', first_body).group(0)
+    assert "lg:ml-auto" in next_link
     # Last comic: a previous sibling but no next.
     assert "comic__sibling--prev" in last_body
     assert "comic__sibling--next" not in last_body

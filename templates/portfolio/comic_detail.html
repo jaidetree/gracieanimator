@@ -57,7 +57,7 @@
         </a>
       {% endif %}
       {% if next_comic %}
-        <a class="comic__sibling comic__sibling--next flex flex-row items-center gap-2"
+        <a class="comic__sibling comic__sibling--next flex flex-row items-center gap-2 lg:ml-auto"
            href="{% url 'comic_detail' next_comic.slug %}">
           <span class="flex flex-col lg:flex-row flex-grow lg:flex-initial lg:items-center gap-2">
             <span class="text-lg font-bold uppercase">next:</span>
