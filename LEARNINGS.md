@@ -23,6 +23,12 @@ Session memory for the Django migration. Newest first. Prune when stale.
   count+1 also collides on any delete-gap. Max-over-all + 1 slots cleanly at the
   end. ComicPage numbering is scoped per comic and assigned in form order so
   several rows added at once get distinct increasing values.
+- **Pre-fill the parent add form via `ModelAdmin.get_changeform_initial_data`,
+  not JS.** It seeds the add view's initial values server-side, so the `order`
+  field shows `max+1` instead of the model default 0. Unlike an inline's empty
+  extra row, the main add form is always a real submitted form, so seeding its
+  initial carries no has_changed/validation trap. `setdefault("order", …)` lets
+  an order passed in the URL still win; `save_model` remains the backstop.
 - **You can't prefill the always-present `extra` inline row on page load.**
   Setting `order` on an otherwise-empty extra form makes `has_changed()` True,
   so Django stops skipping it and runs full validation → "image: This field is

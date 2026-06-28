@@ -18,9 +18,21 @@ class OrderedAdminMixin:
     """Auto-assign the next display order to a new piece left at order 0.
 
     Keeps ``order`` a manual field but spares the editor from hunting the next
-    number: a new instance saved with the default 0 lands at the end of its
-    type. An explicit non-zero order is always respected.
+    number: the add form is pre-filled with the next order, and a new instance
+    saved with the default 0 still lands at the end of its type. An explicit
+    non-zero order is always respected.
     """
+
+    def get_changeform_initial_data(self, request):
+        """Pre-fill the add form's order with the next value (1 when empty).
+
+        ``setdefault`` so an order passed in the URL (e.g. via the changelist)
+        still wins. This is display-only; ``save_model`` is the backstop if the
+        editor clears it back to 0.
+        """
+        initial = super().get_changeform_initial_data(request)
+        initial.setdefault("order", _next_order(self.model.objects.all()))
+        return initial
 
     def save_model(self, request, obj, form, change):
         if not change and obj.order == 0:

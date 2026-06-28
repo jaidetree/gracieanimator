@@ -5,6 +5,7 @@ import pytest
 from django.contrib.admin.sites import site
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms.models import inlineformset_factory
+from django.test import RequestFactory
 from PIL import Image
 
 from portfolio.admin import (
@@ -60,6 +61,34 @@ def test_list_display_orders_published_before_featured(admin_cls):
 def test_list_editable_orders_published_before_featured(admin_cls):
     cols = admin_cls.list_editable
     assert cols.index("published") < cols.index("featured")
+
+
+# --- add form pre-fills the next order (#16, before saving) ---
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("admin_cls,model,factory", ORDERED_ADMINS)
+def test_add_form_prefills_next_order(admin_cls, model, factory):
+    factory(order=5)
+    request = RequestFactory().get("/add/")
+    initial = admin_cls(model, site).get_changeform_initial_data(request)
+    assert initial["order"] == 6
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("admin_cls,model,factory", ORDERED_ADMINS)
+def test_add_form_prefills_one_for_first_piece(admin_cls, model, factory):
+    request = RequestFactory().get("/add/")
+    initial = admin_cls(model, site).get_changeform_initial_data(request)
+    assert initial["order"] == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("admin_cls,model,factory", ORDERED_ADMINS)
+def test_add_form_order_from_url_wins(admin_cls, model, factory):
+    factory(order=5)
+    request = RequestFactory().get("/add/", {"order": "2"})
+    initial = admin_cls(model, site).get_changeform_initial_data(request)
+    assert initial["order"] == "2"
 
 
 # --- auto-increment order on save (#16, server-side backstop) ---
