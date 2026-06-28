@@ -2,6 +2,38 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## Auto-increment order field (Slice 16)
+
+- **A `PositiveIntegerField(default=0)` renders its admin form input as
+  `value="0"`, not empty** — the non-callable model default propagates to the
+  form field's `initial`. So client JS that prefills order must treat `"0"` as
+  "unset" (`current !== "" && current !== "0"`), mirroring the server's
+  `order == 0` sentinel. A naive `value !== ""` guard bails on every row and the
+  prefill is silently dead — the saved data still looks right because the
+  server backstop does the work, so the broken JS hides in plain sight.
+- **Auto-increment lives in the admin (`save_model` + `save_formset`), not
+  `model.save()`.** `default=0` can't tell "user typed 0" from "unset", and
+  factories/tests create rows with explicit `order=0`; computing in `save()`
+  would clobber them. Admin-layer keying on *new object + order==0* leaves all
+  factory-driven tests (which never touch the admin) untouched, needs no
+  migration, and matches the "Order Field UX" framing.
+- **Next order = `max(order)+1` over ALL rows of the type, not published-only.**
+  The issue said "count of published items + 1", but maxing over published-only
+  can collide with a hidden item's order (unpublished at 2 + one published → 2);
+  count+1 also collides on any delete-gap. Max-over-all + 1 slots cleanly at the
+  end. ComicPage numbering is scoped per comic and assigned in form order so
+  several rows added at once get distinct increasing values.
+- **Django 5 fires a native `formset:added` event** (`event.target` is the new
+  row), replacing the old jQuery `formset:added` with a `$row` arg. App static
+  (`portfolio/static/portfolio/…`) is picked up by AppDirectoriesFinder; wire it
+  via the inline's `Media.js`.
+- **Testing `save_formset` without the admin client:** build the same bound
+  `inlineformset_factory` formset the admin would (management-form keys + a
+  generated JPEG per row), then call `admin.save_formset(None,
+  SimpleNamespace(instance=comic), formset, change=False)` — it only uses
+  `form.instance`. Avoids superuser-auth/URL/multipart fragility while
+  exercising the real numbering path.
+
 ## Admin field refinements (Slice 13)
 
 - **Model field declaration order drives the admin change-form order when the
