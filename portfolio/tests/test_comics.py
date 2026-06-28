@@ -134,21 +134,31 @@ def test_first_page_has_next_but_no_previous(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/").content.decode()
     assert f'href="/comics/{comic.slug}/page/2/"' in body
-    assert "comic__prev" not in body
+    # Alpine keeps both chevrons in the DOM; SSR adds display:none as the
+    # no-JS fallback so the hidden one never flashes before Alpine boots.
+    prev = re.search(r'class="comic__prev[^"]*".*?style="([^"]*)"', body, re.DOTALL)
+    assert prev and "display:none" in prev.group(1)
+    nxt = re.search(r'class="comic__next[^"]*".*?style="([^"]*)"', body, re.DOTALL)
+    assert nxt and "display:none" not in nxt.group(1)
 
 
 def test_last_page_has_previous_but_no_next(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/page/3/").content.decode()
     assert f'href="/comics/{comic.slug}/page/2/"' in body
-    assert "comic__next" not in body
+    # Same SSR-hidden pattern: next is hidden on the last page, prev is visible.
+    nxt = re.search(r'class="comic__next[^"]*".*?style="([^"]*)"', body, re.DOTALL)
+    assert nxt and "display:none" in nxt.group(1)
+    prev = re.search(r'class="comic__prev[^"]*".*?style="([^"]*)"', body, re.DOTALL)
+    assert prev and "display:none" not in prev.group(1)
 
 
 def test_previous_from_page_two_points_to_bare_detail_url(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/page/2/").content.decode()
     # The prev chevron links to page 1's canonical (bare) URL.
-    match = re.search(r'class="comic__prev[^"]*"[^>]*href="([^"]+)"', body)
+    # re.DOTALL needed because x-show="currentPage > 1" contains ">".
+    match = re.search(r'class="comic__prev[^"]*".*?href="([^"]+)"', body, re.DOTALL)
     assert match and match.group(1) == f"/comics/{comic.slug}/"
 
 
