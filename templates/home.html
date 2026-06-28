@@ -1,7 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<section>
-  <h1>Portfolio</h1>
-  <p class="paragraph">Welcome to The Grace Space.</p>
+<section class="featured">
+  <h1 class="mb-8">Portfolio</h1>
+  <div class="featured__grid grid grid-cols-2 md:grid-cols-4 gap-8">
+    {% for item in featured %}
+      <a class="featured__cell block text-center bg-black/10 p-4" href="{{ item.url }}">
+        {% if item.thumbnail_url %}
+          <img class="w-full aspect-square object-cover" src="{{ item.thumbnail_url }}" alt="{{ item.title }}">
+        {% endif %}
+        <span class="block font-light text-lg uppercase my-2">{{ item.title }}</span>
+      </a>
+    {% empty %}
+      <p class="paragraph">Nothing here yet.</p>
+    {% endfor %}
+  </div>
 </section>
 {% endblock %}
