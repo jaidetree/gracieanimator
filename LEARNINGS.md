@@ -2,6 +2,31 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## Comic type / multi-image projects (Slice 6)
+
+- **"Full resolution in detail" means the original, not a capped rendition.**
+  AC#5's contrast is rendition-vs-full, not small-vs-large rendition. A
+  `ResizeToFit(CONTAINER_WIDTH)` rendition downscales most comic pages, so the
+  detail view serves `page.image.url` directly; only a small `grid_image`
+  rendition exists (for the index). This *breaks* the gallery's "serve rendition
+  not original" rule — that rule was a per-surface display-width choice (Slice
+  3/4), not a global ban, and originals serve fine from the same storage. So the
+  detail test asserts the original IS served, the opposite of
+  `test_gallery_serves_rendition_not_original`.
+- **A multi-image project = parent `Project` + child rows, not an array field.**
+  `Comic(Project)` carries no media; an ordered `ComicPage` (FK + `order`,
+  `Meta.ordering = ["order", "id"]`) holds the images. This buys an authored-
+  order admin `TabularInline` and per-page imagekit renditions for free. The
+  auto-thumbnail fallback chains through the children:
+  `Comic.derived_thumbnail_url` → first page's `grid_image.url` (None when no
+  pages), reusing the `Project.thumbnail_url` manual-wins property unchanged.
+- **Page 1 has two URLs by design.** Detail is served by one view bound to both
+  `/comics/<slug>/` (page defaults to 1) and `/comics/<slug>/page/<int:n>/`;
+  `/page/1/` resolves identically, but page 1's *canonical* URL is the bare one,
+  so the prev link from page 2 targets `/comics/<slug>/`. Bounds (`n` outside
+  `1..count`) raise `Http404`. Tests pin the exact prev/next hrefs at both
+  boundaries, not just the happy middle page.
+
 ## oembed boundary (Slice 5)
 
 - **Single HTTP seam with stdlib `urllib`, mocked at the imported name.** The
