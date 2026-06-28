@@ -4,6 +4,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from portfolio.tests.factories import ComicFactory, ComicPageFactory, make_comic
+from portfolio.views import adjacent_comics
 
 pytestmark = pytest.mark.django_db
 
@@ -178,6 +179,53 @@ def test_out_of_range_pages_404(client):
 def test_unpublished_comic_detail_404(client):
     comic = make_comic(n_pages=2, published=False)
     assert client.get(f"/comics/{comic.slug}/").status_code == 404
+
+
+# --- sibling (prev/next comic) navigation ---
+
+# adjacent_comics is pure list logic (index + modular indexing), so it's
+# exercised with plain sentinels — no DB or ORM needed.
+
+def test_adjacent_comics_returns_neighbours_in_sort_order():
+    assert adjacent_comics(["a", "b", "c"], "b") == ("a", "c")
+
+
+def test_adjacent_comics_wraps_around_the_ends():
+    # First item's previous is the last; last item's next is the first.
+    assert adjacent_comics(["a", "b", "c"], "a") == ("c", "b")
+    assert adjacent_comics(["a", "b", "c"], "c") == ("b", "a")
+
+
+def test_adjacent_comics_returns_none_for_a_lone_comic():
+    assert adjacent_comics(["only"], "only") == (None, None)
+
+
+def test_detail_renders_prev_next_comic_bar_with_cover_thumbnails(client):
+    first = make_comic(n_pages=2, order=0, title="First Comic")
+    middle = make_comic(n_pages=2, order=1, title="Middle Comic")
+    last = make_comic(n_pages=2, order=2, title="Last Comic")
+    body = client.get(f"/comics/{middle.slug}/").content.decode()
+    assert "comic__siblings" in body
+    # Distinct sort-order neighbours, each linked by its cover thumbnail.
+    assert f'href="/comics/{first.slug}/"' in body
+    assert f'href="/comics/{last.slug}/"' in body
+    assert first.cover_page.grid_image.url in body
+    assert last.cover_page.grid_image.url in body
+    assert "prev:" in body and "next:" in body
+
+
+def test_sibling_bar_omitted_for_a_lone_comic(client):
+    only = make_comic(n_pages=2)
+    body = client.get(f"/comics/{only.slug}/").content.decode()
+    assert "comic__siblings" not in body
+
+
+def test_sibling_bar_ignores_unpublished_comics(client):
+    shown = make_comic(n_pages=1, order=0, title="Shown Comic")
+    make_comic(n_pages=1, order=1, title="Draft Comic", published=False)
+    body = client.get(f"/comics/{shown.slug}/").content.decode()
+    # Only one published comic, so no sibling bar despite the draft existing.
+    assert "comic__siblings" not in body
 
 
 # --- helpers ---

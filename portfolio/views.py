@@ -71,6 +71,21 @@ def comics_index(request):
     )
 
 
+def adjacent_comics(comics, current):
+    """The previous and next comic in sort order, wrapping around the ends.
+
+    ``comics`` is the ordered list of comics to navigate; the first comic's
+    previous is the last and the last's next is the first. Returns
+    ``(None, None)`` when there are fewer than two comics, so the caller omits
+    the bar rather than link a comic to itself.
+    """
+    if len(comics) < 2:
+        return None, None
+    idx = comics.index(current)
+    n = len(comics)
+    return comics[(idx - 1) % n], comics[(idx + 1) % n]
+
+
 def comic_detail(request, slug, page=1):
     """A large view of the selected page above an aspect-respecting thumbnail
     strip of every page, one selected (1-based).
@@ -81,18 +96,23 @@ def comic_detail(request, slug, page=1):
     drive selection. ``/comics/<slug>/`` selects page 1 (the cover);
     ``/comics/<slug>/page/<n>/`` selects page n. Out-of-range pages 404. Page 1's
     canonical URL is the bare detail URL, so the previous link from page 2 points
-    there.
+    there. A bar at the foot links the previous/next comic in sort order (by
+    cover thumbnail), wrapping around the ends.
     """
     comic = get_object_or_404(Comic, slug=slug, published=True)
     pages = list(comic.ordered_pages)
     if not 1 <= page <= len(pages):
         raise Http404("No such comic page.")
+    published_comics = list(Comic.objects.filter(published=True))
+    prev_comic, next_comic = adjacent_comics(published_comics, comic)
     return render(
         request,
         "portfolio/comic_detail.html",
         {
             "comic": comic,
             "pages": pages,
+            "prev_comic": prev_comic,
+            "next_comic": next_comic,
             "page": pages[page - 1],
             "page_number": page,
             "page_count": len(pages),

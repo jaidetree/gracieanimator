@@ -43,5 +43,33 @@
     {% endfor %}
   </div>
   <p class="comic__counter text-center mt-2">Page {{ page_number }} of {{ page_count }}</p>
+  {% if prev_comic or next_comic %}
+    <div class="comic__siblings lg:flex lg:flex-row justify-between p-4 mt-8 bg-black/10">
+      {% if prev_comic %}
+        <a class="comic__sibling comic__sibling--prev flex flex-row items-center gap-2"
+           href="{% url 'comic_detail' prev_comic.slug %}">
+          {% if prev_comic.thumbnail_url %}
+            <img class="object-scale-down h-20" src="{{ prev_comic.thumbnail_url }}" alt="{{ prev_comic.title }}">
+          {% endif %}
+          <span class="flex flex-col lg:flex-row flex-grow lg:flex-initial lg:items-center gap-2">
+            <span class="text-lg font-bold uppercase">prev:</span>
+            {{ prev_comic.title }}
+          </span>
+        </a>
+      {% endif %}
+      {% if next_comic %}
+        <a class="comic__sibling comic__sibling--next flex flex-row items-center gap-2"
+           href="{% url 'comic_detail' next_comic.slug %}">
+          <span class="flex flex-col lg:flex-row flex-grow lg:flex-initial lg:items-center gap-2">
+            <span class="text-lg font-bold uppercase">next:</span>
+            {{ next_comic.title }}
+          </span>
+          {% if next_comic.thumbnail_url %}
+            <img class="object-scale-down h-20" src="{{ next_comic.thumbnail_url }}" alt="{{ next_comic.title }}">
+          {% endif %}
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
 </article>
 {% endblock %}
