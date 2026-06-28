@@ -5,6 +5,21 @@
     <a class="inline-block mb-2 uppercase font-light" href="{% url 'comics_index' %}">← comics</a>
     <h1 class="mb-8">{{ comic.title }}</h1>
   </hgroup>
+  {% comment %}
+    In-place page swapper: every prev/next/thumbnail link inside this wrapper is
+    boosted into an AJAX GET whose response is filtered to the freshly rendered
+    #comic-viewer and swapped in place, with the link's href pushed onto history
+    (shareable/deep-linkable). The plain hrefs are the no-JS fallback; the server
+    re-renders each page in full, so the chevrons' server-side prev/next
+    conditionals stay correct after a swap. Back-link and sibling bar live outside
+    the wrapper so they navigate normally rather than swapping a single page.
+  {% endcomment %}
+  <div id="comic-viewer"
+       hx-boost="true"
+       hx-target="#comic-viewer"
+       hx-select="#comic-viewer"
+       hx-swap="outerHTML"
+       hx-push-url="true">
   <div class="comic__viewer relative mx-auto p-8 lg:py-4 mb-4 bg-black/10">
     <img class="comic__page-large mb-8 mx-auto w-full max-w-xl h-auto"
          src="{{ page.image.url }}"
@@ -42,6 +57,7 @@
       </a>
     {% endfor %}
   </div>
+  </div><!-- /#comic-viewer -->
   {% if prev_comic or next_comic %}
     <div class="comic__siblings lg:flex lg:flex-row justify-between p-4 mt-8 bg-black/10">
       {% if prev_comic %}
