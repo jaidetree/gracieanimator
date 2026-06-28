@@ -2,17 +2,20 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 
+from config import url_names
+
 from .models import Comic, Illustration, SketchbookSample
 
 # Homepage grid: one featured piece per type, in display order. Each entry is
 # (model, label, section_url); reverse_lazy resolves the section URL at
 # import-safe time so the URL itself lives in the tuple, not a name to reverse.
+# Route names come from config.url_names, so a bad name fails at import.
 # Storyboards aren't modeled yet — uncomment their entry once the model exists.
 FEATURED_TYPES = [
-    # (Storyboard, "Storyboards", reverse_lazy("storyboard_gallery")),
-    (Illustration, "Illustrations", reverse_lazy("illustration_gallery")),
-    (SketchbookSample, "Sketchbook Samples", reverse_lazy("sketchbook_sample_gallery")),
-    (Comic, "Comics", reverse_lazy("comics_index")),
+    # (Storyboard, "Storyboards", reverse_lazy(url_names.STORYBOARD_GALLERY)),
+    (Illustration, "Illustrations", reverse_lazy(url_names.ILLUSTRATION_GALLERY)),
+    (SketchbookSample, "Sketchbook Samples", reverse_lazy(url_names.SKETCHBOOK_SAMPLE_GALLERY)),
+    (Comic, "Comics", reverse_lazy(url_names.COMICS_INDEX)),
 ]
 
 
