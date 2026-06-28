@@ -11,6 +11,41 @@ Session memory for the Django migration. Newest first. Prune when stale.
 > `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
 > (CI has the *inverse* problem — see Slice 14.)
 
+## Storyboard public views (Slice 10)
+
+- **The compiled Tailwind CSS (`static/css/stylesheet.css`) is a committed build
+  artifact that regenerates from template classes.** Adding new utility classes
+  in a template (`aspect-[3/2]`, `sticky`, `col-span-12`, `space-y-*`,
+  `text-white/50`, `hover:bg-black/20`, …) produces an unstaged diff in that
+  one-line minified file (a watcher rebuilt it here). Commit it *with* the
+  templates or the new styles won't apply in prod. It's not noise — diff it to
+  confirm only expected classes were added.
+- **"Grids use small renditions" only reaches a *manual* thumbnail.** Storyboard
+  has no `image` field; its auto-thumbnail is the first video's external oembed
+  `poster_url`, which can't be renditioned. So `grid_thumbnail_url` returns a
+  square `thumbnail_rendition` (ImageSpecField on `thumbnail`, descriptor → no
+  migration) only `if self.thumbnail`, else the external poster. Test the
+  rendition path exactly like comics: rendition URL present, full `thumbnail.url`
+  absent (needs real JPEG bytes so imagekit can resize; run env-stripped).
+- **Detail must render independently of video presence.** A thumbnail-only
+  storyboard is valid (Slice 8 formset rule), so `get_object_or_404` and the
+  title/body/nav can't sit inside the video loop. Guard the responsive embed
+  wrapper with `{% if video.embed_html %}` — an unreachable video has
+  `embed_html=""` and `embed_width/height=None`, so an unguarded wrapper emits an
+  empty `<iframe>` and a bare `padding-bottom: %`.
+- **Aspect-ratio box from cached dims with `widthratio`, no view math:**
+  `style="padding-bottom: {% widthratio embed_height embed_width 100 %}%"`. Safe
+  only inside the `embed_html` guard (dims are cleared to None together with the
+  html).
+- **Asserting "no request-time oembed" needs the spy installed *after* the rows
+  exist.** The autouse `stub_oembed` already patches `fetch` (and `save()` calls
+  it on create), so build the storyboard+video first, *then*
+  `monkeypatch.setattr(oembed, "fetch", Mock())`, GET, and `assert_not_called()`.
+- **Homepage storyboard entry is now unblocked** — Slice 10 created the
+  `storyboard_gallery` URL, so `FEATURED_TYPES`'s commented Storyboard line can
+  be enabled (Slice 11 scope; left untouched here). Supersedes the Slice 8 note
+  that the homepage featured grid "stays deferred past #10."
+
 ## Storyboards authoring + oembed-on-save (Slice 8)
 
 - **The oembed cache lives on the child row's `save()`, not the admin.** Each
