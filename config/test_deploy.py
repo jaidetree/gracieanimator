@@ -10,6 +10,7 @@ exercised out-of-process, the same technique as portfolio/tests/test_storage.py.
 It does not connect to Postgres: get_wsgi_application() runs app loading, not
 queries, so no DATABASE_URL is needed here.
 """
+
 import os
 import subprocess
 import sys
@@ -40,7 +41,10 @@ def test_wsgi_application_boots_under_production_config():
     env["DJANGO_SETTINGS_MODULE"] = "config.settings"
     proc = subprocess.run(
         [sys.executable, "-c", _PROBE],
-        capture_output=True, text=True, env=env, cwd=settings.BASE_DIR,
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=settings.BASE_DIR,
     )
     assert proc.stdout.strip().startswith("OK:"), (
         f"WSGI app failed to load under production config:\n{proc.stderr}"

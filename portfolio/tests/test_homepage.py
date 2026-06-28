@@ -17,6 +17,7 @@ def _body(client):
 
 # --- one featured, published piece per type (HTTP seam) ---
 
+
 def test_featured_type_appears(client):
     IllustrationFactory(featured=True, published=True)
     body = _body(client)
@@ -37,6 +38,7 @@ def test_only_one_piece_per_type_even_when_several_featured(client):
 
 # --- published + featured filtering (HTTP seam) ---
 
+
 def test_unpublished_featured_never_selected(client):
     IllustrationFactory(featured=True, published=False)
     assert 'href="/illustrations/"' not in _body(client)
@@ -48,6 +50,7 @@ def test_published_but_not_featured_never_selected(client):
 
 
 # --- cross-model ordering (HTTP seam) ---
+
 
 def test_orders_illustration_then_sketchbook_then_comic(client):
     # Storyboards aren't modeled yet, so they're absent; the remaining three
@@ -65,6 +68,7 @@ def test_orders_illustration_then_sketchbook_then_comic(client):
 
 # --- thumbnails link to section pages (HTTP seam) ---
 
+
 def test_each_type_links_to_its_section_page(client):
     IllustrationFactory(featured=True, published=True)
     SketchbookSampleFactory(featured=True, published=True)
@@ -81,6 +85,7 @@ def test_thumbnail_uses_derived_rendition(client):
 
 
 # --- graceful fallback (HTTP seam) ---
+
 
 def test_type_without_featured_piece_is_omitted(client):
     # Only an illustration is featured; sketchbook/comic contribute nothing and

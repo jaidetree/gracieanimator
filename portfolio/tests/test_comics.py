@@ -13,6 +13,7 @@ INDEX_URL = "/comics/"
 
 # --- model seam: ordering, cover, thumbnail fallback ---
 
+
 def test_pages_render_in_authored_order():
     comic = ComicFactory()
     ComicPageFactory(comic=comic, order=2)
@@ -50,6 +51,7 @@ def test_derived_thumbnail_none_without_pages():
 
 
 # --- index seam: two-column grid, links, renditions, publishing ---
+
 
 def test_index_is_two_column_desktop_grid(client):
     make_comic(n_pages=2)
@@ -89,6 +91,7 @@ def test_index_shows_only_published_comics(client):
 
 
 # --- detail seam: page grid, selection, full resolution, navigation, bounds ---
+
 
 def test_detail_serves_full_resolution_original(client):
     comic = make_comic(n_pages=2)
@@ -186,6 +189,7 @@ def test_unpublished_comic_detail_404(client):
 # adjacent_comics is pure list logic (index + modular indexing), so it's
 # exercised with plain sentinels — no DB or ORM needed.
 
+
 def test_adjacent_comics_returns_neighbours_in_sort_order():
     assert adjacent_comics(["a", "b", "c"], "b") == ("a", "c")
 
@@ -222,7 +226,9 @@ def test_sibling_bar_omits_missing_direction_at_the_ends(client):
     # First comic: a next sibling but no previous; next stays on the right.
     assert "comic__sibling--next" in first_body
     assert "comic__sibling--prev" not in first_body
-    next_link = re.search(r'<a class="comic__sibling comic__sibling--next[^"]*"', first_body).group(0)
+    next_link = re.search(
+        r'<a class="comic__sibling comic__sibling--next[^"]*"', first_body
+    ).group(0)
     assert "lg:ml-auto" in next_link
     # Last comic: a previous sibling but no next.
     assert "comic__sibling--prev" in last_body
@@ -244,6 +250,7 @@ def test_sibling_bar_ignores_unpublished_comics(client):
 
 
 # --- helpers ---
+
 
 def _jpeg_bytes():
     from io import BytesIO

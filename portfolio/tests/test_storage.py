@@ -9,6 +9,7 @@ What still needs live R2 credentials — the upload round-trip (object lands in 
 bucket and is retrievable) — is out of scope here; these cover backend
 selection, the media URL host, the prod guard, and statics staying on WhiteNoise.
 """
+
 import json
 import os
 import subprocess
@@ -56,7 +57,10 @@ def _load_settings(**overrides):
     env.update(overrides)
     proc = subprocess.run(
         [sys.executable, "-c", _PROBE],
-        capture_output=True, text=True, env=env, cwd=settings.BASE_DIR,
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=settings.BASE_DIR,
     )
     out = proc.stdout.strip()
     report = None if out.startswith("ERROR:") else json.loads(out)
@@ -64,6 +68,7 @@ def _load_settings(**overrides):
 
 
 # --- local default (no R2 configured): the running test suite itself ---
+
 
 def test_default_storage_is_local_without_r2():
     # The suite runs with no R2 vars, so media must stay on the local FS — no
@@ -75,6 +80,7 @@ def test_default_storage_is_local_without_r2():
 
 
 # --- R2 enabled by bucket presence (AC #1, #2) ---
+
 
 def test_r2_bucket_selects_s3_backend():
     report, _ = _load_settings(APP_ENV="development", **R2_ENV)
@@ -101,6 +107,7 @@ def test_media_url_uses_custom_domain_when_set():
 
 # --- statics unaffected (AC #4) ---
 
+
 def test_static_storage_unaffected_by_r2():
     report, _ = _load_settings(APP_ENV="development", **R2_ENV)
     # Media moved to R2, but static files stay on the WhiteNoise/Django backend.
@@ -112,6 +119,7 @@ def test_static_storage_unaffected_by_r2():
 
 # --- prod guard: no silent local-disk media in production ---
 
+
 def test_production_without_r2_refuses_to_boot():
     _, raw = _load_settings(
         APP_ENV="production", SECRET_KEY="x" * 50, ALLOWED_HOSTS="example.com"
@@ -122,8 +130,10 @@ def test_production_without_r2_refuses_to_boot():
 
 def test_production_with_r2_boots():
     report, _ = _load_settings(
-        APP_ENV="production", SECRET_KEY="x" * 50,
-        ALLOWED_HOSTS="example.com", **R2_ENV,
+        APP_ENV="production",
+        SECRET_KEY="x" * 50,
+        ALLOWED_HOSTS="example.com",
+        **R2_ENV,
     )
     assert report["r2_enabled"] is True
     assert report["default_backend"] == "storages.backends.s3.S3Storage"

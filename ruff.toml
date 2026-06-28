@@ -1,0 +1,21 @@
+# Ruff: linter + formatter for the Django rebuild.
+# Config lives here (not pyproject.toml) to match the repo's one-file-per-tool
+# convention (pytest.ini). Run `make lint` / `make format`.
+
+target-version = "py312"
+line-length = 88
+
+# Generated Django migrations are not hand-authored; leave them as emitted.
+extend-exclude = ["*/migrations/*"]
+
+[lint]
+# E/F: pycodestyle + pyflakes (the codes already used in `# noqa` comments).
+# I: import sorting. UP: pyupgrade. B: bugbear. DJ: Django-specific. C4: comprehensions.
+select = ["E", "F", "I", "UP", "B", "DJ", "C4"]
+# Line length is owned by the formatter; E501 only nags about comments/strings
+# the formatter can't wrap, so silence it (matches Ruff's default select).
+ignore = ["E501"]
+
+[format]
+# Black-compatible defaults; explicit for clarity.
+quote-style = "double"

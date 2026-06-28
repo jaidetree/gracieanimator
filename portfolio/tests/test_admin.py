@@ -36,6 +36,7 @@ ORDERED_ADMINS = [
 
 # --- published defaults to True (model seam) ---
 
+
 @pytest.mark.parametrize("model", PROJECT_MODELS)
 def test_published_defaults_to_true(model):
     # Nearly every piece is published, so a fresh instance is published by default.
@@ -43,6 +44,7 @@ def test_published_defaults_to_true(model):
 
 
 # --- featured sits below published (form + listing order) ---
+
 
 @pytest.mark.parametrize("model", PROJECT_MODELS)
 def test_model_orders_published_before_featured(model):
@@ -64,6 +66,7 @@ def test_list_editable_orders_published_before_featured(admin_cls):
 
 
 # --- add form pre-fills the next order (#16, before saving) ---
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("admin_cls,model,factory", ORDERED_ADMINS)
@@ -92,6 +95,7 @@ def test_add_form_order_from_url_wins(admin_cls, model, factory):
 
 
 # --- auto-increment order on save (#16, server-side backstop) ---
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("admin_cls,model,factory", ORDERED_ADMINS)
@@ -141,6 +145,7 @@ def test_editing_existing_piece_does_not_renumber(admin_cls, model, factory):
 
 
 # --- comic page inline auto-numbering (#16, bullet 1) ---
+
 
 def _jpeg(name):
     buf = io.BytesIO()

@@ -1,7 +1,7 @@
 # Task runner for The Grace Space. Thin wrapper over scripts/ + manage.py.
 # Assumes the direnv/Nix shell is active (APP_ENV, PG* already exported).
 .DEFAULT_GOAL := help
-.PHONY: help dev serve css css-watch db-start db-stop db-status migrate superuser test build release
+.PHONY: help dev serve css css-watch db-start db-stop db-status migrate superuser test lint format build release
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -39,6 +39,14 @@ superuser: ## Create an admin user
 
 test: ## Run the test suite
 	pytest
+
+lint: ## Lint and check formatting (no changes)
+	ruff check .
+	ruff format --check .
+
+format: ## Auto-fix lint issues and reformat
+	ruff check --fix .
+	ruff format .
 
 build: ## Compile assets for production (CSS + collectstatic)
 	./scripts/build-css.sh

@@ -66,6 +66,7 @@ def fake_urlopen(monkeypatch):
 
 # --- success: video providers carry a poster ---
 
+
 def test_vimeo_returns_embed_with_poster(fake_urlopen):
     fake_urlopen(json_body=VIMEO_RESPONSE)
     result = oembed.fetch("https://vimeo.com/12345")
@@ -91,6 +92,7 @@ def test_youtube_short_link_is_recognised(fake_urlopen):
 
 # --- success: non-video provider has no poster ---
 
+
 def test_speakerdeck_returns_embed_without_poster(fake_urlopen):
     fake_urlopen(json_body=SPEAKERDECK_RESPONSE)
     result = oembed.fetch("https://speakerdeck.com/user/talk")
@@ -100,6 +102,7 @@ def test_speakerdeck_returns_embed_without_poster(fake_urlopen):
 
 
 # --- request construction ---
+
 
 def test_request_targets_provider_endpoint_with_encoded_url(fake_urlopen):
     calls = fake_urlopen(json_body=VIMEO_RESPONSE)
@@ -111,6 +114,7 @@ def test_request_targets_provider_endpoint_with_encoded_url(fake_urlopen):
 
 
 # --- failure modes (AC: success / provider failure / malformed) ---
+
 
 def test_unknown_provider_raises(fake_urlopen):
     with pytest.raises(OEmbedError, match="No oembed provider"):

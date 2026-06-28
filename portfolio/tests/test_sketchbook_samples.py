@@ -12,12 +12,14 @@ GALLERY_URL = "/sketchbook-samples/"
 # Slug generation/uniqueness lives on the shared base and is exercised by the
 # Illustration suite; here we only confirm the chain resolves for this type.
 
+
 def test_slug_auto_generated_from_title():
     sample = SketchbookSampleFactory(title="Morning Studies", slug="")
     assert sample.slug == "morning-studies"
 
 
 # --- published filtering (HTTP seam) ---
+
 
 def test_only_published_samples_appear(client):
     shown = SketchbookSampleFactory(title="Visible Sketch", published=True)
@@ -28,6 +30,7 @@ def test_only_published_samples_appear(client):
 
 
 # --- gallery layout (HTTP seam) ---
+
 
 def test_gallery_is_single_column_full_width(client):
     SketchbookSampleFactory(published=True)
@@ -54,6 +57,7 @@ def test_gallery_serves_rendition_not_original(client):
 
 # --- thumbnail fallback (model seam) ---
 
+
 def test_thumbnail_auto_derives_from_image_when_blank():
     sample = SketchbookSampleFactory()
     assert not sample.thumbnail
@@ -68,6 +72,7 @@ def test_manual_thumbnail_wins():
 
 
 # --- helpers ---
+
 
 def _jpeg_bytes():
     from io import BytesIO

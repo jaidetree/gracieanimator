@@ -1,7 +1,6 @@
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from portfolio.models import Illustration
 from portfolio.tests.factories import IllustrationFactory
 
 pytestmark = pytest.mark.django_db
@@ -10,6 +9,7 @@ GALLERY_URL = "/illustrations/"
 
 
 # --- slug generation (model save() seam) ---
+
 
 def test_slug_auto_generated_from_title():
     illo = IllustrationFactory(title="Sunset Over Water", slug="")
@@ -30,6 +30,7 @@ def test_slug_is_unique_within_type():
 
 # --- published filtering (HTTP seam) ---
 
+
 def test_only_published_illustrations_appear(client):
     shown = IllustrationFactory(title="Visible", published=True)
     hidden = IllustrationFactory(title="Hidden", published=False)
@@ -44,6 +45,7 @@ def test_unpublished_illustration_absent(client):
 
 
 # --- gallery layout (HTTP seam) ---
+
 
 def test_gallery_is_single_column_full_width(client):
     IllustrationFactory(published=True)
@@ -80,6 +82,7 @@ def test_gallery_renders_transparent_png_source(client):
 
 # --- thumbnail fallback (model seam) ---
 
+
 def test_thumbnail_auto_derives_from_image_when_blank():
     illo = IllustrationFactory()
     assert not illo.thumbnail
@@ -94,6 +97,7 @@ def test_manual_thumbnail_wins():
 
 
 # --- helpers ---
+
 
 def _jpeg_bytes():
     from io import BytesIO

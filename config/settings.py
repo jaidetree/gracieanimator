@@ -6,6 +6,7 @@ All configuration is read from the environment, exported by direnv from
 `APP_ENV` (development | test | production) flips environment-specific
 behaviour; it defaults to production when unset.
 """
+
 from pathlib import Path
 
 import dj_database_url
@@ -82,7 +83,9 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -159,7 +162,9 @@ if IS_PROD:
     if SECRET_KEY == "dev-insecure-change-me":
         raise ImproperlyConfigured("SECRET_KEY must be set when APP_ENV=production")
     if "*" in ALLOWED_HOSTS:
-        raise ImproperlyConfigured("ALLOWED_HOSTS must not be '*' when APP_ENV=production")
+        raise ImproperlyConfigured(
+            "ALLOWED_HOSTS must not be '*' when APP_ENV=production"
+        )
     # Local-disk media is wiped on every dyno restart (ADR-0001); a production
     # deploy without R2 would silently lose every upload, so fail loudly.
     if not R2_ENABLED:

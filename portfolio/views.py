@@ -14,7 +14,11 @@ from .models import Comic, Illustration, SketchbookSample
 FEATURED_TYPES = [
     # (Storyboard, "Storyboards", reverse_lazy(url_names.STORYBOARD_GALLERY)),
     (Illustration, "Illustrations", reverse_lazy(url_names.ILLUSTRATION_GALLERY)),
-    (SketchbookSample, "Sketchbook Samples", reverse_lazy(url_names.SKETCHBOOK_SAMPLE_GALLERY)),
+    (
+        SketchbookSample,
+        "Sketchbook Samples",
+        reverse_lazy(url_names.SKETCHBOOK_SAMPLE_GALLERY),
+    ),
     (Comic, "Comics", reverse_lazy(url_names.COMICS_INDEX)),
 ]
 
