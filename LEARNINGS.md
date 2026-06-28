@@ -11,26 +11,32 @@ Session memory for the Django migration. Newest first. Prune when stale.
 > `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
 > (CI has the *inverse* problem — see Slice 14.)
 
-## In-place page-swapper / HTMX + Playwright E2E (Slice 7)
+## In-place page-swapper / Alpine.js + Playwright E2E (Slice 7, migrated)
 
-- **`hx-boost` on a wrapper + inherited `hx-select` = client swap with zero new
-  server code.** Put `hx-boost="true"` plus `hx-target`/`hx-select`/`hx-swap`/
-  `hx-push-url` on one `#comic-viewer` div; every `<a href>` inside is boosted and
-  *inherits* those attrs (only `hx-get` is per-link, and boost supplies it from the
-  href). The server re-renders the whole page; `hx-select="#comic-viewer"` extracts
-  just that fragment from the full response — **no partial template, no
-  HTMX-request detection, no new endpoint.** Chosen over Alpine precisely because
-  the server keeps re-rendering: the chevrons' server-side prev/next `{% if %}`
-  conditionals (and every Slice 6 test) stay correct after a swap. Alpine would
-  need both chevrons always in the DOM, breaking the page-1-has-no-prev asserts.
-- **Keep links that change *more* than the fragment OUTSIDE the wrapper.** The
-  back-link and sibling (prev/next-comic) bar live outside `#comic-viewer` so they
-  navigate normally; boosting them would swap only the viewer and leave a stale
-  title/sibling bar.
-- **A single-line `{# … #}` comment IS stripped from output** (unlike a multi-line
-  one — see Slice 13). To leave a stable structural anchor for a test (e.g. proving
-  the sibling bar renders *after* the wrapper closes), use an HTML comment
-  `<!-- /#comic-viewer -->`, which survives.
+- **Pure `src`-swap eliminates layout shift; DOM-fragment swap does not.**
+  The original HTMX approach fetched a full page and swapped `#comic-image` out of
+  the DOM — the image container collapsed while the incoming image loaded, causing
+  a visible jump. Replacing `src` in place (Alpine `:src="currentImage"`) avoids
+  any layout recalculation; the container never changes size.
+- **Alpine `comicViewer(initialImage, initialPage, pages[])` pattern.** Mount on
+  `#comic-viewer` with `x-data`; pass the full pages array (each `{imageUrl, href}`)
+  from the Django template loop — all URLs are available server-side. `goTo(index)`
+  sets `currentImage`, updates `currentPage`, calls `history.pushState`. No new
+  endpoint, no server round-trip for image navigation.
+- **Chevron visibility: `x-show` + inline `style` seeds no-JS initial state.**
+  Both chevrons are always in the DOM; `x-show="currentPage > 1"` /
+  `x-show="currentPage < pages.length"` control them reactively after any
+  client-side navigation. For the no-JS / pre-Alpine render, seed with
+  `style="{% if page_number == 1 %}display:none{% endif %}"` so the initial paint
+  is correct without JS. Alpine overrides it on init. (The earlier HTMX version
+  used server-side `{% if has_previous %}` conditionals, which can't update after
+  a client-side nav — that's why we always render both chevrons now.)
+- **Keep links that navigate OUTSIDE the viewer outside `#comic-viewer`.** The
+  sibling (prev/next-comic) bar lives outside so it does a full navigation rather
+  than an Alpine-intercepted swap.
+- **A single-line `{# … #}` comment IS stripped from output.** To leave a stable
+  structural anchor for a test (e.g. proving the sibling bar renders *after* the
+  wrapper closes), use an HTML comment `<!-- /#comic-viewer -->`, which survives.
 - **Playwright E2E wiring (the non-obvious parts):** `live_server` + the
   `page` fixture needs `@pytest.mark.django_db(transaction=True)` so the factory
   rows are committed for the server thread's separate connection. Playwright's sync
@@ -45,8 +51,11 @@ Session memory for the Django migration. Newest first. Prune when stale.
   swap from a reload. Set `window.__flag` *and* tag a node *outside* the wrapper
   (the `<h1>`) before the click; both surviving proves the swap was reload-free
   *and* scoped to the fragment.
+- **`x-show` keeps the element in the DOM (display:none); `x-if` removes it.**
+  Playwright's `to_have_count(0)` fails with `x-show` — use `to_be_hidden()` instead.
+  (`to_be_hidden()` passes whether the element is absent OR `display:none`.)
 - **`live_server` serves vendored static via staticfiles** (DEBUG=True under
-  `APP_ENV=test` enables finders), so the vendored `static/js/htmx.min.js` loads.
+  `APP_ENV=test` enables finders), so the vendored `static/js/alpine.min.js` loads.
   Media isn't served, but the E2E only reads the `src` attribute, never the bytes.
   Strip the R2/`DATABASE_URL` env for E2E too (factories upload images).
 
