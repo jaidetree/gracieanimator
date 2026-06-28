@@ -72,18 +72,16 @@ def comics_index(request):
 
 
 def adjacent_comics(comics, current):
-    """The previous and next comic in sort order, wrapping around the ends.
+    """The previous and next comic in sort order, without wrapping.
 
-    ``comics`` is the ordered list of comics to navigate; the first comic's
-    previous is the last and the last's next is the first. Returns
-    ``(None, None)`` when there are fewer than two comics, so the caller omits
-    the bar rather than link a comic to itself.
+    ``comics`` is the ordered list of comics to navigate. The first comic has no
+    previous and the last has no next (each returned as ``None``), so a reader
+    can tell when they've reached an end rather than looping silently.
     """
-    if len(comics) < 2:
-        return None, None
     idx = comics.index(current)
-    n = len(comics)
-    return comics[(idx - 1) % n], comics[(idx + 1) % n]
+    prev = comics[idx - 1] if idx > 0 else None
+    next_ = comics[idx + 1] if idx < len(comics) - 1 else None
+    return prev, next_
 
 
 def comic_detail(request, slug, page=1):
@@ -97,7 +95,7 @@ def comic_detail(request, slug, page=1):
     ``/comics/<slug>/page/<n>/`` selects page n. Out-of-range pages 404. Page 1's
     canonical URL is the bare detail URL, so the previous link from page 2 points
     there. A bar at the foot links the previous/next comic in sort order (by
-    cover thumbnail), wrapping around the ends.
+    cover thumbnail); the first and last comics omit the missing direction.
     """
     comic = get_object_or_404(Comic, slug=slug, published=True)
     pages = list(comic.ordered_pages)

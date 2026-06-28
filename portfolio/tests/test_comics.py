@@ -190,10 +190,10 @@ def test_adjacent_comics_returns_neighbours_in_sort_order():
     assert adjacent_comics(["a", "b", "c"], "b") == ("a", "c")
 
 
-def test_adjacent_comics_wraps_around_the_ends():
-    # First item's previous is the last; last item's next is the first.
-    assert adjacent_comics(["a", "b", "c"], "a") == ("c", "b")
-    assert adjacent_comics(["a", "b", "c"], "c") == ("b", "a")
+def test_adjacent_comics_does_not_wrap_at_the_ends():
+    # The first comic has no previous and the last has no next.
+    assert adjacent_comics(["a", "b", "c"], "a") == (None, "b")
+    assert adjacent_comics(["a", "b", "c"], "c") == ("b", None)
 
 
 def test_adjacent_comics_returns_none_for_a_lone_comic():
@@ -212,6 +212,19 @@ def test_detail_renders_prev_next_comic_bar_with_cover_thumbnails(client):
     assert first.cover_page.grid_image.url in body
     assert last.cover_page.grid_image.url in body
     assert "prev:" in body and "next:" in body
+
+
+def test_sibling_bar_omits_missing_direction_at_the_ends(client):
+    first = make_comic(n_pages=1, order=0, title="First Comic")
+    last = make_comic(n_pages=1, order=1, title="Last Comic")
+    first_body = client.get(f"/comics/{first.slug}/").content.decode()
+    last_body = client.get(f"/comics/{last.slug}/").content.decode()
+    # First comic: a next sibling but no previous.
+    assert "comic__sibling--next" in first_body
+    assert "comic__sibling--prev" not in first_body
+    # Last comic: a previous sibling but no next.
+    assert "comic__sibling--prev" in last_body
+    assert "comic__sibling--next" not in last_body
 
 
 def test_sibling_bar_omitted_for_a_lone_comic(client):
