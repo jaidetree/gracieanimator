@@ -1,43 +1,7 @@
+from adminsortable2.admin import SortableAdminMixin, SortableTabularInline
 from django.contrib import admin
-from django.db.models import Max
 
 from .models import Category, Comic, ComicPage, Illustration, SketchbookSample
-
-
-def _next_order(queryset):
-    """The order to assign a new row: highest existing order + 1 (1 when empty).
-
-    Maxed over *all* rows in the queryset (published or not) so a new piece can
-    never collide with a hidden one's order. Slots a fresh row at the end.
-    """
-    current_max = queryset.aggregate(Max("order"))["order__max"]
-    return (current_max or 0) + 1
-
-
-class OrderedAdminMixin:
-    """Auto-assign the next display order to a new piece left at order 0.
-
-    Keeps ``order`` a manual field but spares the editor from hunting the next
-    number: the add form is pre-filled with the next order, and a new instance
-    saved with the default 0 still lands at the end of its type. An explicit
-    non-zero order is always respected.
-    """
-
-    def get_changeform_initial_data(self, request):
-        """Pre-fill the add form's order with the next value (1 when empty).
-
-        ``setdefault`` so an order passed in the URL (e.g. via the changelist)
-        still wins. This is display-only; ``save_model`` is the backstop if the
-        editor clears it back to 0.
-        """
-        initial = super().get_changeform_initial_data(request)
-        initial.setdefault("order", _next_order(self.model.objects.all()))
-        return initial
-
-    def save_model(self, request, obj, form, change):
-        if not change and obj.order == 0:
-            obj.order = _next_order(type(obj).objects.all())
-        super().save_model(request, obj, form, change)
 
 
 @admin.register(Category)
@@ -50,39 +14,78 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
-class ImageProjectAdmin(OrderedAdminMixin, admin.ModelAdmin):
-    """Shared admin config for single-image project types."""
+class SortableProjectAdmin(SortableAdminMixin, admin.ModelAdmin):
+    """Drag-to-reorder changelist for a project type.
 
-    list_display = ("title", "slug", "order", "published", "featured", "updated_at")
-    list_editable = ("order", "published", "featured")
+    django-admin-sortable2 inserts a drag handle (``_reorder_``) as the leftmost
+    column and strips ``order`` from the change form. ``order`` is left out of
+    ``list_display`` so the handle lands on the left as the issue asks (keeping
+    ``order`` there would only shift the handle inward). ``get_fields`` re-adds
+    ``order`` on the change form so an editor can still type a number by hand
+    when editing an existing piece; new pieces are auto-numbered to the end on
+    add (sortable2's ``save_model``), so the add form omits ``order``.
+
+    ``order`` is deliberately *not* in ``list_editable`` (it isn't a displayed
+    column, so an inline input would have nowhere to render);
+    ``published``/``featured`` stay inline-editable.
+    """
+
+    list_display = ("title", "slug", "published", "featured", "updated_at")
+    list_editable = ("published", "featured")
     list_filter = ("published", "featured")
     search_fields = ("title",)
     ordering = ("order", "title")
     prepopulated_fields = {"slug": ("title",)}
 
+    def get_fields(self, request, obj=None):
+        fields = list(super().get_fields(request, obj))
+        if obj is not None and "order" not in fields:
+            fields.append("order")
+        return fields
+
+    def _update_order(self, updated_items, extra_model_filters):
+        """Apply the dragged span, then renumber the whole collection 1..N.
+
+        sortable2's drag only reindexes the rows between the drag's start and end
+        position, so gaps elsewhere (left by deletes or the add-at-end default)
+        survive. The issue asks a drag to clean up the order field of the
+        *entire* collection, so after the library applies the move we renumber
+        every row by its resulting position. ``order`` has no unique constraint,
+        so the bulk update can't collide.
+        """
+        super()._update_order(updated_items, extra_model_filters)
+        field = self.default_order_field
+        rows = list(
+            self.model.objects.filter(**extra_model_filters).order_by(field, "pk")
+        )
+        renumbered = []
+        for position, obj in enumerate(rows, start=1):
+            if getattr(obj, field) != position:
+                setattr(obj, field, position)
+                renumbered.append(obj)
+        self.model.objects.bulk_update(renumbered, [field])
+        return len(renumbered)
+
 
 @admin.register(Illustration)
-class IllustrationAdmin(ImageProjectAdmin):
+class IllustrationAdmin(SortableProjectAdmin):
     pass
 
 
 @admin.register(SketchbookSample)
-class SketchbookSampleAdmin(ImageProjectAdmin):
+class SketchbookSampleAdmin(SortableProjectAdmin):
     pass
 
 
-class ComicPageInline(admin.TabularInline):
-    """Ordered page collection for a Comic; row order follows the order field.
+class ComicPageInline(SortableTabularInline):
+    """Drag-sortable page collection for a Comic; row order is the render order.
 
-    A small admin script (``comic_page_order.js``) pre-fills the order field in
-    a newly added inline row in the browser; ``ComicAdmin.save_formset`` is the
-    server-side backstop that numbers any page still left at 0 on save.
+    sortable2 renders ``order`` as a hidden input updated by drag and
+    auto-numbers a new page to the end of the comic on save, so the prior
+    slice's manual prefill script and save-time backstop are gone.
 
-    ``extra = 0``: an always-present blank row can't be prefilled on load —
-    setting its order would mark the empty form "changed" and trigger an
-    image-required error on save. Pages are added on demand via "Add another",
-    which fires ``formset:added`` so the prefill runs on a row the editor means
-    to fill.
+    ``extra = 0``: pages are added on demand via "Add another" rather than
+    showing an always-present blank row.
     """
 
     model = ComicPage
@@ -90,39 +93,9 @@ class ComicPageInline(admin.TabularInline):
     fields = ("order", "image")
     ordering = ("order", "id")
 
-    class Media:
-        js = ("portfolio/comic_page_order.js",)
-
 
 @admin.register(Comic)
-class ComicAdmin(OrderedAdminMixin, admin.ModelAdmin):
-    """A comic plus its ordered pages, authored inline."""
+class ComicAdmin(SortableProjectAdmin):
+    """A comic plus its drag-sortable pages, authored inline."""
 
-    list_display = ("title", "slug", "order", "published", "featured", "updated_at")
-    list_editable = ("order", "published", "featured")
-    list_filter = ("published", "featured")
-    search_fields = ("title",)
-    ordering = ("order", "title")
-    prepopulated_fields = {"slug": ("title",)}
     inlines = [ComicPageInline]
-
-    def save_formset(self, request, form, formset, change):
-        """Number new comic pages left at order 0, continuing past existing pages.
-
-        Scoped per comic and assigned in form order so several rows added at once
-        get distinct, increasing values rather than all colliding at 1.
-        """
-        if formset.model is not ComicPage:
-            super().save_formset(request, form, formset, change)
-            return
-        comic = form.instance
-        next_order = _next_order(ComicPage.objects.filter(comic=comic))
-        instances = formset.save(commit=False)
-        for obj in formset.deleted_objects:
-            obj.delete()
-        for instance in instances:
-            if instance.pk is None and instance.order == 0:
-                instance.order = next_order
-                next_order += 1
-            instance.save()
-        formset.save_m2m()
