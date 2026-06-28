@@ -232,15 +232,32 @@ def test_storyboard_registers_all_three_media_inlines():
     ]
 
 
+@pytest.mark.parametrize(
+    "inline,verbose,plural",
+    [
+        (StoryboardVideoInline, "video", "videos"),
+        (StoryboardDeckInline, "deck", "decks"),
+        (StoryboardPDFInline, "PDF", "PDFs"),
+    ],
+)
+def test_storyboard_inlines_drop_the_model_name_prefix(inline, verbose, plural):
+    # The inline labels read "video"/"deck"/"PDF", not "Storyboard video" etc.
+    assert inline.verbose_name == verbose
+    assert inline.verbose_name_plural == plural
+
+
 @pytest.mark.django_db
 def test_storyboard_add_form_renders_three_inlines(admin_client):
     # Proves the three sortable inlines coexist on one change form (the library
-    # only had a single-inline precedent before this slice).
+    # only had a single-inline precedent before this slice) and that the
+    # "Storyboard" prefix is gone from their "Add another …" labels.
     response = admin_client.get(reverse("admin:portfolio_storyboard_add"))
     assert response.status_code == 200
     body = response.content.decode()
     for prefix in ("videos", "decks", "pdfs"):
         assert f"{prefix}-TOTAL_FORMS" in body
+    assert "Storyboard video" not in body
+    assert "Storyboard deck" not in body
 
 
 @pytest.mark.django_db

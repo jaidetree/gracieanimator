@@ -149,12 +149,19 @@ class RequireVideoOrThumbnailFormSet(CustomInlineFormSet):
 
 
 class StoryboardVideoInline(SortableTabularInline):
-    """Drag-sortable embedded videos; optional when a thumbnail is set."""
+    """Drag-sortable embedded videos; optional when a thumbnail is set.
+
+    ``verbose_name`` drops the model's "Storyboard" prefix from the inline's
+    section header and "Add another …" label (Django derives them from the
+    class name otherwise).
+    """
 
     model = StoryboardVideo
     formset = RequireVideoOrThumbnailFormSet
     extra = 0
     fields = ("order", "url")
+    verbose_name = "video"
+    verbose_name_plural = "videos"
 
 
 class StoryboardDeckInline(SortableTabularInline):
@@ -163,6 +170,8 @@ class StoryboardDeckInline(SortableTabularInline):
     model = StoryboardDeck
     extra = 0
     fields = ("order", "url")
+    verbose_name = "deck"
+    verbose_name_plural = "decks"
 
 
 class StoryboardPDFInline(SortableTabularInline):
@@ -171,6 +180,8 @@ class StoryboardPDFInline(SortableTabularInline):
     model = StoryboardPDF
     extra = 0
     fields = ("order", "file", "display_name")
+    verbose_name = "PDF"
+    verbose_name_plural = "PDFs"
 
 
 @admin.register(Storyboard)
