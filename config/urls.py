@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from config import url_names
 from pages import views as page_views
@@ -9,6 +9,9 @@ from portfolio import views as portfolio_views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # CKEditor 5 inline-image upload endpoint (Slice 12). Multi-segment, so it
+    # never collides with the trailing <slug:slug>/ catch-all below.
+    path("ckeditor5/", include("django_ckeditor_5.urls")),
     path("", page_views.home, name=url_names.HOME),
     path(
         "illustrations/",

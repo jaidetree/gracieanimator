@@ -3,6 +3,8 @@ from django.utils.text import slugify
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill, ResizeToFit
 
+from richtext import sanitize_html
+
 from . import oembed
 
 # The site container is max-w-5xl (64rem / 1024px); gallery images render at that
@@ -213,7 +215,7 @@ class Storyboard(Project):
     )
     body = models.TextField(
         blank=True,
-        help_text="Rich body. HTML is rendered as-is (WYSIWYG arrives later).",
+        help_text="Rich body, edited with the rich-text editor (Slice 12).",
     )
 
     # Small square rendition of a *manual* thumbnail, for the index/category
@@ -225,6 +227,12 @@ class Storyboard(Project):
         format="JPEG",
         options={"quality": 80},
     )
+
+    def save(self, *args, **kwargs):
+        # Sanitize the WYSIWYG body here (not just in the admin form) so stored
+        # HTML is safe regardless of entry point; Project.save handles the slug.
+        self.body = sanitize_html(self.body)
+        super().save(*args, **kwargs)
 
     @property
     def grid_thumbnail_url(self):

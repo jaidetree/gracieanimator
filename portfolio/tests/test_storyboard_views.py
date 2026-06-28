@@ -151,6 +151,19 @@ def test_detail_composes_videos_decks_pdfs_and_body(client):
     assert "Body words here" in body  # rich body rendered
 
 
+def test_detail_renders_media_embed_in_body(client):
+    """A media embed authored into the WYSIWYG body (Slice 12) reaches the public
+    page as a working iframe, surviving both the save-time sanitize and render."""
+    sb = StoryboardFactory(
+        body=(
+            '<figure class="media"><div data-oembed-url="https://youtu.be/z">'
+            '<iframe src="https://www.youtube.com/embed/z"></iframe></div></figure>'
+        )
+    )
+    body = _body(client, _detail_url(sb))
+    assert '<iframe src="https://www.youtube.com/embed/z">' in body
+
+
 def test_detail_renders_cached_embed_dimensions(client):
     sb = StoryboardFactory()
     video = StoryboardVideoFactory(storyboard=sb, url="https://vimeo.com/9")

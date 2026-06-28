@@ -13,6 +13,11 @@ django-imagekit==6.1.0
 # Admin drag-and-drop reordering for models with an order field
 django-admin-sortable2==2.3.1
 
+# WYSIWYG rich body for Pages/Storyboards (admin editor + inline image upload to
+# default storage). nh3 sanitizes the stored HTML on save (Slice 12).
+django-ckeditor-5==0.2.20
+nh3==0.3.6
+
 # Media storage: Cloudflare R2 (S3-compatible) via django-storages + boto3
 django-storages==1.14.4
 boto3==1.35.99

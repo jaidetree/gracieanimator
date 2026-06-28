@@ -3,8 +3,10 @@ import json
 import pytest
 from adminsortable2.admin import SortableAdminMixin, SortableInlineAdminMixin
 from django.contrib.admin.sites import site
+from django.contrib.auth.models import User
 from django.test import RequestFactory
 from django.urls import reverse
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 from portfolio.admin import (
     ComicAdmin,
@@ -12,11 +14,12 @@ from portfolio.admin import (
     IllustrationAdmin,
     SketchbookSampleAdmin,
     StoryboardAdmin,
+    StoryboardAdminForm,
     StoryboardDeckInline,
     StoryboardPDFInline,
     StoryboardVideoInline,
 )
-from portfolio.models import Comic, Illustration, SketchbookSample
+from portfolio.models import Comic, Illustration, SketchbookSample, Storyboard
 from portfolio.tests.factories import (
     ComicFactory,
     IllustrationFactory,
@@ -214,6 +217,33 @@ def test_comic_page_inline_shows_no_blank_row_by_default():
 
 def test_storyboard_changelist_is_sortable():
     assert issubclass(StoryboardAdmin, SortableAdminMixin)
+
+
+def test_storyboard_admin_form_uses_ckeditor_widget_for_body():
+    # AC: the WYSIWYG widget is wired for the Storyboard body in the admin.
+    assert isinstance(StoryboardAdminForm().fields["body"].widget, CKEditor5Widget)
+
+
+@pytest.mark.django_db
+def test_storyboard_admin_order_field_survives_custom_form():
+    # The Slice-12 form enumerates `fields` (DJ006/DJ007 forbid __all__/exclude)
+    # and omits `order`; guard that SortableProjectAdmin.get_fields still owns it
+    # — typeable on the change form (#17), absent on the auto-numbered add form.
+    sb = StoryboardFactory()
+    admin = StoryboardAdmin(Storyboard, site)
+    # The change form builds the real form, which inspects request.user for the
+    # category FK's add-related permission; supply a superuser.
+    user = User.objects.create_superuser("sb-admin", "a@b.c", "pw")
+
+    def _request(path):
+        req = RequestFactory().get(path)
+        req.user = user
+        return req
+
+    change_fields = admin.get_fields(_request("/change/"), obj=sb)
+    assert "order" in change_fields
+    assert "body" in change_fields
+    assert "order" not in admin.get_fields(_request("/add/"), obj=None)
 
 
 @pytest.mark.parametrize(

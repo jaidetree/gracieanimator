@@ -3,8 +3,10 @@ from adminsortable2.admin import (
     SortableAdminMixin,
     SortableTabularInline,
 )
+from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 from .models import (
     Category,
@@ -183,8 +185,37 @@ class StoryboardPDFInline(SortableTabularInline):
     verbose_name_plural = "PDFs"
 
 
+class StoryboardAdminForm(forms.ModelForm):
+    """Swaps the body's plain textarea for the CKEditor 5 widget (Slice 12).
+
+    Widget on the admin form, not the model, so ``body`` stays a ``TextField``
+    (no migration) and the editor is an admin-only concern. ``body`` is declared
+    explicitly so it carries the widget while the admin still builds the rest of
+    the fieldset (including the dynamically re-added ``order`` field).
+    """
+
+    body = forms.CharField(
+        widget=CKEditor5Widget(config_name="default"), required=False
+    )
+
+    class Meta:
+        model = Storyboard
+        # All editable fields except ``order`` — SortableProjectAdmin.get_fields
+        # owns order (omitted on the add form, re-appended on the change form).
+        fields = [
+            "title",
+            "slug",
+            "published",
+            "featured",
+            "thumbnail",
+            "category",
+            "body",
+        ]
+
+
 @admin.register(Storyboard)
 class StoryboardAdmin(SortableProjectAdmin):
     """A storyboard plus its ordered video, deck, and PDF collections."""
 
+    form = StoryboardAdminForm
     inlines = [StoryboardVideoInline, StoryboardDeckInline, StoryboardPDFInline]

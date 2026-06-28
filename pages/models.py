@@ -2,11 +2,14 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 
+from richtext import sanitize_html
+
 
 class Page(models.Model):
     """A standalone content page rendered live at /<slug>/.
 
-    Body is plain text/HTML for now; a WYSIWYG editor arrives in a later slice.
+    Body is WYSIWYG-authored HTML (CKEditor 5 in the admin, Slice 12), sanitized
+    on save so the public template can render it with ``|safe``.
     """
 
     title = models.CharField(max_length=200)
@@ -18,7 +21,7 @@ class Page(models.Model):
     )
     body = models.TextField(
         blank=True,
-        help_text="Page content. HTML is rendered as-is.",
+        help_text="Page content, edited with the rich-text editor.",
     )
     published = models.BooleanField(
         default=False,
@@ -36,6 +39,9 @@ class Page(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        # Sanitize here (not just in the admin form) so the stored HTML is safe
+        # no matter how the row was written.
+        self.body = sanitize_html(self.body)
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):

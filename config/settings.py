@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "adminsortable2",
     "imagekit",
+    "django_ckeditor_5",
     "pages",
     "portfolio",
 ]
@@ -159,6 +160,54 @@ STORAGES = {
             if not IS_PROD
             else "whitenoise.storage.CompressedManifestStaticFilesStorage"
         )
+    },
+}
+
+# WYSIWYG rich body (Slice 12). CKEditor 5 edits Page and Storyboard bodies in
+# the admin; the stored HTML is sanitized on each model's save() (see richtext).
+#
+# Inline image uploads POST to django_ckeditor_5's upload view, which writes to
+# STORAGES["default"] — so uploads land on R2 in any real deploy (ADR-0001) with
+# no extra config, and on the local filesystem in dev/tests. Uploads are staff-
+# only (the package default, made explicit here).
+#
+# mediaEmbed.previewsInData stores the provider <iframe> in the body (not the
+# unrenderable <oembed url>), so embeds display on the public page as-is.
+CKEDITOR_5_FILE_UPLOAD_PERMISSION = "staff"
+
+CKEDITOR_5_CONFIGS = {
+    "default": {
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "link",
+            "bulletedList",
+            "numberedList",
+            "blockQuote",
+            "|",
+            "imageUpload",
+            "mediaEmbed",
+            "insertTable",
+            "|",
+            "undo",
+            "redo",
+        ],
+        "image": {
+            "toolbar": [
+                "imageTextAlternative",
+                "|",
+                "imageStyle:alignLeft",
+                "imageStyle:full",
+                "imageStyle:alignRight",
+            ],
+            "styles": ["full", "alignLeft", "alignRight"],
+        },
+        "table": {
+            "contentToolbar": ["tableColumn", "tableRow", "mergeTableCells"],
+        },
+        "mediaEmbed": {"previewsInData": True},
     },
 }
 

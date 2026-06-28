@@ -301,3 +301,23 @@ def test_formset_invalid_when_last_video_deleted_and_no_thumbnail():
     formset = formset_cls(data=data, instance=sb, prefix="videos")
     assert not formset.is_valid()
     assert "video or a thumbnail" in str(formset.non_form_errors()).lower()
+
+
+# --- WYSIWYG body sanitize seam (Slice 12) ------------------------------------
+
+
+def test_storyboard_save_sanitizes_body_but_keeps_image_and_embed():
+    """Storyboard.save runs the body through the sanitizer (same guarantee as
+    Page), stripping scripts while keeping the editor's image and media embed."""
+    sb = StoryboardFactory(
+        body=(
+            "<script>evil()</script>"
+            '<figure class="image"><img src="https://cdn.example/b.png" alt="A"></figure>'
+            '<figure class="media"><div data-oembed-url="https://youtu.be/z">'
+            '<iframe src="https://www.youtube.com/embed/z"></iframe></div></figure>'
+        )
+    )
+    sb.refresh_from_db()
+    assert "<script" not in sb.body
+    assert "cdn.example/b.png" in sb.body
+    assert "youtube.com/embed/z" in sb.body
