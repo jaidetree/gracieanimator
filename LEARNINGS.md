@@ -2,6 +2,41 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## Linter + CI (Slice 14)
+
+- **Ruff is the whole toolchain: linter *and* Black-compatible formatter in
+  one binary.** It natively understands the `E402/F401/F403` codes already in
+  the codebase's `# noqa`, and installs via the existing `uv` (`uvx ruff …`,
+  no project install needed to measure). Config lives in `ruff.toml` (not
+  `pyproject.toml`) to match the repo's one-file-per-tool convention
+  (pytest.ini) and avoid implying this is a packaged project. `ruff.toml` uses
+  bare `[lint]`/`[format]` tables — not the `[tool.ruff.lint]` nesting a
+  pyproject needs.
+- **Delegate line length to the formatter; ignore `E501`.** Selecting the `E`
+  group pulls in `E501` (line-too-long), which the formatter deliberately
+  won't fix on comments/strings — so with `E501` on, those lines stay red and
+  CI can't go green without manual rewraps. Ruff's *default* select already
+  omits `E501` for this reason. `ignore = ["E501"]` kept the entire lint diff
+  to one unused import; the only churn was `ruff format` reflowing 11
+  hand-authored files (measured first with `ruff format --check` before
+  applying — don't let `--fix`/`format` rewrite as an unseen side effect).
+- **Exclude generated migrations from both lint and format** via top-level
+  `extend-exclude = ["*/migrations/*"]`. Django emits them; `ruff format`
+  wanted to rewrite 5 of them otherwise. With them excluded the format set
+  drops from 17 → 11 files.
+- **CI Postgres service needs an explicit TCP `DATABASE_URL` — the inverse of
+  the local `.envrc.local` problem.** Locally the leak is too *much* env
+  (remote `DATABASE_URL` clobbering the socket default); in CI the danger is
+  too *little* — `config.test_settings` forces `APP_ENV=test` but base settings
+  still read `DATABASE_URL`, defaulting to a unix-socket URL the GitHub
+  `services: postgres` container (TCP only) can't answer. The `test` job must
+  set `DATABASE_URL=postgres://postgres:postgres@localhost:5432/gracie`. The
+  YAML is the one part unverifiable locally — confirm on the first real run.
+- **"Run tests then lint" = `needs: test`.** Two jobs, `lint` gated on `test`,
+  triggered on `django` push/PR only (not `main`, the legacy ClojureScript
+  stack whose `deploy.yml` is left untouched). Scoped to Python/Ruff; the lone
+  JS file and templates are out-of-scope follow-ups, not eslint/djlint creep.
+
 ## Auto-increment order field (Slice 16)
 
 - **A `PositiveIntegerField(default=0)` renders its admin form input as
