@@ -7,7 +7,7 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-dev: db-start ## Start db, Tailwind watcher, and runserver together
+dev: ## Tailwind watcher, and runserver together
 	@trap 'kill 0' EXIT INT TERM; \
 	./scripts/build-css.sh --watch & \
 	./manage.py runserver & \
