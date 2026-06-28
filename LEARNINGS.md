@@ -11,6 +11,49 @@ Session memory for the Django migration. Newest first. Prune when stale.
 > `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
 > (CI has the *inverse* problem — see Slice 14.)
 
+## Storyboards authoring + oembed-on-save (Slice 8)
+
+- **The oembed cache lives on the child row's `save()`, not the admin.** Each
+  `StoryboardVideo`/`Deck` resolves its URL through `oembed.fetch` in `save()`
+  and caches `embed_html`/dims (+ video `poster_url`). This is the single seam
+  the "model-save-seam tests" target — no admin needed to exercise it.
+- **Guard re-fetch with `_needs_oembed`: resolve only when unresolved (new row
+  or prior failure) or the URL changed.** Detect a URL change by comparing
+  `self.url` to the DB value (`objects.filter(pk=…).values_list("url")`). Gives
+  both "fetched once" (no-op re-save makes no call) *and* recovery (a failed
+  fetch left `embed_html` empty, so a re-save retries).
+- **On `OEmbedError`, CLEAR the cache, don't leave it.** Keeping the old embed
+  after the URL changed serves a stale iframe/poster against a gone URL — and
+  the guard would never refetch it (non-empty html + unchanged url). Clearing is
+  safe because you only reach resolution when the cache is empty or url changed.
+  Caught only by a "change URL to an unreachable provider" test; the create-fail
+  path (cache already empty) hides it.
+- **"At least one X child" can't be a model rule.** The parent saves before its
+  inline children, so `self.videos` is empty during model validation. Enforce in
+  the inline's `BaseInlineFormSet.clean` (count forms with `cleaned_data` and not
+  `DELETE`). Test by driving the real bound formset (management-form data + N
+  rows), incl. an INITIAL row marked `DELETE` for the "deleted last video" path.
+- **A custom formset on a *sortable* inline must extend
+  `adminsortable2.admin.CustomInlineFormSet`, not `BaseInlineFormSet`** — the
+  sortable inline injects a `default_order_direction` kwarg the plain base
+  rejects (`TypeError`). And `CustomInlineFormSet.__init__` takes
+  `default_order_direction`/`_field` as its *leading positional* args, so in
+  tests pass `data=` by keyword or it gets swallowed and the formset is unbound.
+- **Three `SortableTabularInline`s on one parent works** (extra=0 each); the
+  repo previously only had one (ComicPage). Verified by GETting the add form
+  (all three `*-TOTAL_FORMS` present) and a full admin add/change POST.
+- **Autouse `stub_oembed` in conftest keeps factory-built media off the
+  network** (`save()` fetches on create, where `pk is None` so it always
+  resolves — you can't pre-seed `embed_html` to skip it). The `test_oembed`
+  modules opt out (`"test_oembed" in request.module.__name__`) to exercise the
+  real `fetch` via the `urlopen` seam.
+- **`extra=0` on the inlines** reaffirms the Slice-16 trap: a `default=0` order
+  field makes an always-present blank row look "changed" → spurious required
+  errors. Add rows on demand.
+- **Homepage featured grid stays deferred past #10** — `FEATURED_TYPES` needs
+  the `storyboard_gallery` *public* URL (a later slice), so the Slice-11
+  "storyboard-first" AC still isn't satisfied by the model/admin alone.
+
 ## In-place page-swapper / Alpine.js + Playwright E2E (Slice 7, migrated)
 
 - **Pure `src`-swap eliminates layout shift; DOM-fragment swap does not.**
