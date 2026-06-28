@@ -300,7 +300,7 @@ def test_storyboard_saves_through_admin_and_caches_embed(admin_client):
 
 
 @pytest.mark.django_db
-def test_storyboard_admin_rejects_save_with_no_videos(admin_client):
+def test_storyboard_admin_rejects_save_with_no_video_and_no_thumbnail(admin_client):
     from portfolio.models import Storyboard
     from portfolio.tests.factories import CategoryFactory
 
@@ -311,5 +311,32 @@ def test_storyboard_admin_rejects_save_with_no_videos(admin_client):
     )
     # Form re-renders (200, not a 302 redirect) with the validation error.
     assert response.status_code == 200
-    assert "at least one video" in response.content.decode().lower()
+    assert "video or a thumbnail" in response.content.decode().lower()
     assert not Storyboard.objects.filter(title="Posted Storyboard").exists()
+
+
+@pytest.mark.django_db
+def test_storyboard_admin_accepts_thumbnail_without_video(admin_client):
+    # The migrated case: a thumbnail and no video saves cleanly. Proves the
+    # uploaded thumbnail is visible on self.instance during the inline formset's
+    # clean (admin binds it to the parent before building the inlines).
+    from io import BytesIO
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    from portfolio.models import Storyboard
+    from portfolio.tests.factories import CategoryFactory
+
+    category = CategoryFactory()
+    data = _storyboard_add_post(category, videos=[])
+    # A real image: ImageField runs Pillow validation on the admin POST path.
+    buffer = BytesIO()
+    Image.new("RGB", (10, 10)).save(buffer, "PNG")
+    thumbnail = SimpleUploadedFile("t.png", buffer.getvalue(), content_type="image/png")
+    response = admin_client.post(
+        reverse("admin:portfolio_storyboard_add"),
+        {**data, "thumbnail": thumbnail},
+    )
+    assert response.status_code == 302
+    assert Storyboard.objects.get(title="Posted Storyboard").thumbnail

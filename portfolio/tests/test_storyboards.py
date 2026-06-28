@@ -3,14 +3,15 @@
 The oembed boundary is mocked everywhere (autouse ``stub_oembed`` in conftest;
 individual tests override ``portfolio.oembed.fetch`` to exercise the caching,
 unreachable, and re-save paths). Validation is driven through the real admin
-inline formset, since "at least one video" can't live on the model.
+inline formset, since the "video or thumbnail" rule can't live on the model.
 """
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms.models import inlineformset_factory
 
 from portfolio import oembed
-from portfolio.admin import RequireOneVideoFormSet
+from portfolio.admin import RequireVideoOrThumbnailFormSet
 from portfolio.models import Storyboard, StoryboardVideo
 from portfolio.tests.factories import (
     StoryboardDeckFactory,
@@ -202,8 +203,6 @@ def test_no_videos_yields_no_derived_thumbnail():
 
 
 def test_manual_thumbnail_wins_over_video_poster(monkeypatch):
-    from django.core.files.uploadedfile import SimpleUploadedFile
-
     monkeypatch.setattr(
         oembed, "fetch", lambda url: _oembed(poster_url="https://poster/auto.jpg")
     )
@@ -224,19 +223,22 @@ def test_pdf_stores_file_and_display_name():
     assert pdf.file.read() == b"%PDF-1.4 test"
 
 
-# --- AC3: validation requires at least one video (driven via the real formset) ---
+# --- validation: a storyboard needs a video OR a thumbnail (real formset) ---
+
+_THUMBNAIL = SimpleUploadedFile("thumb.png", b"img-bytes", content_type="image/png")
 
 
-def _video_formset(n_videos):
+def _video_formset(n_videos, *, thumbnail=False):
     """Build the bound video inline formset the change form submits, with the
-    admin's ``RequireOneVideoFormSet`` clean rule wired in. ``extra=0`` mirrors
-    the inline (no always-present blank row), so submitting ``n_videos`` filled
-    rows is how the form expresses "this many videos"."""
-    sb = StoryboardFactory()
+    admin's ``RequireVideoOrThumbnailFormSet`` clean rule wired in. ``extra=0``
+    mirrors the inline (no always-present blank row), so ``n_videos`` filled rows
+    is how the form expresses "this many videos". ``thumbnail`` seeds the parent
+    instance's thumbnail (the rule reads ``self.instance.thumbnail``)."""
+    sb = StoryboardFactory(thumbnail=_THUMBNAIL if thumbnail else "")
     formset_cls = inlineformset_factory(
         Storyboard,
         StoryboardVideo,
-        formset=RequireOneVideoFormSet,
+        formset=RequireVideoOrThumbnailFormSet,
         fields=("order", "url"),
         extra=0,
     )
@@ -256,26 +258,32 @@ def _video_formset(n_videos):
     return formset_cls(data=data, instance=sb, prefix=prefix)
 
 
-def test_formset_invalid_with_no_videos():
-    formset = _video_formset(0)
+def test_formset_invalid_with_no_video_and_no_thumbnail():
+    formset = _video_formset(0, thumbnail=False)
     assert not formset.is_valid()
-    assert "at least one video" in str(formset.non_form_errors()).lower()
+    assert "video or a thumbnail" in str(formset.non_form_errors()).lower()
 
 
-def test_formset_valid_with_one_video():
-    formset = _video_formset(1)
+def test_formset_valid_with_one_video_and_no_thumbnail():
+    formset = _video_formset(1, thumbnail=False)
     assert formset.is_valid(), formset.errors or formset.non_form_errors()
 
 
-def test_formset_invalid_when_last_video_is_deleted():
-    # Editing an existing storyboard: its one video is marked for deletion. The
-    # DELETE-marked row drops out of the live count, so the rule still fires.
+def test_formset_valid_with_thumbnail_and_no_video():
+    # The migrated case: a storyboard with only a thumbnail, no video.
+    formset = _video_formset(0, thumbnail=True)
+    assert formset.is_valid(), formset.errors or formset.non_form_errors()
+
+
+def test_formset_invalid_when_last_video_deleted_and_no_thumbnail():
+    # Editing: the one video is marked for deletion and there's no thumbnail, so
+    # nothing is left to show — the rule fires.
     sb = StoryboardFactory()
     video = StoryboardVideoFactory(storyboard=sb, url="https://vimeo.com/x")
     formset_cls = inlineformset_factory(
         Storyboard,
         StoryboardVideo,
-        formset=RequireOneVideoFormSet,
+        formset=RequireVideoOrThumbnailFormSet,
         fields=("order", "url"),
         extra=0,
         can_delete=True,
@@ -292,4 +300,4 @@ def test_formset_invalid_when_last_video_is_deleted():
     }
     formset = formset_cls(data=data, instance=sb, prefix="videos")
     assert not formset.is_valid()
-    assert "at least one video" in str(formset.non_form_errors()).lower()
+    assert "video or a thumbnail" in str(formset.non_form_errors()).lower()

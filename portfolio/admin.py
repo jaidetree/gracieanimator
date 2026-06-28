@@ -120,13 +120,16 @@ class ComicAdmin(SortableProjectAdmin):
     inlines = [ComicPageInline]
 
 
-class RequireOneVideoFormSet(CustomInlineFormSet):
-    """Enforce the "at least one video" rule on the storyboard change form.
+class RequireVideoOrThumbnailFormSet(CustomInlineFormSet):
+    """Require a storyboard to have *something to show*: at least one video or a
+    manual thumbnail.
 
     The rule can't live on the model: the parent saves before its inline
     children, so ``Storyboard.videos`` is empty during model validation. It
-    belongs here, where the pending inline forms are visible. A row counts when
-    it has data and isn't marked for deletion. Extends sortable2's
+    belongs here, where the pending video forms are visible and ``self.instance``
+    already carries the thumbnail the main form just bound (admin builds the
+    inline formsets against the saved-but-not-committed parent). A video row
+    counts when it has data and isn't marked for deletion. Extends sortable2's
     ``CustomInlineFormSet`` so the drag-order plumbing (``default_order_*``)
     still works on this sortable inline.
     """
@@ -135,20 +138,21 @@ class RequireOneVideoFormSet(CustomInlineFormSet):
         super().clean()
         if any(self.errors):
             return
-        live = [
-            form
+        has_video = any(
+            form.cleaned_data and not form.cleaned_data.get("DELETE", False)
             for form in self.forms
-            if form.cleaned_data and not form.cleaned_data.get("DELETE", False)
-        ]
-        if not live:
-            raise ValidationError("A storyboard requires at least one video.")
+        )
+        if not has_video and not self.instance.thumbnail:
+            raise ValidationError(
+                "A storyboard needs at least one video or a thumbnail."
+            )
 
 
 class StoryboardVideoInline(SortableTabularInline):
-    """Drag-sortable embedded videos; at least one is required."""
+    """Drag-sortable embedded videos; optional when a thumbnail is set."""
 
     model = StoryboardVideo
-    formset = RequireOneVideoFormSet
+    formset = RequireVideoOrThumbnailFormSet
     extra = 0
     fields = ("order", "url")
 

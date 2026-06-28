@@ -197,8 +197,9 @@ class Storyboard(Project):
 
     Media lives on three ordered child collections — ``StoryboardVideo``
     (Vimeo/YouTube), ``StoryboardDeck`` (Speakerdeck), and ``StoryboardPDF``
-    (uploaded file). At least one video is required (enforced by the admin
-    inline formset, since the parent saves before its children). The thumbnail
+    (uploaded file). A storyboard needs something to show — at least one video
+    *or* a manual thumbnail — enforced by the admin inline formset (the parent
+    saves before its children, so it can't be a model rule). The thumbnail
     auto-derives from the first video's oembed poster when blank; a manual
     upload wins, and the absence of any poster leaves it to a CSS color block
     downstream.
