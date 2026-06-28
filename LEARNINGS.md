@@ -2,303 +2,217 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+> **Test env leak (recurring).** Local `.envrc.local` exports remote `DATABASE_URL`
+> (RDS, no createdb perm → `pytest` dies "permission denied to create database")
+> and `R2_*` staging vars (→ `R2_ENABLED=bool(R2_BUCKET_NAME)` flips
+> `STORAGES["default"]` to S3, so FileField/ImageField tests silently upload to the
+> *real* bucket — the only tell is a stray `botocore` auth `DeprecationWarning`).
+> Run with the storage env stripped to exercise `FileSystemStorage` like CI:
+> `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
+> (CI has the *inverse* problem — see Slice 14.)
+
+## In-place page-swapper / HTMX + Playwright E2E (Slice 7)
+
+- **`hx-boost` on a wrapper + inherited `hx-select` = client swap with zero new
+  server code.** Put `hx-boost="true"` plus `hx-target`/`hx-select`/`hx-swap`/
+  `hx-push-url` on one `#comic-viewer` div; every `<a href>` inside is boosted and
+  *inherits* those attrs (only `hx-get` is per-link, and boost supplies it from the
+  href). The server re-renders the whole page; `hx-select="#comic-viewer"` extracts
+  just that fragment from the full response — **no partial template, no
+  HTMX-request detection, no new endpoint.** Chosen over Alpine precisely because
+  the server keeps re-rendering: the chevrons' server-side prev/next `{% if %}`
+  conditionals (and every Slice 6 test) stay correct after a swap. Alpine would
+  need both chevrons always in the DOM, breaking the page-1-has-no-prev asserts.
+- **Keep links that change *more* than the fragment OUTSIDE the wrapper.** The
+  back-link and sibling (prev/next-comic) bar live outside `#comic-viewer` so they
+  navigate normally; boosting them would swap only the viewer and leave a stale
+  title/sibling bar.
+- **A single-line `{# … #}` comment IS stripped from output** (unlike a multi-line
+  one — see Slice 13). To leave a stable structural anchor for a test (e.g. proving
+  the sibling bar renders *after* the wrapper closes), use an HTML comment
+  `<!-- /#comic-viewer -->`, which survives.
+- **Playwright E2E wiring (the non-obvious parts):** `live_server` + the
+  `page` fixture needs `@pytest.mark.django_db(transaction=True)` so the factory
+  rows are committed for the server thread's separate connection. Playwright's sync
+  API holds an asyncio loop in the test thread, tripping Django's async guard on
+  those ORM calls → set `os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "1")`
+  (safe: the browser runs on its own thread, no real concurrent DB access). Note it
+  leaks to the whole session because the e2e module is imported at *collection*
+  even when deselected — harmless with no async tests. Mark `e2e` and deselect by
+  default (`-m "not live and not e2e"`), mirroring `live`.
+- **The no-reload proof needs a sentinel, not just URL/src asserts.** A full
+  navigation also changes the URL and the image `src`, so those don't distinguish a
+  swap from a reload. Set `window.__flag` *and* tag a node *outside* the wrapper
+  (the `<h1>`) before the click; both surviving proves the swap was reload-free
+  *and* scoped to the fragment.
+- **`live_server` serves vendored static via staticfiles** (DEBUG=True under
+  `APP_ENV=test` enables finders), so the vendored `static/js/htmx.min.js` loads.
+  Media isn't served, but the E2E only reads the `src` attribute, never the bytes.
+  Strip the R2/`DATABASE_URL` env for E2E too (factories upload images).
+
 ## Inline file attachments (Slice 18)
 
-- **`FileField`, not `ImageField`, when the requirement names PDFs / "other file
-  types."** `ImageField` runs Pillow validation and silently rejects non-images,
-  so it can't hold the PDFs the issue asked for. `FileField` is permissive — and
-  deliberately *no* `validators=` restricting extensions, since the ask was
-  "images, PDFs, or other." The load-bearing test uploads a non-image
-  (`SimpleUploadedFile("brief.pdf", b"%PDF…")`) and asserts it saves — that's
-  the implicit requirement a naive `ImageField` implementation gets wrong.
-- **No ordering ask → plain `admin.TabularInline`, not the Slice 17 sortable2
-  machinery.** Co-locating uploads on the page's change form (the inline itself)
-  is what "easier to edit" needed; a per-file label/`description` was scope to
-  drop (minimal elements). `file` stays required — an empty `extra=1` row is
-  skipped by the formset, so it forces no phantom upload (none of Slice 16's
-  has_changed prefill trap applies, since nothing is prefilled).
-- **Local FileField tests silently upload to the *real* R2 bucket** when the
-  `R2_*` env vars are present (same leak class as Slice 14's `DATABASE_URL`:
-  `R2_ENABLED = bool(R2_BUCKET_NAME)` flips `STORAGES["default"]` to
-  S3Boto3Storage). A passing test gives no hint — watch for a stray
-  `botocore` auth `DeprecationWarning` in the output. Run the suite with the
-  storage env unset to exercise `FileSystemStorage` like CI does:
-  `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID
-  -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
+- **`FileField`, not `ImageField`, for "PDFs / other file types."** `ImageField`
+  runs Pillow validation and silently rejects non-images. Use `FileField` with
+  *no* extension `validators=`. Load-bearing test: upload a
+  `SimpleUploadedFile("brief.pdf", b"%PDF…")` and assert it saves — the test a
+  naive `ImageField` fails.
+- **No ordering ask → plain `admin.TabularInline`, not Slice 17's sortable2.** Keep
+  `file` required: an empty `extra=1` row is skipped by the formset, so it forces
+  no phantom upload.
 
 ## Drag-and-drop sortable admin (Slice 17)
 
-- **`django-admin-sortable2` fully *owns* the sort field — it doesn't just add a
-  handle.** On the changelist `get_list_display` replaces the sort field with the
-  `_reorder_` handle (or inserts it at index 0 when the field is absent), and
-  `get_fields` strips the sort field from the change form; the inline forces the
-  field to a `HiddenInput`; `save_model`/`save_new` auto-number new rows to the
-  end. So Slice 16's whole order-UX layer (`OrderedAdminMixin`,
-  `ComicAdmin.save_formset`, `comic_page_order.js`) became redundant and was
-  removed — the library now assigns order.
-- **Handle-on-the-left = OMIT the sort field from `list_display`.** Keeping
-  `order` in `list_display` makes sortable2 swap it *in place* (handle lands
-  mid-table); dropping it makes sortable2 insert `_reorder_` at index 0. The
-  issue wanted the handle on the left, so `list_display` excludes `order`.
-- **To retain a typeable number, re-add the sort field in `get_fields` for an
-  existing object only** (`obj is not None`). That gives a manual order input on
-  the change form while the add form omits it (new pieces auto-number to the
-  end). The **inline can't keep a numeric input** — sortable2 hard-codes its
-  order widget to `HiddenInput`; inlines are drag-only.
-- **The sort field must NOT stay in `list_editable`** once sortable2 owns it: it
-  isn't a displayed column, so an inline input has nowhere to render. Other
-  fields (`published`/`featured`) coexist fine in `list_editable` beside drag.
-- **sortable2's drag only reindexes the *moved span*, not the whole
-  collection.** Its `onEnd` JS (`adminsortable2.js`) computes the rows between
-  old/new index, anchors them to the neighbour's order, and POSTs only those to
-  `{"updatedItems": [[pk, order], …]}`; gaps elsewhere survive (hence its
-  `manage.py reorder` command). To satisfy "clean up the *entire* collection,"
-  override `_update_order`: call `super()`, then `bulk_update` every row to
-  `1..N` by current order. `order` has no unique constraint, so no collision.
-- **The bulk reorder endpoint is testable headlessly** via pytest-django's
-  `admin_client`: `reverse("admin:<app>_<model>_sortable_update")`, POST JSON
-  `{"updatedItems": [[pk, neworder], …]}` (GET → 405). Beats trying to drive the
-  JS. Render-level checks (`class="drag handle"` present, `_reorder_` before
-  `title` in HTML, `name="order"` on the change form) catch the wiring the
-  structural asserts miss.
-- **A `SortableInlineAdminMixin` inline asserts its parent ModelAdmin is a
-  `SortableAdminBase`** (in `__init__`), so the parent must use
-  `SortableAdminMixin`. Use `SortableTabularInline` (not bare
-  `SortableInlineAdminMixin` + `TabularInline`) — only the former sets the
-  sortable row template that renders the handles. Add `"adminsortable2"` to
-  `INSTALLED_APPS` for its templates/static.
+- **`django-admin-sortable2` fully *owns* the sort field.** Changelist
+  `get_list_display` replaces the sort field with the `_reorder_` handle (or
+  inserts at index 0 if absent); `get_fields` strips it from the change form; the
+  inline forces it to `HiddenInput`; `save_model`/`save_new` auto-number new rows
+  to the end. (This is why Slice 16's whole order-UX layer was removed.)
+- **Handle-on-the-left = OMIT the sort field from `list_display`.** Keeping it makes
+  sortable2 swap the handle in *in place* (mid-table); dropping it inserts
+  `_reorder_` at index 0.
+- **Re-add the sort field in `get_fields` for `obj is not None` only** to keep a
+  typeable order input on the existing-object change form (add form omits it,
+  auto-numbers). Inlines *can't* keep a numeric input — sortable2 hard-codes the
+  order widget to `HiddenInput`, drag-only.
+- **The sort field must NOT stay in `list_editable`** (not a displayed column, so
+  an inline input has nowhere to render). `published`/`featured` coexist fine.
+- **Drag only reindexes the *moved span*, not the whole collection.** `onEnd` POSTs
+  `{"updatedItems": [[pk, order], …]}` for the moved rows only; gaps elsewhere
+  survive. For "clean up the *entire* collection," override `_update_order`:
+  `super()` then `bulk_update` every row to `1..N` by current order (`order` has no
+  unique constraint).
+- **Test the reorder endpoint headlessly** via `admin_client`:
+  `reverse("admin:<app>_<model>_sortable_update")`, POST that JSON (GET → 405).
+  Render-level checks (`class="drag handle"`, `_reorder_` before `title`,
+  `name="order"` on change form) catch the wiring structural asserts miss.
+- **Use `SortableTabularInline`** (not bare `SortableInlineAdminMixin` +
+  `TabularInline`) — only it sets the handle row template. The inline asserts its
+  parent is a `SortableAdminBase`, so the parent ModelAdmin needs
+  `SortableAdminMixin`. Add `"adminsortable2"` to `INSTALLED_APPS`.
 
 ## Linter + CI (Slice 14)
 
-- **Ruff is the whole toolchain: linter *and* Black-compatible formatter in
-  one binary.** It natively understands the `E402/F401/F403` codes already in
-  the codebase's `# noqa`, and installs via the existing `uv` (`uvx ruff …`,
-  no project install needed to measure). Config lives in `ruff.toml` (not
-  `pyproject.toml`) to match the repo's one-file-per-tool convention
-  (pytest.ini) and avoid implying this is a packaged project. `ruff.toml` uses
-  bare `[lint]`/`[format]` tables — not the `[tool.ruff.lint]` nesting a
-  pyproject needs.
-- **Delegate line length to the formatter; ignore `E501`.** Selecting the `E`
-  group pulls in `E501` (line-too-long), which the formatter deliberately
-  won't fix on comments/strings — so with `E501` on, those lines stay red and
-  CI can't go green without manual rewraps. Ruff's *default* select already
-  omits `E501` for this reason. `ignore = ["E501"]` kept the entire lint diff
-  to one unused import; the only churn was `ruff format` reflowing 11
-  hand-authored files (measured first with `ruff format --check` before
-  applying — don't let `--fix`/`format` rewrite as an unseen side effect).
-- **Exclude generated migrations from both lint and format** via top-level
-  `extend-exclude = ["*/migrations/*"]`. Django emits them; `ruff format`
-  wanted to rewrite 5 of them otherwise. With them excluded the format set
-  drops from 17 → 11 files.
-- **CI Postgres service needs an explicit TCP `DATABASE_URL` — the inverse of
-  the local `.envrc.local` problem.** Locally the leak is too *much* env
-  (remote `DATABASE_URL` clobbering the socket default); in CI the danger is
-  too *little* — `config.test_settings` forces `APP_ENV=test` but base settings
-  still read `DATABASE_URL`, defaulting to a unix-socket URL the GitHub
-  `services: postgres` container (TCP only) can't answer. The `test` job must
-  set `DATABASE_URL=postgres://postgres:postgres@localhost:5432/gracie`. The
-  YAML is the one part unverifiable locally — confirm on the first real run.
-- **"Run tests then lint" = `needs: test`.** Two jobs, `lint` gated on `test`,
-  triggered on `django` push/PR only (not `main`, the legacy ClojureScript
-  stack whose `deploy.yml` is left untouched). Scoped to Python/Ruff; the lone
-  JS file and templates are out-of-scope follow-ups, not eslint/djlint creep.
+- **Ruff is linter *and* Black-compatible formatter in one binary**, runs via
+  existing `uv` (`uvx ruff …`). Config in `ruff.toml` (repo's one-file-per-tool
+  convention) using bare `[lint]`/`[format]` tables, not `[tool.ruff.lint]`.
+- **Delegate line length to the formatter; `ignore = ["E501"]`.** The `E` group
+  pulls in `E501`, which the formatter won't fix on comments/strings → permanently
+  red lines CI can't green. Measure with `ruff format --check` before applying;
+  don't let `--fix`/`format` rewrite as an unseen side effect.
+- **`extend-exclude = ["*/migrations/*"]`** — Django emits them; `ruff format`
+  wanted to rewrite them otherwise.
+- **CI Postgres needs an explicit TCP `DATABASE_URL` — the inverse of the local
+  leak.** `config.test_settings` forces `APP_ENV=test` but base settings still read
+  `DATABASE_URL`, defaulting to a unix-socket URL the `services: postgres`
+  container (TCP only) can't answer. Set
+  `DATABASE_URL=postgres://postgres:postgres@localhost:5432/gracie`. YAML is the
+  one part unverifiable locally — confirm on first real run.
+- **"Run tests then lint" = `needs: test`.** Two jobs, `lint` gated on `test`, on
+  `django` push/PR only (not `main`, the legacy ClojureScript stack).
 
 ## Auto-increment order field (Slice 16) — superseded by Slice 17 for the admin UX
 
-> Slice 17 replaced this layer with drag-and-drop; the Django facts below still
-> hold, but `OrderedAdminMixin` / `save_formset` / `comic_page_order.js` are gone.
+> Drag-and-drop replaced this layer; `OrderedAdminMixin` / `save_formset` /
+> `comic_page_order.js` are gone. These Django facts still hold:
 
-- **A `PositiveIntegerField(default=0)` renders its admin form input as
-  `value="0"`, not empty** — the non-callable model default propagates to the
-  form field's `initial`. So client JS that prefills order must treat `"0"` as
-  "unset" (`current !== "" && current !== "0"`), mirroring the server's
-  `order == 0` sentinel. A naive `value !== ""` guard bails on every row and the
-  prefill is silently dead — the saved data still looks right because the
-  server backstop does the work, so the broken JS hides in plain sight.
-- **Auto-increment lives in the admin (`save_model` + `save_formset`), not
-  `model.save()`.** `default=0` can't tell "user typed 0" from "unset", and
-  factories/tests create rows with explicit `order=0`; computing in `save()`
-  would clobber them. Admin-layer keying on *new object + order==0* leaves all
-  factory-driven tests (which never touch the admin) untouched, needs no
-  migration, and matches the "Order Field UX" framing.
-- **Next order = `max(order)+1` over ALL rows of the type, not published-only.**
-  The issue said "count of published items + 1", but maxing over published-only
-  can collide with a hidden item's order (unpublished at 2 + one published → 2);
-  count+1 also collides on any delete-gap. Max-over-all + 1 slots cleanly at the
-  end. ComicPage numbering is scoped per comic and assigned in form order so
-  several rows added at once get distinct increasing values.
-- **Pre-fill the parent add form via `ModelAdmin.get_changeform_initial_data`,
-  not JS.** It seeds the add view's initial values server-side, so the `order`
-  field shows `max+1` instead of the model default 0. Unlike an inline's empty
-  extra row, the main add form is always a real submitted form, so seeding its
-  initial carries no has_changed/validation trap. `setdefault("order", …)` lets
-  an order passed in the URL still win; `save_model` remains the backstop.
-- **You can't prefill the always-present `extra` inline row on page load.**
-  Setting `order` on an otherwise-empty extra form makes `has_changed()` True,
-  so Django stops skipping it and runs full validation → "image: This field is
-  required" blocks the save (verified: order=6+no image → invalid; order=0 →
-  valid/skipped). Fix is `extra = 0` — no blank row sits showing 0, and pages
-  are added on demand via "Add another", which fires `formset:added` so the
-  prefill runs on a row the editor actually means to fill.
+- **A `PositiveIntegerField(default=0)` renders its admin input as `value="0"`, not
+  empty** (non-callable default propagates to the form field's `initial`). Client
+  JS treating order as "unset" must check `current !== "" && current !== "0"`.
+- **You can't prefill the always-present `extra` inline row on page load.** Setting
+  `order` on an empty extra form makes `has_changed()` True, so Django runs full
+  validation → "image: This field is required" blocks the save (verified: order=6
+  + no image → invalid; order=0 → skipped/valid). Fix is `extra = 0`; add rows on
+  demand via "Add another", which fires `formset:added`.
 - **Django 5 fires a native `formset:added` event** (`event.target` is the new
-  row), replacing the old jQuery `formset:added` with a `$row` arg. App static
-  (`portfolio/static/portfolio/…`) is picked up by AppDirectoriesFinder; wire it
-  via the inline's `Media.js`.
-- **Testing `save_formset` without the admin client:** build the same bound
-  `inlineformset_factory` formset the admin would (management-form keys + a
-  generated JPEG per row), then call `admin.save_formset(None,
-  SimpleNamespace(instance=comic), formset, change=False)` — it only uses
-  `form.instance`. Avoids superuser-auth/URL/multipart fragility while
-  exercising the real numbering path.
+  row), replacing the old jQuery version. App static is picked up by
+  AppDirectoriesFinder; wire via the inline's `Media.js`.
 
 ## Admin field refinements (Slice 13)
 
-- **Model field declaration order drives the admin change-form order when the
-  ModelAdmin sets no `fields`/`fieldsets`/`form`.** "Move featured below
-  published" in the form was achieved by reordering the two fields on the
-  abstract `Project` base — the auto-built form follows `_meta.fields`. So the
-  ordering test asserts on `_meta.fields` (not `get_fields()`, which also pulls
-  in reverse relations like Comic's `pages`).
-- **Reordering fields generates no migration; only the `default` change did.**
-  Moving `published` above `featured` is a pure source-order edit with no schema
-  delta, so `makemigrations` emitted only the three `AlterField`s for the new
-  `default=True`. Field position isn't tracked in migration state.
-- **The `published` default flips to True because the toggle is mostly used to
-  *unpublish* later.** New entries are live by default; the rare draft unchecks
-  it. Existing factories already set `published=True` explicitly, so the default
-  change broke no published-filtering tests.
-- **`list_editable` column order is cosmetic — `list_display` drives the
-  changelist column layout.** Both were reordered for consistency, but only the
-  `list_display` reorder is load-bearing.
+- **Model field declaration order drives the auto-built admin change-form order**
+  (when no `fields`/`fieldsets`/`form`). "Move featured below published" = reorder
+  the two fields on the abstract `Project` base. Assert on `_meta.fields`, not
+  `get_fields()` (which also pulls reverse relations like Comic's `pages`).
+- **Reordering fields generates no migration** — pure source-order edit, no schema
+  delta. Only the `published` `default=True` flip emitted `AlterField`s.
+- **`list_editable` column order is cosmetic — `list_display` drives the changelist
+  layout.**
 
 ## Homepage featured grid (Slice 11)
 
 - **An ordered registry of `(model, label, reverse_lazy(url))` is the seam for a
-  cross-model, partially-built selection.** The homepage selects one
-  featured+published piece per type ordered storyboards → illustrations →
-  sketchbook → comics, but the Storyboard model doesn't exist yet (Slice 8 / #10
-  still open). `FEATURED_TYPES` holds the three built types plus a commented-out
-  predicted Storyboard entry; `featured_projects()` loops it and skips empties.
-  Storyboards slot in by uncommenting one line when #10 lands — so the slice
-  ships 3-of-4 honestly without faking the missing model. The "combines the four
-  models" / storyboard-first-ordering ACs are *not* fully satisfied until then;
-  don't tick them as done.
-- **`reverse_lazy` puts the section URL directly in the registry tuple.** There's
-  no importable URL object in Django, but `reverse_lazy("name")` is import-safe
-  (defers resolution), so the tuple carries the URL value itself rather than a
-  name the view must `reverse()` per request.
-- **The grid labels the content *type*, not the piece.** Visitors navigate to
-  sections, so each cell shows "Illustrations" / "Comics" etc. (the registry
-  label), with the featured piece supplying only the thumbnail image. Tests that
-  need to distinguish *which* piece was selected (one-per-type) assert on the
-  chosen piece's rendition URL, since the piece title isn't rendered.
-- **"Falls back gracefully when a type has no featured piece" drops out of the
-  registry, it isn't a separate branch.** A type with no eligible piece (or a
-  type not yet in the registry at all) simply contributes nothing to the list —
-  same mechanism covers both "no featured yet" and "model doesn't exist".
+  cross-model, partially-built selection.** `FEATURED_TYPES` holds built types plus
+  a commented-out Storyboard entry (model not built until #10);
+  `featured_projects()` loops it and skips empties — a missing/unfeatured type
+  simply contributes nothing (one mechanism for both cases). The
+  "combines four models" / storyboard-first ACs are *not* done until #10 lands.
+- **`reverse_lazy` in the tuple** is import-safe (defers resolution), so the
+  registry carries the URL value, not a name to `reverse()` per request.
+- **The grid labels the content *type*, not the piece** (visitors navigate to
+  sections). Tests that need *which* piece was selected assert on its rendition
+  URL, since the title isn't rendered.
 - **`.first()` on `filter(published=True, featured=True)` makes "one per type"
-  deterministic for free** via `Project.Meta.ordering = ["order", "title"]` — the
-  lowest-`order` featured piece wins, so several featured pieces of one type need
-  no extra tie-break flag.
-- **`thumbnail_url` is not uniformly square across types, so normalize in CSS.**
-  Image types give a 400² `ResizeToFill` square; Comic gives a fit-width portrait
-  (`cover.grid_image`, `ResizeToFit(600)` on tall pages). `aspect-square
-  object-cover` on the `<img>` keeps the grid even with no model change — the
-  square treatment `THUMBNAIL_SIZE`'s comment already anticipated for this surface.
+  deterministic** via `Project.Meta.ordering = ["order", "title"]`.
+- **`thumbnail_url` isn't uniformly square across types** (image types → 400²
+  `ResizeToFill`; Comic → fit-width portrait). Normalize with `aspect-square
+  object-cover` on the `<img>` — no model change.
 
 ## Comic type / multi-image projects (Slice 6)
 
-- **"Full resolution in detail" means the original, not a capped rendition.**
-  AC#5's contrast is rendition-vs-full, not small-vs-large rendition. A
-  `ResizeToFit(CONTAINER_WIDTH)` rendition downscales most comic pages, so the
-  detail view serves `page.image.url` directly; only a small `grid_image`
-  rendition exists (for the index). This *breaks* the gallery's "serve rendition
-  not original" rule — that rule was a per-surface display-width choice (Slice
-  3/4), not a global ban, and originals serve fine from the same storage. So the
-  detail test asserts the original IS served, the opposite of
-  `test_gallery_serves_rendition_not_original`.
+- **"Full resolution in detail" means the original, not a capped rendition.** The
+  detail view serves `page.image.url` directly (only a small `grid_image` rendition
+  exists, for the index). This intentionally breaks the gallery's "serve rendition
+  not original" rule — that was a per-surface width choice, not a global ban. Detail
+  test asserts the original IS served.
 - **A multi-image project = parent `Project` + child rows, not an array field.**
-  `Comic(Project)` carries no media; an ordered `ComicPage` (FK + `order`,
-  `Meta.ordering = ["order", "id"]`) holds the images. This buys an authored-
-  order admin `TabularInline` and per-page imagekit renditions for free. The
-  auto-thumbnail fallback chains through the children:
-  `Comic.derived_thumbnail_url` → first page's `grid_image.url` (None when no
-  pages), reusing the `Project.thumbnail_url` manual-wins property unchanged.
-- **Page 1 has two URLs by design.** Detail is served by one view bound to both
-  `/comics/<slug>/` (page defaults to 1) and `/comics/<slug>/page/<int:n>/`;
-  `/page/1/` resolves identically, but page 1's *canonical* URL is the bare one,
-  so the prev link from page 2 targets `/comics/<slug>/`. Bounds (`n` outside
-  `1..count`) raise `Http404`. Tests pin the exact prev/next hrefs at both
-  boundaries, not just the happy middle page.
+  `Comic(Project)` carries no media; ordered `ComicPage` (FK + `order`,
+  `Meta.ordering = ["order", "id"]`) holds images. `Comic.derived_thumbnail_url` →
+  first page's `grid_image.url` (None when no pages).
+- **Page 1 has two URLs by design.** One view bound to `/comics/<slug>/` (page
+  defaults to 1) and `/comics/<slug>/page/<int:n>/`; page 1's canonical URL is the
+  bare one. `n` outside `1..count` raises `Http404`. Tests pin exact prev/next
+  hrefs at both boundaries.
 
 ## oembed boundary (Slice 5)
 
-- **Single HTTP seam with stdlib `urllib`, mocked at the imported name.** The
-  oembed client (`portfolio/oembed.py`) is the one place external provider HTTP
-  happens (ADR-0002). It uses `urllib.request` (no `requests` dependency) and
-  tests patch `portfolio.oembed.urlopen` — the name *as imported into the
-  module*, not `urllib.request.urlopen` — so endpoint construction and JSON
-  parsing are exercised, not just an internal stub. `urllib` raises `HTTPError`
-  (a `URLError` subclass) for non-2xx, so one `except URLError` cleanly covers
-  both network-down and provider-4xx/5xx as `OEmbedError`.
-- **Vimeo oembed real-world quirks (carried from the legacy stack, unverified
-  against live here):** Vimeo's `thumbnail_url` comes back *extension-less* and
-  404s unless `.jpg` is appended; Vimeo also gates oembed on a whitelisted
-  `Referer` (`https://gracieanimator.squarespace.com`). YouTube/Speakerdeck need
-  neither. Confirm these against live providers when the storyboard-save consumer
-  wires `fetch()` in.
-- **Speakerdeck 403s the default `Python-urllib` User-Agent.** Its oembed
-  endpoint requires a browser-like `User-Agent`; Vimeo/YouTube don't care. A live
-  integration test (`test_oembed_live.py`, opt-in via `-m live`) caught this —
-  the mocked suite never would. The fix was a UA header on every oembed request.
-  Live tests are deselected by default (`pytest.ini: -m "not live"`); a live
-  failure often just means a fixture URL rotted, not a regression.
-
-## Local test env (Slice 5)
-
-- **The shell's `.envrc.local` leaks staging env into the test run.** It exports
-  `DATABASE_URL` (remote RDS, no createdb perm → `pytest` dies with "permission
-  denied to create database", `SystemExit: 2` on every DB test) and `R2_*`
-  staging vars (→ `R2_ENABLED` True, failing `test_storage`). `config.settings`
-  defaults to local `postgres:///gracie` only when `DATABASE_URL` is unset. Run
-  the suite with those vars stripped:
-  `env -u DATABASE_URL -u R2_BUCKET_NAME python -m pytest`. (`make test` assumes
-  the plain direnv/Nix shell without the `.local` overrides.)
+- **Single HTTP seam with stdlib `urllib`, mocked at the imported name.**
+  `portfolio/oembed.py` is the one place provider HTTP happens (ADR-0002). Tests
+  patch `portfolio.oembed.urlopen` (the name as imported, not
+  `urllib.request.urlopen`). `urllib` raises `HTTPError` (a `URLError` subclass) for
+  non-2xx, so one `except URLError` covers network-down and provider-4xx/5xx as
+  `OEmbedError`.
+- **Provider quirks (from legacy stack, confirm against live):** Vimeo's
+  `thumbnail_url` comes back extension-less and 404s without `.jpg`; Vimeo gates
+  oembed on a whitelisted `Referer`
+  (`https://gracieanimator.squarespace.com`). Speakerdeck 403s the default
+  `Python-urllib` User-Agent → needs a browser-like UA on every request
+  (caught by opt-in `test_oembed_live.py`, `-m live`; deselected by default). A live
+  failure often means a fixture URL rotted, not a regression.
 
 ## Model abstraction (Slice 4)
 
-- **imagekit `ImageSpecField`s are descriptors, not DB columns**, so they never
-  appear in migrations. To DRY two structurally-identical types (Illustration /
-  SketchbookSample per ADR-0003), extract a shared abstract base
-  (`ImageProject(Project)`) holding the renditions (`gallery_image`,
-  `thumbnail_rendition`) and `derived_thumbnail_url` — but **keep the `image`
-  field on each concrete subclass** so each gets its own `upload_to` namespace.
-  Moving only the spec fields up is migration-free for the existing type;
-  unifying `image` onto the base with a callable `upload_to` would instead emit
-  an `AlterField` rewriting the existing upload path. Verify with
-  `makemigrations --dry-run` (expect only the new model's migration). The
-  unchanged existing test suite is the guard that spec-field-on-abstract works.
+- **imagekit `ImageSpecField`s are descriptors, not DB columns** — never appear in
+  migrations. To DRY two identical types (ADR-0003), extract an abstract
+  `ImageProject(Project)` base holding renditions (`gallery_image`,
+  `thumbnail_rendition`) + `derived_thumbnail_url`, but **keep the `image` field on
+  each concrete subclass** (own `upload_to` namespace, migration-free). Unifying
+  `image` onto the base would emit an `AlterField` rewriting the upload path. Verify
+  with `makemigrations --dry-run` (expect only the new model's migration).
 
 ## Storage / R2 (Slice 3)
 
-- **Gate the media storage backend on `R2_BUCKET_NAME` presence, not `APP_ENV`.**
-  Switching `STORAGES["default"]` to S3 unconditionally breaks every test and
-  local dev: factories that save an `ImageField` would make a network call with
-  no creds. Local FS stays the default; R2 turns on only when the bucket var is
-  set. A prod guard (`APP_ENV=production` + no bucket → `ImproperlyConfigured`)
-  prevents silently writing to Heroku's ephemeral disk.
+- **Gate media storage on `R2_BUCKET_NAME` presence, not `APP_ENV`.** Switching
+  `STORAGES["default"]` to S3 unconditionally breaks every test/local dev (factories
+  saving an `ImageField` → network call, no creds). Local FS stays default. Prod
+  guard: `APP_ENV=production` + no bucket → `ImproperlyConfigured`.
 - **imagekit renditions follow the `"default"` storage alias automatically**
-  (`IMAGEKIT_DEFAULT_FILE_STORAGE` resolves to `DEFAULT_STORAGE_ALIAS` →
-  `storages["default"]`). No extra imagekit config needed for renditions to land
-  on R2.
-- **R2 public serving gotcha:** the account endpoint
-  (`<acct>.r2.cloudflarestorage.com`) only answers SigV4-*signed* requests.
-  With `querystring_auth=False` and no custom domain, `url()` yields an unsigned
-  URL that 401s on a public GET — so `<img src>` won't load. Public image
-  serving REQUIRES `R2_CUSTOM_DOMAIN` (a mapped domain or `pub-*.r2.dev`) plus
-  bucket public access enabled. The live AC #5 round-trip can't pass without it.
-- **Testing import-time settings branches:** config/settings.py decides the
-  storage backend at import time from env vars. Exercise the branches by
-  importing `config.settings` in a clean subprocess with a controlled env
-  (`portfolio/tests/test_storage.py`); a conftest fixture or `override_settings`
-  runs too late to steer import-time decisions.
+  (`IMAGEKIT_DEFAULT_FILE_STORAGE` → `DEFAULT_STORAGE_ALIAS`). No extra config.
+- **R2 public serving requires `R2_CUSTOM_DOMAIN`** (mapped domain or `pub-*.r2.dev`)
+  + bucket public access. The account endpoint
+  (`<acct>.r2.cloudflarestorage.com`) only answers SigV4-signed requests, so with
+  `querystring_auth=False` and no custom domain, `url()` yields an unsigned URL that
+  401s on public GET — `<img src>` won't load.
+- **Test import-time settings branches in a clean subprocess** with a controlled env
+  (`portfolio/tests/test_storage.py`) — settings decides the backend at import time,
+  so a conftest fixture / `override_settings` runs too late.
