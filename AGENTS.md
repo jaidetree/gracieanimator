@@ -6,6 +6,10 @@ This is a greenfield Django + Postgres rebuild of Gracie's portfolio site, repla
 
 The PRD and primary source of truth is **GitHub issue #2**, broken into vertical-slice sub-issues #3–#15 (labeled `ready-for-agent`). Consult issue #2 when scoping or validating work against the success criteria. Design decisions live in `CONTEXT.md` (domain glossary) and `docs/adr/`.
 
+### Live reference site
+
+The current production site is live at **https://gracieanimator.fly.dev**. It runs the legacy stack and is the source of truth for **markup and UI** — when rebuilding a page or component, fetch the matching live URL and match its DOM structure, Tailwind classes, and visual layout. Example: a comic detail page is `https://gracieanimator.fly.dev/comics/<slug>/`. Prefer this over the `main`-branch ClojureScript source when checking how something should look, since it reflects the deployed markup.
+
 ### Scaffolding
 
 Prefer Django's built-in generators and scaffolding (`manage.py startapp`, `startproject`, management commands) over hand-writing files; they produce idiomatic, convention-correct structure with less drift. Only write files raw when no generator fits.
