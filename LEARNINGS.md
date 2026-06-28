@@ -2,6 +2,26 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## Admin field refinements (Slice 13)
+
+- **Model field declaration order drives the admin change-form order when the
+  ModelAdmin sets no `fields`/`fieldsets`/`form`.** "Move featured below
+  published" in the form was achieved by reordering the two fields on the
+  abstract `Project` base — the auto-built form follows `_meta.fields`. So the
+  ordering test asserts on `_meta.fields` (not `get_fields()`, which also pulls
+  in reverse relations like Comic's `pages`).
+- **Reordering fields generates no migration; only the `default` change did.**
+  Moving `published` above `featured` is a pure source-order edit with no schema
+  delta, so `makemigrations` emitted only the three `AlterField`s for the new
+  `default=True`. Field position isn't tracked in migration state.
+- **The `published` default flips to True because the toggle is mostly used to
+  *unpublish* later.** New entries are live by default; the rare draft unchecks
+  it. Existing factories already set `published=True` explicitly, so the default
+  change broke no published-filtering tests.
+- **`list_editable` column order is cosmetic — `list_display` drives the
+  changelist column layout.** Both were reordered for consistency, but only the
+  `list_display` reorder is load-bearing.
+
 ## Homepage featured grid (Slice 11)
 
 - **An ordered registry of `(model, label, reverse_lazy(url))` is the seam for a
