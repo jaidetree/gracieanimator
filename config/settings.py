@@ -97,16 +97,50 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# Uploaded media (artwork). Local filesystem for now; Slice 3 swaps the default
-# storage backend to Cloudflare R2 (django-storages), at which point imagekit
-# generates renditions against R2 instead.
+# Uploaded media (artwork) lives on Cloudflare R2 in any real deploy (ADR-0001):
+# Heroku's filesystem is ephemeral, so uploads and imagekit renditions must not
+# touch local disk. R2 is S3-compatible, reached via django-storages + boto3.
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# R2 is enabled by presence of a bucket name; everything else is read from env.
+# When unset (local dev, tests) the default storage stays on the local
+# filesystem, so neither requires R2 credentials or a network round-trip.
+R2_BUCKET_NAME = env("R2_BUCKET_NAME", default="")
+R2_ENABLED = bool(R2_BUCKET_NAME)
+
+if R2_ENABLED:
+    default_storage = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": R2_BUCKET_NAME,
+            "endpoint_url": env("R2_ENDPOINT_URL"),
+            "access_key": env("R2_ACCESS_KEY_ID"),
+            "secret_key": env("R2_SECRET_ACCESS_KEY"),
+            # R2 ignores regions but boto3 requires one; "auto" is R2's value.
+            "region_name": "auto",
+            "signature_version": "s3v4",
+            # R2 has no ACLs and serves a public portfolio: no per-object ACL,
+            # and plain (unsigned) URLs so cached <img> src stays stable.
+            "default_acl": None,
+            "querystring_auth": False,
+            # Don't clobber a same-named upload; keep distinct objects.
+            "file_overwrite": False,
+            # Optional public hostname (custom domain or pub-*.r2.dev) that
+            # serves the bucket; when set, media URLs point here instead of the
+            # private account endpoint.
+            "custom_domain": env("R2_CUSTOM_DOMAIN", default="") or None,
+        },
+    }
+else:
+    default_storage = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # Media: R2 in deploys, local filesystem otherwise (see above).
+    "default": default_storage,
+    # Static (CSS/JS) is always served by WhiteNoise, independent of media.
+    # Manifest hashing only in prod; plain storage keeps dev/tests simple.
     "staticfiles": {
-        # Manifest hashing only in prod; plain storage keeps dev/tests simple.
         "BACKEND": (
             "django.contrib.staticfiles.storage.StaticFilesStorage"
             if not IS_PROD
@@ -126,6 +160,10 @@ if IS_PROD:
         raise ImproperlyConfigured("SECRET_KEY must be set when APP_ENV=production")
     if "*" in ALLOWED_HOSTS:
         raise ImproperlyConfigured("ALLOWED_HOSTS must not be '*' when APP_ENV=production")
+    # Local-disk media is wiped on every dyno restart (ADR-0001); a production
+    # deploy without R2 would silently lose every upload, so fail loudly.
+    if not R2_ENABLED:
+        raise ImproperlyConfigured("R2_BUCKET_NAME must be set when APP_ENV=production")
 
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)

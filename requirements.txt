@@ -10,6 +10,10 @@ gunicorn==23.0.0
 Pillow==11.3.0
 django-imagekit==6.1.0
 
+# Media storage: Cloudflare R2 (S3-compatible) via django-storages + boto3
+django-storages==1.14.4
+boto3==1.35.99
+
 # Test harness
 pytest==8.3.4
 pytest-django==4.9.0

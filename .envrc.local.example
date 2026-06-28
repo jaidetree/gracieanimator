@@ -10,4 +10,20 @@
 # export DATABASE_URL="postgres:///gracie"
 
 # Exercise production hardening locally (https redirect, manifest static, etc.).
+# NOTE: APP_ENV=production now also requires the R2 vars below (the prod guard
+# refuses to boot without a bucket — see config/settings.py).
 # export APP_ENV="production"
+
+# Cloudflare R2 media storage (ADR-0001). Setting R2_BUCKET_NAME switches the
+# default file storage from local disk to R2; leave it unset for local dev.
+# The bucket + three credentials are all required once the bucket is set.
+#
+# R2_CUSTOM_DOMAIN is optional for the backend to *function* but REQUIRED for
+# public image serving: the account endpoint only answers SigV4-signed
+# requests, so unsigned <img src> URLs against it 401. Point this at a mapped
+# custom domain or the bucket's pub-*.r2.dev URL, with bucket public access on.
+# export R2_BUCKET_NAME="gracie-media"
+# export R2_ENDPOINT_URL="https://<account-id>.r2.cloudflarestorage.com"
+# export R2_ACCESS_KEY_ID="..."
+# export R2_SECRET_ACCESS_KEY="..."
+# export R2_CUSTOM_DOMAIN="media.example.com"
