@@ -8,6 +8,10 @@ from imagekit.processors import ResizeToFill, ResizeToFit
 CONTAINER_WIDTH = 1024
 # Square crop used for grid/thumbnail surfaces (e.g. the homepage, Slice 11).
 THUMBNAIL_SIZE = 400
+# Width of comic page renditions on the two-column comics index. Sized to the
+# on-screen cover/grid cell so the small rendition isn't upscaled into a blur;
+# detail serves the full-resolution original instead.
+COMIC_GRID_WIDTH = 600
 
 
 def thumbnail_upload_to(instance, filename):
@@ -158,3 +162,55 @@ class SketchbookSample(ImageProject):
     """A single uploaded image, shown full-width in the sketchbook gallery."""
 
     image = models.ImageField(upload_to="sketchbook_samples/")
+
+
+class Comic(Project):
+    """A multi-page comic. The media lives on an ordered collection of
+    ``ComicPage`` rows; the comic itself carries only the shared Project fields.
+
+    Page 1 is the cover and the comics index uses it as the linking thumbnail
+    when no manual thumbnail is set.
+    """
+
+    @property
+    def ordered_pages(self):
+        """Pages in authored order (``ComicPage.Meta.ordering``)."""
+        return self.pages.all()
+
+    @property
+    def cover_page(self):
+        """The first page, used as the index cover; None when there are none."""
+        return self.pages.first()
+
+    @property
+    def derived_thumbnail_url(self):
+        cover = self.cover_page
+        return cover.grid_image.url if cover else None
+
+
+class ComicPage(models.Model):
+    """One image within a Comic. Ordered by ``order`` then insertion id, so the
+    admin inline's row order is the public render order.
+    """
+
+    comic = models.ForeignKey(Comic, related_name="pages", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="comics/")
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Page order within the comic; lower numbers appear first.",
+    )
+
+    # Small rendition for the two-column index (cover + pages beneath). Detail
+    # serves the full-resolution original, so no large rendition is needed.
+    grid_image = ImageSpecField(
+        source="image",
+        processors=[ResizeToFit(width=COMIC_GRID_WIDTH)],
+        format="JPEG",
+        options={"quality": 80},
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.comic.title} — page {self.order}"

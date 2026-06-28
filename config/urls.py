@@ -15,6 +15,13 @@ urlpatterns = [
         portfolio_views.sketchbook_sample_gallery,
         name="sketchbook_sample_gallery",
     ),
+    path("comics/", portfolio_views.comics_index, name="comics_index"),
+    path("comics/<slug:slug>/", portfolio_views.comic_detail, name="comic_detail"),
+    path(
+        "comics/<slug:slug>/page/<int:page>/",
+        portfolio_views.comic_detail,
+        name="comic_page",
+    ),
     # Catch-all top-level slug -> a published Page. Keep last.
     path("<slug:slug>/", page_views.page_detail, name="page_detail"),
 ]
