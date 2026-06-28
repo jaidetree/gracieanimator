@@ -19,6 +19,8 @@ COMIC_PAGE = "comic_page"
 STORYBOARD_GALLERY = "storyboard_gallery"
 STORYBOARD_CATEGORY = "storyboard_category"
 STORYBOARD_DETAIL = "storyboard_detail"
+STORYBOARD_AUTH = "storyboards_auth"
+STORYBOARD_LOGOUT = "storyboards_logout"
 
 # Pages
 HOME = "home"

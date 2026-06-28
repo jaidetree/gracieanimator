@@ -6,8 +6,10 @@ and published filtering. The oembed boundary is stubbed by the autouse
 ``stub_oembed`` fixture, so factory-built media carry cached embed HTML; the
 "no request-time oembed" test swaps ``fetch`` for a spy after the rows exist.
 
-NOTE: the "behind the gate" acceptance criterion (#11) is intentionally NOT
-covered here — gating is deferred to a later slice, so these views are public.
+The views are now behind the storyboard password gate (Slice 9): the autouse
+``unlock_storyboards`` fixture sets the session flag so these tests exercise the
+content as an unlocked visitor. The gate itself (locked/unlocked, login, logout)
+is covered separately in ``test_storyboard_gate.py``.
 """
 
 from io import BytesIO
@@ -29,6 +31,15 @@ from portfolio.tests.factories import (
 pytestmark = pytest.mark.django_db
 
 INDEX_URL = "/storyboards/"
+
+
+@pytest.fixture(autouse=True)
+def unlock_storyboards(client):
+    """Unlock the gate for the shared ``client`` so these view tests see content,
+    not the login redirect. The gate's own behaviour lives in test_storyboard_gate."""
+    session = client.session
+    session["storyboards_auth"] = True
+    session.save()
 
 
 def _jpeg_bytes():

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="storyboards-login max-w-sm mx-auto">
+  <h1 class="mb-8">Storyboards</h1>
+  <p class="paragraph mb-4">These storyboards are password protected. Enter the password to view them.</p>
+  {% if error %}
+    <p class="storyboards-login__error text-red-400 mb-4" role="alert">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="{% url 'storyboards_auth' %}" class="flex flex-col gap-4">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <input
+      type="password"
+      name="password"
+      aria-label="Password"
+      placeholder="Password"
+      autofocus
+      class="text-black px-3 py-2"
+    >
+    <button type="submit" class="bg-secondary text-white uppercase px-4 py-2">Enter</button>
+  </form>
+</section>
+{% endblock %}

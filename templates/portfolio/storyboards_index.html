@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="storyboards">
-  <h1 class="mb-8">{{ page_title }}</h1>
+  <div class="flex justify-between items-center mb-8">
+    <h1>{{ page_title }}</h1>
+    <form method="post" action="{% url 'storyboards_logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="storyboards__logout text-sm uppercase underline">Log out</button>
+    </form>
+  </div>
   <div class="space-y-16">
     {% for section in sections %}
       <section class="storyboards__category mt-8">

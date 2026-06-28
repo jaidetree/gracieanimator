@@ -83,6 +83,15 @@ DATABASES = {
     )
 }
 
+# Storyboards are gated behind a single shared password (Slice 9). A correct POST
+# to /auth/ sets a session flag that unlocks every storyboard page for the
+# browser session; an empty password (unset) never unlocks (see the login view).
+STORYBOARDS_PASSWORD = env("STORYBOARDS_PASSWORD", default="")
+
+# End the session — and thus storyboard access — when the browser closes, so the
+# gate re-locks on a fresh browser without an explicit logout.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"

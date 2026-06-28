@@ -31,6 +31,15 @@ urlpatterns = [
         portfolio_views.comic_detail,
         name=url_names.COMIC_PAGE,
     ),
+    # Storyboard password gate (Slice 9): /auth/ unlocks the session, /logout/
+    # re-locks it. Both are top-level per the spec; registered before the
+    # catch-all slug route, which only matches what these don't.
+    path("auth/", portfolio_views.storyboards_login, name=url_names.STORYBOARD_AUTH),
+    path(
+        "logout/",
+        portfolio_views.storyboards_logout,
+        name=url_names.STORYBOARD_LOGOUT,
+    ),
     path(
         "storyboards/",
         portfolio_views.storyboards_index,

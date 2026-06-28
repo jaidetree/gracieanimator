@@ -12,5 +12,9 @@ set an env var before Django configures.
 import os
 
 os.environ["APP_ENV"] = "test"
+# A known storyboard password for the suite. HTTP-seam tests still set it
+# explicitly with override_settings; this default exists for the Playwright E2E,
+# whose live_server reads settings in a thread where override_settings is fiddly.
+os.environ.setdefault("STORYBOARDS_PASSWORD", "test-storyboards-password")
 
 from config.settings import *  # noqa: E402,F401,F403
