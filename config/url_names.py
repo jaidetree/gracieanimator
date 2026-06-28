@@ -16,7 +16,9 @@ SKETCHBOOK_SAMPLE_GALLERY = "sketchbook_sample_gallery"
 COMICS_INDEX = "comics_index"
 COMIC_DETAIL = "comic_detail"
 COMIC_PAGE = "comic_page"
-# STORYBOARD_GALLERY = "storyboard_gallery"  # add when the Storyboard model lands
+STORYBOARD_GALLERY = "storyboard_gallery"
+STORYBOARD_CATEGORY = "storyboard_category"
+STORYBOARD_DETAIL = "storyboard_detail"
 
 # Pages
 HOME = "home"

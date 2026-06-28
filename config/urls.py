@@ -31,6 +31,23 @@ urlpatterns = [
         portfolio_views.comic_detail,
         name=url_names.COMIC_PAGE,
     ),
+    path(
+        "storyboards/",
+        portfolio_views.storyboards_index,
+        name=url_names.STORYBOARD_GALLERY,
+    ),
+    # The literal "category/" segment makes this two-segment route distinct from
+    # the one-segment detail route below, so their relative order is irrelevant.
+    path(
+        "storyboards/category/<slug:slug>/",
+        portfolio_views.storyboard_category,
+        name=url_names.STORYBOARD_CATEGORY,
+    ),
+    path(
+        "storyboards/<slug:slug>/",
+        portfolio_views.storyboard_detail,
+        name=url_names.STORYBOARD_DETAIL,
+    ),
     # Catch-all top-level slug -> a published Page. Keep last.
     path("<slug:slug>/", page_views.page_detail, name=url_names.PAGE_DETAIL),
 ]

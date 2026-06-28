@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 
 from config import url_names
 
-from .models import Comic, Illustration, SketchbookSample
+from .models import Category, Comic, Illustration, SketchbookSample, Storyboard
 
 # Homepage grid: one featured piece per type, in display order. Each entry is
 # (model, label, section_url); reverse_lazy resolves the section URL at
@@ -62,6 +62,71 @@ def illustration_gallery(request):
 
 def sketchbook_sample_gallery(request):
     return _image_gallery(request, SketchbookSample, "Sketchbook Samples")
+
+
+# TODO(#11): these storyboard views are not yet behind the password gate. The
+# gate (Slice 9) lands in #11; until then every view below is publicly
+# reachable. Wrap them with the gate decorator/middleware once it exists.
+
+
+def _published_storyboards():
+    """Published storyboards with their media prefetched for public rendering."""
+    return Storyboard.objects.filter(published=True).prefetch_related(
+        "videos", "decks", "pdfs"
+    )
+
+
+def storyboards_index(request):
+    """Every category that has at least one published storyboard, each with its
+    storyboards in a grid beneath the category heading. Empty categories are
+    omitted so the index never shows a bare heading with nothing under it."""
+    storyboards = _published_storyboards().select_related("category")
+    groups = {}
+    for storyboard in storyboards:
+        groups.setdefault(storyboard.category, []).append(storyboard)
+    # Category.Meta.ordering is by name; honour it for the section order.
+    categories = sorted(groups, key=lambda c: c.name.lower())
+    sections = [{"category": c, "storyboards": groups[c]} for c in categories]
+    return render(
+        request,
+        "portfolio/storyboards_index.html",
+        {"sections": sections, "page_title": "Storyboards"},
+    )
+
+
+def storyboard_category(request, slug):
+    """A single category's published storyboards in one grid."""
+    category = get_object_or_404(Category, slug=slug)
+    storyboards = _published_storyboards().filter(category=category)
+    return render(
+        request,
+        "portfolio/storyboard_category.html",
+        {
+            "category": category,
+            "storyboards": storyboards,
+            "page_title": category.name,
+        },
+    )
+
+
+def storyboard_detail(request, slug):
+    """One storyboard: its videos, decks, downloadable PDFs, and body, with a
+    section-navigation sidebar. All embeds render from the cache populated on
+    save (ADR-0002), so this view never calls the oembed provider."""
+    storyboard = get_object_or_404(
+        _published_storyboards().select_related("category"), slug=slug
+    )
+    return render(
+        request,
+        "portfolio/storyboard_detail.html",
+        {
+            "storyboard": storyboard,
+            "videos": list(storyboard.videos.all()),
+            "decks": list(storyboard.decks.all()),
+            "pdfs": list(storyboard.pdfs.all()),
+            "page_title": storyboard.title,
+        },
+    )
 
 
 def comics_index(request):

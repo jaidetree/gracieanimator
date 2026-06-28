@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="storyboard-page" class="grid grid-cols-12 gap-8">
+  <div class="col-span-full md:col-span-8 space-y-16 order-2 md:order-1">
+    <section id="animatic" class="storyboard__animatic space-y-8">
+      <h1>{{ storyboard.title }}</h1>
+      {% for video in videos %}
+        {% if video.embed_html %}
+          <div class="embedded-video relative" style="padding-bottom: {% widthratio video.embed_height video.embed_width 100 %}%">
+            {{ video.embed_html|safe }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </section>
+
+    {% if decks %}
+      <section id="boards" class="storyboard__boards space-y-8">
+        <h2>Boards</h2>
+        {% for deck in decks %}
+          {% if deck.embed_html %}
+            <div class="embedded-shots relative" style="padding-bottom: {% widthratio deck.embed_height deck.embed_width 100 %}%">
+              {{ deck.embed_html|safe }}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    {% if pdfs %}
+      <section id="pdfs" class="storyboard__pdfs space-y-8">
+        <h2>PDFs</h2>
+        <ul class="bg-black/20 p-8">
+          {% for pdf in pdfs %}
+            <li>
+              <a class="flex flex-row" href="{{ pdf.file.url }}" target="_grace_pdf" download>{{ pdf.display_name }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if storyboard.body %}
+      <section id="content" class="storyboard__content space-y-8">
+        {{ storyboard.body|safe }}
+      </section>
+    {% endif %}
+  </div>
+
+  <aside class="col-span-12 md:col-span-4 order-1 md:order-2">
+    <div class="space-y-4 sticky top-8">
+      <div class="sidebar-section">
+        <h2>Category</h2>
+        <a href="{% url 'storyboard_gallery' %}">Storyboards</a>
+        <span class="mx-4 text-white/50">/</span>
+        <a href="{% url 'storyboard_category' storyboard.category.slug %}">{{ storyboard.category.name }}</a>
+      </div>
+      <nav class="sidebar-section storyboard__nav">
+        <h2>Navigation</h2>
+        <ul class="border-l-2 border-white ml-4">
+          <li><a class="py-1 px-4 block hover:bg-black/20" href="#animatic">Animatic</a></li>
+          {% if decks %}<li><a class="py-1 px-4 block hover:bg-black/20" href="#boards">Boards</a></li>{% endif %}
+          {% if pdfs %}<li><a class="py-1 px-4 block hover:bg-black/20" href="#pdfs">PDFs</a></li>{% endif %}
+          {% if storyboard.body %}<li><a class="py-1 px-4 block hover:bg-black/20" href="#content">More</a></li>{% endif %}
+        </ul>
+      </nav>
+    </div>
+  </aside>
+</div>
+{% endblock %}

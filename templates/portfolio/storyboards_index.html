@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="storyboards">
+  <h1 class="mb-8">{{ page_title }}</h1>
+  <div class="space-y-16">
+    {% for section in sections %}
+      <section class="storyboards__category mt-8">
+        <header>
+          <h2><a href="{% url 'storyboard_category' section.category.slug %}">{{ section.category.name }}</a></h2>
+        </header>
+        <ul class="storyboards__grid flex flex-wrap gap-4 mt-8 justify-center md:justify-start">
+          {% for storyboard in section.storyboards %}
+            <li class="storyboards__cell max-w-xs w-full">
+              <a class="block text-center" href="{% url 'storyboard_detail' storyboard.slug %}">
+                {% if storyboard.grid_thumbnail_url %}
+                  <img class="w-full aspect-[3/2] object-cover" src="{{ storyboard.grid_thumbnail_url }}" alt="{{ storyboard.title }}">
+                {% endif %}
+                <span class="block font-light text-lg uppercase my-2">{{ storyboard.title }}</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% empty %}
+      <p class="paragraph">Nothing here yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

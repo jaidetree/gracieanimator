@@ -216,6 +216,24 @@ class Storyboard(Project):
         help_text="Rich body. HTML is rendered as-is (WYSIWYG arrives later).",
     )
 
+    # Small square rendition of a *manual* thumbnail, for the index/category
+    # grids. Only the manual upload can be rendered: the auto-derived thumbnail
+    # is an external oembed poster URL (Vimeo/YouTube), not a local image file.
+    thumbnail_rendition = ImageSpecField(
+        source="thumbnail",
+        processors=[ResizeToFill(THUMBNAIL_SIZE, THUMBNAIL_SIZE)],
+        format="JPEG",
+        options={"quality": 80},
+    )
+
+    @property
+    def grid_thumbnail_url(self):
+        """Small rendition for grid surfaces. A manual thumbnail is served as a
+        square crop; otherwise the (external, un-renditionable) video poster."""
+        if self.thumbnail:
+            return self.thumbnail_rendition.url
+        return self.derived_thumbnail_url
+
     @property
     def derived_thumbnail_url(self):
         """The first video's oembed poster, or None when none is available."""
