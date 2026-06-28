@@ -250,7 +250,7 @@ def test_storyboard_inlines_drop_the_model_name_prefix(inline, verbose, plural):
 def test_storyboard_add_form_renders_three_inlines(admin_client):
     # Proves the three sortable inlines coexist on one change form (the library
     # only had a single-inline precedent before this slice) and that the
-    # "Storyboard" prefix is gone from their "Add another …" labels.
+    # "Storyboard" prefix is gone from their labels.
     response = admin_client.get(reverse("admin:portfolio_storyboard_add"))
     assert response.status_code == 200
     body = response.content.decode()

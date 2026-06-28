@@ -152,8 +152,7 @@ class StoryboardVideoInline(SortableTabularInline):
     """Drag-sortable embedded videos; optional when a thumbnail is set.
 
     ``verbose_name`` drops the model's "Storyboard" prefix from the inline's
-    section header and "Add another …" label (Django derives them from the
-    class name otherwise).
+    labels (Django derives them from the class name otherwise).
     """
 
     model = StoryboardVideo
