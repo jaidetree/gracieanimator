@@ -1,7 +1,8 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
-from pages.models import Page
+from pages.models import Page, PageFile
 from pages.tests.factories import PageFactory
 
 pytestmark = pytest.mark.django_db
@@ -40,6 +41,32 @@ def test_published_page_appears_in_nav(client):
 def test_unpublished_page_absent_from_nav(client):
     PageFactory(title="Draft", slug="draft", published=False)
     assert "Draft" not in client.get("/").content.decode()
+
+
+def test_page_accepts_non_image_file_attachment():
+    # The whole point of FileField over ImageField: PDFs/other types attach.
+    page = PageFactory()
+    pdf = SimpleUploadedFile(
+        "brief.pdf", b"%PDF-1.4 fake", content_type="application/pdf"
+    )
+    attachment = PageFile.objects.create(page=page, file=pdf)
+    assert page.files.get() == attachment
+    assert attachment.file.name.endswith(".pdf")
+
+
+def test_page_files_cascade_on_page_delete():
+    page = PageFactory()
+    PageFile.objects.create(page=page, file=SimpleUploadedFile("a.txt", b"hi"))
+    page.delete()
+    assert PageFile.objects.count() == 0
+
+
+def test_page_file_str_is_filename():
+    page = PageFactory()
+    attachment = PageFile.objects.create(
+        page=page, file=SimpleUploadedFile("notes.txt", b"x")
+    )
+    assert "notes" in str(attachment)
 
 
 def test_branded_404_template(client, settings):

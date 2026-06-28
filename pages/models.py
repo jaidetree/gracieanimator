@@ -40,3 +40,21 @@ class Page(models.Model):
 
     def get_absolute_url(self):
         return reverse("page_detail", kwargs={"slug": self.slug})
+
+
+class PageFile(models.Model):
+    """An asset co-located with a Page (image, PDF, or any other file type).
+
+    These are uploads an editor wants kept alongside a page — they may or may not
+    be referenced in the body. ``FileField`` (not ``ImageField``) so non-image
+    types like PDFs are accepted.
+    """
+
+    page = models.ForeignKey(Page, related_name="files", on_delete=models.CASCADE)
+    file = models.FileField(upload_to="pages/files/")
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.file.name
