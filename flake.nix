@@ -16,9 +16,10 @@
         # installed into a .venv by direnv (`layout python`). Adding a Python
         # dep does NOT require touching this file or reloading direnv.
         buildInputs = [
+          pkgs.heroku
           pkgs.python312
           pkgs.postgresql_18
-          pkgs.tailwindcss   # standalone Tailwind CLI, no npm/node_modules
+          pkgs.tailwindcss # standalone Tailwind CLI, no npm/node_modules
           pkgs.uv
         ];
       };
