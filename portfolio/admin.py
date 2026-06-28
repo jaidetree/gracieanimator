@@ -16,8 +16,8 @@ class CategoryAdmin(admin.ModelAdmin):
 class ImageProjectAdmin(admin.ModelAdmin):
     """Shared admin config for single-image project types."""
 
-    list_display = ("title", "slug", "order", "featured", "published", "updated_at")
-    list_editable = ("order", "featured", "published")
+    list_display = ("title", "slug", "order", "published", "featured", "updated_at")
+    list_editable = ("order", "published", "featured")
     list_filter = ("published", "featured")
     search_fields = ("title",)
     ordering = ("order", "title")
@@ -47,8 +47,8 @@ class ComicPageInline(admin.TabularInline):
 class ComicAdmin(admin.ModelAdmin):
     """A comic plus its ordered pages, authored inline."""
 
-    list_display = ("title", "slug", "order", "featured", "published", "updated_at")
-    list_editable = ("order", "featured", "published")
+    list_display = ("title", "slug", "order", "published", "featured", "updated_at")
+    list_editable = ("order", "published", "featured")
     list_filter = ("published", "featured")
     search_fields = ("title",)
     ordering = ("order", "title")

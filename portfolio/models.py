@@ -65,13 +65,15 @@ class Project(models.Model):
         default=0,
         help_text="Manual display order; lower numbers appear first.",
     )
+    # published before featured: nearly every piece is published, while only one
+    # per type is featured, so the common toggle leads in forms and listings.
+    published = models.BooleanField(
+        default=True,
+        help_text="Unpublished pieces are hidden from the public site.",
+    )
     featured = models.BooleanField(
         default=False,
         help_text="Highlight one piece of this type on the homepage.",
-    )
-    published = models.BooleanField(
-        default=False,
-        help_text="Unpublished pieces are hidden from the public site.",
     )
     thumbnail = models.ImageField(
         upload_to=thumbnail_upload_to,
