@@ -11,6 +11,42 @@ Session memory for the Django migration. Newest first. Prune when stale.
 > `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
 > (CI has the *inverse* problem — see Slice 14.)
 
+## Storyboard password gate (Slice 9)
+
+- **`override_settings` can't ride in a `pytestmark` list** — pytest tries to
+  normalize each entry as a Mark and dies at *collection* with
+  `TypeError: got <override_settings object> instead of Mark` (a whole-file error,
+  not a test failure). For a per-module setting, use pytest-django's `settings`
+  fixture in an autouse fixture (`settings.STORYBOARDS_PASSWORD = "s3cret"`); it
+  auto-reverts. `@override_settings` as a *function/class decorator* is still fine.
+- **`override_settings` doesn't reach the `live_server` thread**, so a Playwright
+  E2E can't set the gate password that way. Bake a known default into
+  `config.test_settings` (`os.environ.setdefault("STORYBOARDS_PASSWORD", …)`
+  before importing base settings) and read it via `settings.STORYBOARDS_PASSWORD`
+  in the E2E. HTTP-seam tests stay self-contained with the `settings` fixture.
+- **Test `SESSION_EXPIRE_AT_BROWSER_CLOSE` behaviorally, not tautologically.**
+  Asserting `settings.X is True` just restates config. The real effect is the
+  cookie: after a successful `/auth/` POST, `resp.cookies["sessionid"]["max-age"]`
+  is `""` (a browser-session cookie) when the setting is on; an int when off.
+- **Shared-password gate = custom decorator + session flag, not Django auth.**
+  No user accounts, one secret: `@storyboards_required` checks
+  `request.session.get("storyboards_auth")` and redirects to `/auth/?next=<path>`.
+  One unlock covers the namespace because the flag is session-scoped. **Fail
+  closed**: an empty/unset configured password never matches (`if password and
+  entered == password`), so a misconfigured deploy locks rather than opens.
+  Validate `next` with `url_has_allowed_host_and_scheme` (open-redirect guard);
+  fall back to the index.
+- **Landing a gate breaks the section's existing public-view tests** — every
+  `client.get(...)` now 302s to `/auth/`, turning `test_storyboard_views.py` red
+  wholesale. Add an autouse fixture there that sets the session flag
+  (`s = client.session; s["storyboards_auth"] = True; s.save()`) so those tests
+  run as an unlocked visitor; cover the gate itself in a separate file. Also
+  update that file's "views are public / gating deferred" docstring — now false.
+- **`/auth/` and `/logout/` are top-level, registered *before* the `<slug:slug>/`
+  catch-all** (Slice 11's `page_detail`); specific paths win, so order is safe.
+  The homepage featured-storyboard *thumbnail* (`featured_projects()`, queried off
+  the model) is **not** gated — the AC gates pages, not that one grid image.
+
 ## Storyboard public views (Slice 10)
 
 - **The compiled Tailwind CSS (`static/css/stylesheet.css`) is a committed build
