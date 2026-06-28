@@ -1,0 +1,26 @@
+/* Narrow the drag handle on sortable changelists. Sizing the _reorder_ column
+   doesn't shrink the grip — the handle div sets its own width — so target the
+   .drag.handle element inside the cell. */
+table#result_list tbody td.field-_reorder_ .drag.handle {
+	width: 1rem;
+}
+
+fieldset.sortable table tr.form-row.has_original td.original p {
+	background: none !important;
+	padding-left: 1.25rem;
+}
+
+fieldset.sortable table tr.form-row.has_original td.original p::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 1rem;
+	height: 1rem;
+	background-image: url(../adminsortable2/icons/drag.png);
+	background-repeat: repeat;
+}
+fieldset.sortable table tr.form-row.has_original td.field-image {
+	padding-left: 2rem;
+}
