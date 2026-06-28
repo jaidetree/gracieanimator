@@ -207,7 +207,7 @@ def test_detail_mounts_alpine_viewer(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/").content.decode()
     assert 'id="comic-viewer"' in body
-    assert "x-data=\"comicViewer(" in body
+    assert 'x-data="comicViewer(' in body
     assert "function comicViewer(" in body
 
 
