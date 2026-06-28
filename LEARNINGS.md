@@ -2,6 +2,30 @@
 
 Session memory for the Django migration. Newest first. Prune when stale.
 
+## Inline file attachments (Slice 18)
+
+- **`FileField`, not `ImageField`, when the requirement names PDFs / "other file
+  types."** `ImageField` runs Pillow validation and silently rejects non-images,
+  so it can't hold the PDFs the issue asked for. `FileField` is permissive — and
+  deliberately *no* `validators=` restricting extensions, since the ask was
+  "images, PDFs, or other." The load-bearing test uploads a non-image
+  (`SimpleUploadedFile("brief.pdf", b"%PDF…")`) and asserts it saves — that's
+  the implicit requirement a naive `ImageField` implementation gets wrong.
+- **No ordering ask → plain `admin.TabularInline`, not the Slice 17 sortable2
+  machinery.** Co-locating uploads on the page's change form (the inline itself)
+  is what "easier to edit" needed; a per-file label/`description` was scope to
+  drop (minimal elements). `file` stays required — an empty `extra=1` row is
+  skipped by the formset, so it forces no phantom upload (none of Slice 16's
+  has_changed prefill trap applies, since nothing is prefilled).
+- **Local FileField tests silently upload to the *real* R2 bucket** when the
+  `R2_*` env vars are present (same leak class as Slice 14's `DATABASE_URL`:
+  `R2_ENABLED = bool(R2_BUCKET_NAME)` flips `STORAGES["default"]` to
+  S3Boto3Storage). A passing test gives no hint — watch for a stray
+  `botocore` auth `DeprecationWarning` in the output. Run the suite with the
+  storage env unset to exercise `FileSystemStorage` like CI does:
+  `env -u DATABASE_URL -u R2_BUCKET_NAME -u R2_ACCESS_KEY_ID
+  -u R2_SECRET_ACCESS_KEY -u R2_ENDPOINT_URL -u R2_CUSTOM_DOMAIN pytest`.
+
 ## Drag-and-drop sortable admin (Slice 17)
 
 - **`django-admin-sortable2` fully *owns* the sort field — it doesn't just add a
