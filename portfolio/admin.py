@@ -1,7 +1,22 @@
-from adminsortable2.admin import SortableAdminMixin, SortableTabularInline
+from adminsortable2.admin import (
+    CustomInlineFormSet,
+    SortableAdminMixin,
+    SortableTabularInline,
+)
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 
-from .models import Category, Comic, ComicPage, Illustration, SketchbookSample
+from .models import (
+    Category,
+    Comic,
+    ComicPage,
+    Illustration,
+    SketchbookSample,
+    Storyboard,
+    StoryboardDeck,
+    StoryboardPDF,
+    StoryboardVideo,
+)
 
 
 @admin.register(Category)
@@ -103,3 +118,59 @@ class ComicAdmin(SortableProjectAdmin):
     """A comic plus its drag-sortable pages, authored inline."""
 
     inlines = [ComicPageInline]
+
+
+class RequireOneVideoFormSet(CustomInlineFormSet):
+    """Enforce the "at least one video" rule on the storyboard change form.
+
+    The rule can't live on the model: the parent saves before its inline
+    children, so ``Storyboard.videos`` is empty during model validation. It
+    belongs here, where the pending inline forms are visible. A row counts when
+    it has data and isn't marked for deletion. Extends sortable2's
+    ``CustomInlineFormSet`` so the drag-order plumbing (``default_order_*``)
+    still works on this sortable inline.
+    """
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        live = [
+            form
+            for form in self.forms
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False)
+        ]
+        if not live:
+            raise ValidationError("A storyboard requires at least one video.")
+
+
+class StoryboardVideoInline(SortableTabularInline):
+    """Drag-sortable embedded videos; at least one is required."""
+
+    model = StoryboardVideo
+    formset = RequireOneVideoFormSet
+    extra = 0
+    fields = ("order", "url")
+
+
+class StoryboardDeckInline(SortableTabularInline):
+    """Drag-sortable embedded slide decks (optional)."""
+
+    model = StoryboardDeck
+    extra = 0
+    fields = ("order", "url")
+
+
+class StoryboardPDFInline(SortableTabularInline):
+    """Drag-sortable uploaded files (optional)."""
+
+    model = StoryboardPDF
+    extra = 0
+    fields = ("order", "file", "display_name")
+
+
+@admin.register(Storyboard)
+class StoryboardAdmin(SortableProjectAdmin):
+    """A storyboard plus its ordered video, deck, and PDF collections."""
+
+    inlines = [StoryboardVideoInline, StoryboardDeckInline, StoryboardPDFInline]

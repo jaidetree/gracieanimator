@@ -11,12 +11,18 @@ from portfolio.admin import (
     ComicPageInline,
     IllustrationAdmin,
     SketchbookSampleAdmin,
+    StoryboardAdmin,
+    StoryboardDeckInline,
+    StoryboardPDFInline,
+    StoryboardVideoInline,
 )
 from portfolio.models import Comic, Illustration, SketchbookSample
 from portfolio.tests.factories import (
     ComicFactory,
     IllustrationFactory,
     SketchbookSampleFactory,
+    StoryboardFactory,
+    StoryboardVideoFactory,
 )
 
 # Concrete project types and their admins.
@@ -201,3 +207,109 @@ def test_reorder_endpoint_rejects_get(admin_client):
 
 def test_comic_page_inline_shows_no_blank_row_by_default():
     assert ComicPageInline.extra == 0
+
+
+# --- storyboard admin: sortable changelist + three sortable inlines (#10) ---
+
+
+def test_storyboard_changelist_is_sortable():
+    assert issubclass(StoryboardAdmin, SortableAdminMixin)
+
+
+@pytest.mark.parametrize(
+    "inline", [StoryboardVideoInline, StoryboardDeckInline, StoryboardPDFInline]
+)
+def test_storyboard_inlines_are_sortable(inline):
+    assert issubclass(inline, SortableInlineAdminMixin)
+    assert inline.extra == 0
+
+
+def test_storyboard_registers_all_three_media_inlines():
+    assert StoryboardAdmin.inlines == [
+        StoryboardVideoInline,
+        StoryboardDeckInline,
+        StoryboardPDFInline,
+    ]
+
+
+@pytest.mark.django_db
+def test_storyboard_add_form_renders_three_inlines(admin_client):
+    # Proves the three sortable inlines coexist on one change form (the library
+    # only had a single-inline precedent before this slice).
+    response = admin_client.get(reverse("admin:portfolio_storyboard_add"))
+    assert response.status_code == 200
+    body = response.content.decode()
+    for prefix in ("videos", "decks", "pdfs"):
+        assert f"{prefix}-TOTAL_FORMS" in body
+
+
+@pytest.mark.django_db
+def test_storyboard_change_form_renders_with_saved_media(admin_client):
+    sb = StoryboardFactory()
+    StoryboardVideoFactory(storyboard=sb, url="https://vimeo.com/1")
+    url = reverse("admin:portfolio_storyboard_change", args=[sb.pk])
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert "https://vimeo.com/1" in response.content.decode()
+
+
+def _storyboard_add_post(category, *, videos):
+    """Minimal admin add-form POST: main fields + the three inline mgmt forms."""
+    data = {
+        "title": "Posted Storyboard",
+        "slug": "",
+        "category": str(category.pk),
+        "body": "<p>body</p>",
+        "published": "on",
+        "videos-TOTAL_FORMS": str(len(videos)),
+        "videos-INITIAL_FORMS": "0",
+        "videos-MIN_NUM_FORMS": "0",
+        "videos-MAX_NUM_FORMS": "1000",
+        "decks-TOTAL_FORMS": "0",
+        "decks-INITIAL_FORMS": "0",
+        "decks-MIN_NUM_FORMS": "0",
+        "decks-MAX_NUM_FORMS": "1000",
+        "pdfs-TOTAL_FORMS": "0",
+        "pdfs-INITIAL_FORMS": "0",
+        "pdfs-MIN_NUM_FORMS": "0",
+        "pdfs-MAX_NUM_FORMS": "1000",
+    }
+    for i, url in enumerate(videos):
+        data[f"videos-{i}-url"] = url
+        data[f"videos-{i}-order"] = str(i)
+    return data
+
+
+@pytest.mark.django_db
+def test_storyboard_saves_through_admin_and_caches_embed(admin_client):
+    # Full add path: the 3-inline form saves and the video's save() resolves
+    # oembed (stubbed in conftest) and caches the embed on the row.
+    from portfolio.models import Storyboard, StoryboardVideo
+    from portfolio.tests.factories import CategoryFactory
+
+    category = CategoryFactory()
+    response = admin_client.post(
+        reverse("admin:portfolio_storyboard_add"),
+        _storyboard_add_post(category, videos=["https://vimeo.com/555"]),
+    )
+    assert response.status_code == 302  # redirect on success
+    sb = Storyboard.objects.get(title="Posted Storyboard")
+    video = StoryboardVideo.objects.get(storyboard=sb)
+    assert video.url == "https://vimeo.com/555"
+    assert video.embed_html  # cached by save() via the stubbed oembed client
+
+
+@pytest.mark.django_db
+def test_storyboard_admin_rejects_save_with_no_videos(admin_client):
+    from portfolio.models import Storyboard
+    from portfolio.tests.factories import CategoryFactory
+
+    category = CategoryFactory()
+    response = admin_client.post(
+        reverse("admin:portfolio_storyboard_add"),
+        _storyboard_add_post(category, videos=[]),
+    )
+    # Form re-renders (200, not a 302 redirect) with the validation error.
+    assert response.status_code == 200
+    assert "at least one video" in response.content.decode().lower()
+    assert not Storyboard.objects.filter(title="Posted Storyboard").exists()

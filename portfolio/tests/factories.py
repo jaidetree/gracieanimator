@@ -1,6 +1,23 @@
 import factory
 
-from portfolio.models import Comic, ComicPage, Illustration, SketchbookSample
+from portfolio.models import (
+    Category,
+    Comic,
+    ComicPage,
+    Illustration,
+    SketchbookSample,
+    Storyboard,
+    StoryboardDeck,
+    StoryboardPDF,
+    StoryboardVideo,
+)
+
+
+class CategoryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Category
+
+    name = factory.Sequence(lambda n: f"Category {n}")
 
 
 class IllustrationFactory(factory.django.DjangoModelFactory):
@@ -42,6 +59,44 @@ class ComicPageFactory(factory.django.DjangoModelFactory):
     order = factory.Sequence(lambda n: n)
     # A real (Pillow-generated) image so imagekit can produce renditions.
     image = factory.django.ImageField(width=1200, height=1800, format="JPEG")
+
+
+class StoryboardFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Storyboard
+
+    title = factory.Sequence(lambda n: f"Storyboard {n}")
+    order = factory.Sequence(lambda n: n)
+    published = True
+    category = factory.SubFactory(CategoryFactory)
+
+
+class StoryboardVideoFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = StoryboardVideo
+
+    storyboard = factory.SubFactory(StoryboardFactory)
+    order = factory.Sequence(lambda n: n)
+    url = factory.Sequence(lambda n: f"https://vimeo.com/{n}")
+
+
+class StoryboardDeckFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = StoryboardDeck
+
+    storyboard = factory.SubFactory(StoryboardFactory)
+    order = factory.Sequence(lambda n: n)
+    url = factory.Sequence(lambda n: f"https://speakerdeck.com/user/talk-{n}")
+
+
+class StoryboardPDFFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = StoryboardPDF
+
+    storyboard = factory.SubFactory(StoryboardFactory)
+    order = factory.Sequence(lambda n: n)
+    display_name = factory.Sequence(lambda n: f"Brief {n}")
+    file = factory.django.FileField(filename="brief.pdf", data=b"%PDF-1.4 test")
 
 
 def make_comic(n_pages=3, **kwargs):

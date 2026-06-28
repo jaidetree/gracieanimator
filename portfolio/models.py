@@ -3,6 +3,8 @@ from django.utils.text import slugify
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill, ResizeToFit
 
+from . import oembed
+
 # The site container is max-w-5xl (64rem / 1024px); gallery images render at that
 # width, so the container-width rendition is capped there.
 CONTAINER_WIDTH = 1024
@@ -188,6 +190,162 @@ class Comic(Project):
     def derived_thumbnail_url(self):
         cover = self.cover_page
         return cover.grid_image.url if cover else None
+
+
+class Storyboard(Project):
+    """A storyboard piece: a rich body plus ordered embedded media.
+
+    Media lives on three ordered child collections — ``StoryboardVideo``
+    (Vimeo/YouTube), ``StoryboardDeck`` (Speakerdeck), and ``StoryboardPDF``
+    (uploaded file). At least one video is required (enforced by the admin
+    inline formset, since the parent saves before its children). The thumbnail
+    auto-derives from the first video's oembed poster when blank; a manual
+    upload wins, and the absence of any poster leaves it to a CSS color block
+    downstream.
+    """
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name="storyboards",
+        help_text="Grouping label for the storyboards section.",
+    )
+    body = models.TextField(
+        blank=True,
+        help_text="Rich body. HTML is rendered as-is (WYSIWYG arrives later).",
+    )
+
+    @property
+    def derived_thumbnail_url(self):
+        """The first video's oembed poster, or None when none is available."""
+        first_video = self.videos.first()
+        if first_video and first_video.poster_url:
+            return first_video.poster_url
+        return None
+
+
+class OEmbedMedia(models.Model):
+    """Abstract base for a provider URL whose oembed result is cached on save.
+
+    On save the URL is resolved through the oembed client (ADR-0002) once and
+    the embed HTML and dimensions are cached on the row, so public rendering
+    never touches the provider. Resolution is skipped when nothing needs it (an
+    unchanged, already-resolved URL), so a no-op re-save makes no network call.
+    A provider that can't be reached never blocks the save: the URL is kept with
+    empty cache, and a later re-save retries.
+    """
+
+    url = models.URLField(max_length=500)
+    embed_html = models.TextField(blank=True)
+    embed_width = models.PositiveIntegerField(null=True, blank=True)
+    embed_height = models.PositiveIntegerField(null=True, blank=True)
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order within the storyboard; lower numbers first.",
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.url
+
+    def save(self, *args, **kwargs):
+        if self._needs_oembed():
+            self._resolve_oembed()
+        super().save(*args, **kwargs)
+
+    def _needs_oembed(self):
+        """Resolve only when there's something to fetch: a URL that's unresolved
+        (new row or a prior failure) or that has changed since the last save."""
+        if not self.url:
+            return False
+        if not self.embed_html:
+            return True
+        if self.pk is None:
+            return True
+        previous = (
+            type(self).objects.filter(pk=self.pk).values_list("url", flat=True).first()
+        )
+        return previous != self.url
+
+    def _resolve_oembed(self):
+        try:
+            result = oembed.fetch(self.url)
+        except oembed.OEmbedError:
+            # Keep the URL but drop any cache: on a URL change the old embed now
+            # describes a different (gone) URL, so a stale embed must not stick.
+            # (We only get here when the cache is already empty or the URL
+            # changed, so clearing is always safe.) A later re-save retries.
+            self._clear_oembed()
+            return
+        self._apply_oembed(result)
+
+    def _apply_oembed(self, result):
+        self.embed_html = result.html
+        self.embed_width = result.width
+        self.embed_height = result.height
+
+    def _clear_oembed(self):
+        self.embed_html = ""
+        self.embed_width = None
+        self.embed_height = None
+
+
+class StoryboardVideo(OEmbedMedia):
+    """An embedded video (Vimeo/YouTube) on a Storyboard, with a cached poster.
+
+    The poster is the storyboard's auto-thumbnail source (first video wins).
+    """
+
+    storyboard = models.ForeignKey(
+        Storyboard, related_name="videos", on_delete=models.CASCADE
+    )
+    poster_url = models.URLField(max_length=500, blank=True)
+
+    def _apply_oembed(self, result):
+        super()._apply_oembed(result)
+        self.poster_url = result.poster_url or ""
+
+    def _clear_oembed(self):
+        super()._clear_oembed()
+        self.poster_url = ""
+
+
+class StoryboardDeck(OEmbedMedia):
+    """An embedded slide deck (Speakerdeck) on a Storyboard. No poster."""
+
+    storyboard = models.ForeignKey(
+        Storyboard, related_name="decks", on_delete=models.CASCADE
+    )
+
+
+class StoryboardPDF(models.Model):
+    """An uploaded PDF (or other file) on a Storyboard, with a display name.
+
+    ``FileField`` (not ``ImageField``) so non-image types are accepted, stored
+    on the configured backend (R2 in deployed environments).
+    """
+
+    storyboard = models.ForeignKey(
+        Storyboard, related_name="pdfs", on_delete=models.CASCADE
+    )
+    file = models.FileField(upload_to="storyboards/pdfs/")
+    display_name = models.CharField(
+        max_length=200,
+        help_text="Label shown for the download link.",
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order within the storyboard; lower numbers first.",
+    )
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.display_name
 
 
 class ComicPage(models.Model):
