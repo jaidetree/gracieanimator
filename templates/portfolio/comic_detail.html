@@ -5,11 +5,33 @@
     <a class="inline-block mb-2 uppercase font-light" href="{% url 'comics_index' %}">← comics</a>
     <h1 class="mb-8">{{ comic.title }}</h1>
   </hgroup>
-  {# Large view of the selected page (full resolution). #}
-  <div class="comic__viewer mx-auto p-8 mb-4 bg-black/10">
+  {# Large view of the selected page (full resolution), with prev/next chevrons
+     vertically centered over it. The .page a base rule (text-opacity-80 →
+     hover:text-opacity-100) renders the chevrons slightly transparent and fully
+     opaque on hover; `transition` animates it. On mobile each sits in a 10%
+     black circle (bg-black/10), which clears to transparent on desktop. #}
+  <div class="comic__viewer relative mx-auto p-8 mb-4 bg-black/10">
     <img class="comic__page-large mx-auto w-full max-w-xl h-auto"
          src="{{ page.image.url }}"
          alt="{{ comic.title }} page {{ page_number }}">
+    {% if has_previous %}
+      <a class="comic__prev absolute top-0 bottom-0 my-auto block w-12 h-12 z-10 rounded-full bg-black/10 lg:bg-transparent -left-4 lg:left-20 transition"
+         aria-label="Previous page"
+         href="{% if previous_number == 1 %}{% url 'comic_detail' comic.slug %}{% else %}{% url 'comic_page' comic.slug previous_number %}{% endif %}">
+        <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+      </a>
+    {% endif %}
+    {% if has_next %}
+      <a class="comic__next absolute top-0 bottom-0 my-auto block w-12 h-12 z-10 rounded-full bg-black/10 lg:bg-transparent -right-4 lg:right-20 transition"
+         aria-label="Next page"
+         href="{% url 'comic_page' comic.slug next_number %}">
+        <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+      </a>
+    {% endif %}
   </div>
   {% comment %}
     Thumbnail strip: every page, aspect-respecting, so a visitor can jump to a
@@ -25,18 +47,6 @@
       </a>
     {% endfor %}
   </div>
-  <nav class="comic__nav flex justify-between">
-    {% if has_previous %}
-      {% if previous_number == 1 %}
-        <a class="comic__prev" href="{% url 'comic_detail' comic.slug %}">← Previous</a>
-      {% else %}
-        <a class="comic__prev" href="{% url 'comic_page' comic.slug previous_number %}">← Previous</a>
-      {% endif %}
-    {% endif %}
-    {% if has_next %}
-      <a class="comic__next" href="{% url 'comic_page' comic.slug next_number %}">Next →</a>
-    {% endif %}
-  </nav>
   <p class="comic__counter text-center mt-2">Page {{ page_number }} of {{ page_count }}</p>
 </article>
 {% endblock %}

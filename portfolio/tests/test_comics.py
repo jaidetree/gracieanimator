@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -141,7 +143,9 @@ def test_last_page_has_previous_but_no_next(client):
 def test_previous_from_page_two_points_to_bare_detail_url(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/page/2/").content.decode()
-    assert f'class="comic__prev" href="/comics/{comic.slug}/"' in body
+    # The prev chevron links to page 1's canonical (bare) URL.
+    match = re.search(r'class="comic__prev[^"]*"[^>]*href="([^"]+)"', body)
+    assert match and match.group(1) == f"/comics/{comic.slug}/"
 
 
 def test_middle_page_has_both_navigation_links(client):
@@ -149,6 +153,20 @@ def test_middle_page_has_both_navigation_links(client):
     body = client.get(f"/comics/{comic.slug}/page/2/").content.decode()
     assert "comic__prev" in body
     assert "comic__next" in body
+
+
+def test_nav_chevrons_are_centered_circles_with_hover_transition(client):
+    comic = make_comic(n_pages=3)
+    body = client.get(f"/comics/{comic.slug}/page/2/").content.decode()
+    prev = re.search(r'<a class="comic__prev[^"]*"', body).group(0)
+    # 48x48, vertically centered over the image, transitions, rounded with a
+    # 10% black circle on mobile that clears on desktop. Chevron is an SVG.
+    assert "w-12" in prev and "h-12" in prev
+    assert "top-0" in prev and "bottom-0" in prev and "my-auto" in prev
+    assert "rounded-full" in prev
+    assert "bg-black/10" in prev and "lg:bg-transparent" in prev
+    assert "transition" in prev
+    assert "<svg" in body
 
 
 def test_out_of_range_pages_404(client):
