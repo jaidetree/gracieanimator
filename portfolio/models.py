@@ -85,13 +85,18 @@ class Project(models.Model):
         return None
 
 
-class Illustration(Project):
-    """A single uploaded image, shown full-width in the illustrations gallery."""
+class ImageProject(Project):
+    """Abstract base for single-image project types (Illustration, Sketchbook
+    Sample): structurally identical per ADR-0003 but distinct display groupings.
 
-    image = models.ImageField(upload_to="illustrations/")
+    Subclasses declare their own ``image`` field (so each gets its own
+    ``upload_to`` namespace); the renditions and thumbnail fallback live here.
+    ImageSpecFields are imagekit descriptors, not DB columns, so they add no
+    per-subclass migration state.
+    """
 
     # Container-width rendition for the single-column gallery (full image is
-    # reserved for a detail view, which this type doesn't have).
+    # reserved for a detail view, which these types don't have).
     gallery_image = ImageSpecField(
         source="image",
         processors=[ResizeToFit(width=CONTAINER_WIDTH)],
@@ -107,6 +112,21 @@ class Illustration(Project):
         options={"quality": 80},
     )
 
+    class Meta(Project.Meta):
+        abstract = True
+
     @property
     def derived_thumbnail_url(self):
         return self.thumbnail_rendition.url
+
+
+class Illustration(ImageProject):
+    """A single uploaded image, shown full-width in the illustrations gallery."""
+
+    image = models.ImageField(upload_to="illustrations/")
+
+
+class SketchbookSample(ImageProject):
+    """A single uploaded image, shown full-width in the sketchbook gallery."""
+
+    image = models.ImageField(upload_to="sketchbook_samples/")

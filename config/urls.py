@@ -10,6 +10,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", page_views.home, name="home"),
     path("illustrations/", portfolio_views.illustration_gallery, name="illustration_gallery"),
+    path(
+        "sketchbook-samples/",
+        portfolio_views.sketchbook_sample_gallery,
+        name="sketchbook_sample_gallery",
+    ),
     # Catch-all top-level slug -> a published Page. Keep last.
     path("<slug:slug>/", page_views.page_detail, name="page_detail"),
 ]
