@@ -1,37 +1,39 @@
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
-from django.urls import reverse
+from django.urls import reverse_lazy
 
 from .models import Comic, Illustration, SketchbookSample
 
-# Canonical homepage order: storyboards → illustrations → sketchbook → comics.
-# Storyboards (Slice 8, #10) aren't modeled yet; insert their (model, url_name)
-# entry first here when they land, and `featured_projects` picks them up.
+# Homepage grid: one featured piece per type, in display order. Each entry is
+# (model, label, section_url); reverse_lazy resolves the section URL at
+# import-safe time so the URL itself lives in the tuple, not a name to reverse.
+# Storyboards aren't modeled yet — uncomment their entry once the model exists.
 FEATURED_TYPES = [
-    (Illustration, "illustration_gallery"),
-    (SketchbookSample, "sketchbook_sample_gallery"),
-    (Comic, "comics_index"),
+    # (Storyboard, "Storyboards", reverse_lazy("storyboard_gallery")),
+    (Illustration, "Illustrations", reverse_lazy("illustration_gallery")),
+    (SketchbookSample, "Sketchbook Samples", reverse_lazy("sketchbook_sample_gallery")),
+    (Comic, "Comics", reverse_lazy("comics_index")),
 ]
 
 
 def featured_projects():
     """One featured, published piece per type for the homepage grid.
 
-    Cross-model selection in canonical order (see ``FEATURED_TYPES``). For each
-    type the lowest-``order`` featured+published piece wins (``Meta.ordering``),
-    so several featured pieces resolve deterministically to one. A type with no
-    eligible piece simply contributes nothing — the grid degrades gracefully.
-    Each entry is self-contained: title, thumbnail URL, and the section href.
+    For each type the lowest-``order`` featured+published piece wins
+    (``Meta.ordering``), so several featured pieces resolve deterministically to
+    one. A type with no eligible piece simply contributes nothing — the grid
+    degrades gracefully. Each entry is self-contained: type label, thumbnail
+    URL, and the section href.
     """
     selected = []
-    for model, url_name in FEATURED_TYPES:
+    for model, label, url in FEATURED_TYPES:
         piece = model.objects.filter(published=True, featured=True).first()
         if piece is not None:
             selected.append(
                 {
-                    "title": piece.title,
+                    "label": label,
                     "thumbnail_url": piece.thumbnail_url,
-                    "url": reverse(url_name),
+                    "url": url,
                 }
             )
     return selected

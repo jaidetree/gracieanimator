@@ -6,9 +6,9 @@
     {% for item in featured %}
       <a class="featured__cell block text-center bg-black/10 p-4" href="{{ item.url }}">
         {% if item.thumbnail_url %}
-          <img class="w-full aspect-square object-cover" src="{{ item.thumbnail_url }}" alt="{{ item.title }}">
+          <img class="w-full aspect-square object-cover" src="{{ item.thumbnail_url }}" alt="{{ item.label }}">
         {% endif %}
-        <span class="block font-light text-lg uppercase my-2">{{ item.title }}</span>
+        <span class="block font-light text-lg uppercase my-2">{{ item.label }}</span>
       </a>
     {% empty %}
       <p class="paragraph">Nothing here yet.</p>

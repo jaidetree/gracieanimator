@@ -4,15 +4,25 @@ Session memory for the Django migration. Newest first. Prune when stale.
 
 ## Homepage featured grid (Slice 11)
 
-- **An ordered registry of `(model, url_name)` is the seam for a cross-model,
-  partially-built selection.** The homepage selects one featured+published piece
-  per type ordered storyboards → illustrations → sketchbook → comics, but the
-  Storyboard model doesn't exist yet (Slice 8 / #10 still open). `FEATURED_TYPES`
-  lists only the three built types; `featured_projects()` loops it and skips
-  empties. Storyboards slot in as a one-line first entry when #10 lands — so the
-  slice ships 3-of-4 honestly without faking the missing model. The
-  "combines the four models" / storyboard-first-ordering ACs are *not* fully
-  satisfied until then; don't tick them as done.
+- **An ordered registry of `(model, label, reverse_lazy(url))` is the seam for a
+  cross-model, partially-built selection.** The homepage selects one
+  featured+published piece per type ordered storyboards → illustrations →
+  sketchbook → comics, but the Storyboard model doesn't exist yet (Slice 8 / #10
+  still open). `FEATURED_TYPES` holds the three built types plus a commented-out
+  predicted Storyboard entry; `featured_projects()` loops it and skips empties.
+  Storyboards slot in by uncommenting one line when #10 lands — so the slice
+  ships 3-of-4 honestly without faking the missing model. The "combines the four
+  models" / storyboard-first-ordering ACs are *not* fully satisfied until then;
+  don't tick them as done.
+- **`reverse_lazy` puts the section URL directly in the registry tuple.** There's
+  no importable URL object in Django, but `reverse_lazy("name")` is import-safe
+  (defers resolution), so the tuple carries the URL value itself rather than a
+  name the view must `reverse()` per request.
+- **The grid labels the content *type*, not the piece.** Visitors navigate to
+  sections, so each cell shows "Illustrations" / "Comics" etc. (the registry
+  label), with the featured piece supplying only the thumbnail image. Tests that
+  need to distinguish *which* piece was selected (one-per-type) assert on the
+  chosen piece's rendition URL, since the piece title isn't rendered.
 - **"Falls back gracefully when a type has no featured piece" drops out of the
   registry, it isn't a separate branch.** A type with no eligible piece (or a
   type not yet in the registry at all) simply contributes nothing to the list —
