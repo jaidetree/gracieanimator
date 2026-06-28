@@ -20,6 +20,9 @@ from urllib.request import Request, urlopen
 # Some providers (Vimeo) gate oembed on a referring domain; kept from the legacy
 # Squarespace stack, which is the referer Vimeo has whitelisted for this account.
 _REFERER = "https://gracieanimator.squarespace.com"
+# Speakerdeck 403s the default "Python-urllib" agent; a browser-like UA is
+# required there and harmless to Vimeo/YouTube.
+_USER_AGENT = "Mozilla/5.0 (compatible; GracieAnimator/1.0)"
 _TIMEOUT = 10
 # Dimensions we request; the response echoes the provider's actual values, which
 # are what we cache and use for aspect-ratio padding.
@@ -97,7 +100,10 @@ def _get_json(endpoint: str, url: str) -> dict:
     query = urlencode(
         {"url": url, "format": "json", "width": _WIDTH, "height": _HEIGHT}
     )
-    request = Request(f"{endpoint}?{query}", headers={"Referer": _REFERER})
+    request = Request(
+        f"{endpoint}?{query}",
+        headers={"Referer": _REFERER, "User-Agent": _USER_AGENT},
+    )
     try:
         with urlopen(request, timeout=_TIMEOUT) as response:
             body = response.read()

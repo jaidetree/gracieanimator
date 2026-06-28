@@ -18,6 +18,12 @@ Session memory for the Django migration. Newest first. Prune when stale.
   `Referer` (`https://gracieanimator.squarespace.com`). YouTube/Speakerdeck need
   neither. Confirm these against live providers when the storyboard-save consumer
   wires `fetch()` in.
+- **Speakerdeck 403s the default `Python-urllib` User-Agent.** Its oembed
+  endpoint requires a browser-like `User-Agent`; Vimeo/YouTube don't care. A live
+  integration test (`test_oembed_live.py`, opt-in via `-m live`) caught this —
+  the mocked suite never would. The fix was a UA header on every oembed request.
+  Live tests are deselected by default (`pytest.ini: -m "not live"`); a live
+  failure often just means a fixture URL rotted, not a regression.
 
 ## Local test env (Slice 5)
 
