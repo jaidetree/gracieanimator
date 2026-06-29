@@ -37,8 +37,8 @@ migrate: ## Apply database migrations
 superuser: ## Create an admin user
 	./manage.py createsuperuser
 
-test: ## Run the test suite
-	pytest
+test: ## Run the test suite (against local Postgres + media)
+	./scripts/test.sh
 
 lint: ## Lint and check formatting (no changes)
 	ruff check .

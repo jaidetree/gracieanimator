@@ -41,8 +41,12 @@ edit, and re-run `direnv allow`.
 ## Test
 
 ```sh
-pytest
+make test
 ```
+
+Wraps `pytest`, stripping any exported `DATABASE_URL` / `R2_*` so the suite runs
+against the project-local Postgres socket and in-repo media rather than deployed
+resources. Run `pytest` directly only when those vars are unset.
 
 ## Configuration
 
