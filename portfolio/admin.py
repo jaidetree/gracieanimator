@@ -19,6 +19,7 @@ from .models import (
     StoryboardPDF,
     StoryboardVideo,
 )
+from .ordering import renumber
 
 
 @admin.register(Category)
@@ -79,11 +80,7 @@ class SortableProjectAdmin(SortableAdminMixin, admin.ModelAdmin):
         rows = list(
             self.model.objects.filter(**extra_model_filters).order_by(field, "pk")
         )
-        renumbered = []
-        for position, obj in enumerate(rows, start=1):
-            if getattr(obj, field) != position:
-                setattr(obj, field, position)
-                renumbered.append(obj)
+        renumbered = renumber(rows, field)
         self.model.objects.bulk_update(renumbered, [field])
         return len(renumbered)
 
