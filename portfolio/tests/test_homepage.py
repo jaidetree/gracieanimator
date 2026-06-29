@@ -1,4 +1,8 @@
+from io import BytesIO
+
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 
 from portfolio.tests.factories import (
     IllustrationFactory,
@@ -14,6 +18,12 @@ HOME_URL = "/"
 
 def _body(client):
     return client.get(HOME_URL).content.decode()
+
+
+def _jpeg_bytes():
+    buf = BytesIO()
+    Image.new("RGB", (40, 40), "red").save(buf, "JPEG")
+    return buf.getvalue()
 
 
 # --- one featured, published piece per type (HTTP seam) ---
@@ -92,6 +102,17 @@ def test_each_type_links_to_its_section_page(client):
 def test_thumbnail_uses_derived_rendition(client):
     illo = IllustrationFactory(featured=True, published=True)
     assert illo.thumbnail_rendition.url in _body(client)
+
+
+def test_featured_storyboard_tile_serves_rendition_not_full_image(client):
+    # AC2: a manual-thumbnail storyboard resolves to the same small rendition on
+    # the homepage tile as in the grids — the full uploaded image is never served
+    # into a grid surface.
+    thumb = SimpleUploadedFile("t.jpg", _jpeg_bytes(), content_type="image/jpeg")
+    sb = StoryboardFactory(featured=True, published=True, thumbnail=thumb)
+    body = _body(client)
+    assert sb.thumbnail_rendition.url in body
+    assert sb.thumbnail.url not in body
 
 
 # --- graceful fallback (HTTP seam) ---

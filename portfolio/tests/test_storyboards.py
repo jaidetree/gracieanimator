@@ -7,10 +7,12 @@ inline formset, since the "video or thumbnail" rule can't live on the model.
 """
 
 import os
+from io import BytesIO
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms.models import inlineformset_factory
+from PIL import Image
 
 from portfolio import oembed
 from portfolio.admin import RequireVideoOrThumbnailFormSet
@@ -208,10 +210,15 @@ def test_manual_thumbnail_wins_over_video_poster(monkeypatch):
     monkeypatch.setattr(
         oembed, "fetch", lambda url: _oembed(poster_url="https://poster/auto.jpg")
     )
-    image = SimpleUploadedFile("manual.png", b"img-bytes", content_type="image/png")
+    buf = BytesIO()
+    Image.new("RGB", (40, 40), "red").save(buf, "JPEG")
+    image = SimpleUploadedFile("manual.jpg", buf.getvalue(), content_type="image/jpeg")
     sb = StoryboardFactory(thumbnail=image)
     StoryboardVideoFactory(storyboard=sb, url="https://vimeo.com/d")
-    assert sb.thumbnail_url == sb.thumbnail.url
+    # The seam serves the small rendition of the manual upload, never the full
+    # image and never the video poster.
+    assert sb.thumbnail_url == sb.thumbnail_rendition.url
+    assert "auto.jpg" not in sb.thumbnail_url
     assert "auto.jpg" not in sb.thumbnail_url
 
 

@@ -244,9 +244,13 @@ class Storyboard(Project):
         super().save(*args, **kwargs)
 
     @property
-    def grid_thumbnail_url(self):
-        """Small rendition for grid surfaces. A manual thumbnail is served as a
-        square crop; otherwise the (external, un-renditionable) video poster."""
+    def thumbnail_url(self):
+        """The single seam every surface (homepage tile, index/category grids)
+        asks for a storyboard's display thumbnail, so one storyboard renders at
+        one size everywhere. A manual upload is served as its small rendition
+        (never the full image, which a grid doesn't need); otherwise the first
+        video's external, un-renditionable oembed poster; otherwise None, which
+        the shared thumbnail partial turns into the downstream CSS color block."""
         if self.thumbnail:
             return self.thumbnail_rendition.url
         return self.derived_thumbnail_url

@@ -1,0 +1,6 @@
+{% comment %}
+The one place the "is there a thumbnail?" decision is made: render the image
+when the seam resolves a URL, else nothing (the empty cell is a CSS color block
+downstream). Callers pass the resolved `url`, the surface's `img_class`, and an
+`alt`. Keeps every surface from re-deciding with its own inline {% if %}.
+{% endcomment %}{% if url %}<img class="{{ img_class }}" src="{{ url }}" alt="{{ alt }}">{% endif %}

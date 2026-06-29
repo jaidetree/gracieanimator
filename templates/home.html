@@ -3,9 +3,7 @@
 <div class="flex flex-wrap gap-4 justify-center md:justify-start">
   {% for item in featured %}
     <a class="block max-w-xs w-full text-center" href="{{ item.url }}">
-      {% if item.thumbnail_url %}
-        <img class="object-cover h-64 w-full" src="{{ item.thumbnail_url }}" alt="{{ item.label }}">
-      {% endif %}
+      {% include "portfolio/_thumbnail.html" with url=item.thumbnail_url img_class="object-cover h-64 w-full" alt=item.label %}
       <span class="uppercase text-lg font-body font-light">{{ item.label }}</span>
     </a>
   {% empty %}

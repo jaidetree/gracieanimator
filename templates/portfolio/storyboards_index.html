@@ -18,9 +18,7 @@
           {% for storyboard in section.storyboards %}
             <li class="storyboards__cell max-w-xs w-full">
               <a class="block text-center" href="{% url 'storyboard_detail' storyboard.slug %}">
-                {% if storyboard.grid_thumbnail_url %}
-                  <img class="w-full aspect-[3/2] object-cover" src="{{ storyboard.grid_thumbnail_url }}" alt="{{ storyboard.title }}">
-                {% endif %}
+                {% include "portfolio/_thumbnail.html" with url=storyboard.thumbnail_url img_class="w-full aspect-[3/2] object-cover" alt=storyboard.title %}
                 <span class="block font-light text-lg uppercase my-2">{{ storyboard.title }}</span>
               </a>
             </li>
