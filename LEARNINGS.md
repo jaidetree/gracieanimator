@@ -91,3 +91,9 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   derivation is image-rendition / cover-page `grid_image` / first-video poster.
   Don't try to unify into one body or a dispatch module — there's no public
   `derived_thumbnail_url`/`grid_thumbnail_url` anymore (#22, #23).
+- **The Storyboard password gate lives in `portfolio/storyboard_gate.py`** (not
+  `views.py`): the `SESSION_AUTH_KEY` string, `storyboards_required`, and the
+  login/logout views. `views.py` imports only the decorator; `config/urls.py`
+  routes `/auth/` + `/logout/` at the gate module directly. The gate tests
+  (`test_storyboard_gate`, `_e2e`) drive the HTTP seam, so the extraction needed
+  zero test edits (#25).
