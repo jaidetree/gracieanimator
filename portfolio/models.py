@@ -381,13 +381,13 @@ class StoryboardPDF(models.Model):
     class Meta:
         ordering = ["order", "id"]
 
+    def __str__(self):
+        return self.label
+
     @property
     def label(self):
         """Display name, falling back to the uploaded file's basename."""
         return self.display_name or os.path.basename(self.file.name)
-
-    def __str__(self):
-        return self.label
 
 
 class ComicPage(models.Model):
