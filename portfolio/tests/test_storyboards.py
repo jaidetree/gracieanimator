@@ -6,6 +6,8 @@ unreachable, and re-save paths). Validation is driven through the real admin
 inline formset, since the "video or thumbnail" rule can't live on the model.
 """
 
+import os
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms.models import inlineformset_factory
@@ -220,7 +222,14 @@ def test_pdf_stores_file_and_display_name():
     pdf = StoryboardPDFFactory(display_name="Project Brief")
     pdf.refresh_from_db()
     assert pdf.display_name == "Project Brief"
+    assert pdf.label == "Project Brief"
     assert pdf.file.read() == b"%PDF-1.4 test"
+
+
+def test_pdf_label_defaults_to_filename_when_display_name_blank():
+    pdf = StoryboardPDFFactory(display_name="")
+    assert pdf.label == os.path.basename(pdf.file.name)
+    assert str(pdf) == pdf.label
 
 
 # --- validation: a storyboard needs a video OR a thumbnail (real formset) ---

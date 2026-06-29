@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 from django.utils.text import slugify
 from imagekit.models import ImageSpecField
@@ -368,7 +370,8 @@ class StoryboardPDF(models.Model):
     file = models.FileField(upload_to="storyboards/pdfs/")
     display_name = models.CharField(
         max_length=200,
-        help_text="Label shown for the download link.",
+        blank=True,
+        help_text="Label shown for the download link. Defaults to the filename.",
     )
     order = models.PositiveIntegerField(
         default=0,
@@ -378,8 +381,13 @@ class StoryboardPDF(models.Model):
     class Meta:
         ordering = ["order", "id"]
 
+    @property
+    def label(self):
+        """Display name, falling back to the uploaded file's basename."""
+        return self.display_name or os.path.basename(self.file.name)
+
     def __str__(self):
-        return self.display_name
+        return self.label
 
 
 class ComicPage(models.Model):
