@@ -63,7 +63,7 @@ Postgres, Tailwind CLI, uv).
 ## Deploy (Heroku)
 
 The app deploys to Heroku via a [pipeline](https://devcenter.heroku.com/articles/pipelines):
-a **staging** app **auto-deploys from the `django` branch** through the GitHub
+a **staging** app **auto-deploys from the default branch** through the GitHub
 integration (a production app + staging→prod promotion are added at go-live).
 
 - `Procfile` — `web` runs gunicorn (`config.wsgi`, binding `$PORT`
