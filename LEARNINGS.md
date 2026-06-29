@@ -82,3 +82,12 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   back to the first video's oembed `poster_url`.
 - **Autouse `stub_oembed` (conftest) keeps factory media off the network**;
   `test_oembed*` modules opt out to hit the real `urlopen` seam.
+- **One thumbnail seam: `Project.thumbnail_url`** (+ `_thumbnail.html` partial,
+  the only place the img-or-nothing `{% if %}` lives). The base owns the
+  manual-wins rule; each type supplies two hooks — `_manual_thumbnail_url` (how a
+  manual upload renders) and `_derived_thumbnail_url` (the fallback). The per-type
+  behaviour is irreducible: Storyboard renditions its *manual* upload (grids never
+  need the full image) while Illustration/Sketchbook/Comic serve theirs full;
+  derivation is image-rendition / cover-page `grid_image` / first-video poster.
+  Don't try to unify into one body or a dispatch module — there's no public
+  `derived_thumbnail_url`/`grid_thumbnail_url` anymore (#22, #23).
