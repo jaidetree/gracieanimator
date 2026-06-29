@@ -125,7 +125,7 @@ def test_grid_uses_small_rendition_not_full_thumbnail(client):
     thumb = SimpleUploadedFile("t.jpg", _jpeg_bytes(), content_type="image/jpeg")
     sb = StoryboardFactory(thumbnail=thumb)
     body = _body(client, INDEX_URL)
-    # The square rendition is served; the full uploaded thumbnail is not.
+    # The small grid rendition is served; the full uploaded thumbnail is not.
     assert sb.thumbnail_rendition.url in body
     assert sb.thumbnail.url not in body
 

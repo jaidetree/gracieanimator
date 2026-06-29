@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from imagekit.models import ImageSpecField
-from imagekit.processors import ResizeToFill, ResizeToFit
+from imagekit.processors import ResizeToFit
 
 from richtext import sanitize_html
 
@@ -10,7 +10,12 @@ from . import oembed
 # The site container is max-w-5xl (64rem / 1024px); gallery images render at that
 # width, so the container-width rendition is capped there.
 CONTAINER_WIDTH = 1024
-# Square crop used for grid/thumbnail surfaces (e.g. the homepage, Slice 11).
+# Bounding box for grid/thumbnail renditions (e.g. the homepage, Slice 11). The
+# image is scaled to fit within this box with its aspect ratio intact and no
+# crop; each grid surface frames it to its own aspect with CSS object-cover
+# (equivalent to background-size: cover), so a single uncropped rendition serves
+# the 5:4 homepage and 3:2 storyboard grids without the double-crop that a
+# pre-cropped square would cause.
 THUMBNAIL_SIZE = 400
 # Width of comic page renditions on the two-column comics index. Sized to the
 # on-screen cover/grid cell so the small rendition isn't upscaled into a blur;
@@ -141,11 +146,12 @@ class ImageProject(Project):
         format="JPEG",
         options={"quality": 85},
     )
-    # Small square rendition for grid surfaces (homepage), auto-derived from the
-    # image so a blank thumbnail still has something to show.
+    # Small rendition for grid surfaces (homepage), auto-derived from the image
+    # so a blank thumbnail still has something to show. Scaled to fit, not
+    # cropped: the grid's object-cover does the framing (see THUMBNAIL_SIZE).
     thumbnail_rendition = ImageSpecField(
         source="image",
-        processors=[ResizeToFill(THUMBNAIL_SIZE, THUMBNAIL_SIZE)],
+        processors=[ResizeToFit(THUMBNAIL_SIZE, THUMBNAIL_SIZE)],
         format="JPEG",
         options={"quality": 80},
     )
@@ -218,12 +224,13 @@ class Storyboard(Project):
         help_text="Rich body, edited with the rich-text editor (Slice 12).",
     )
 
-    # Small square rendition of a *manual* thumbnail, for the index/category
-    # grids. Only the manual upload can be rendered: the auto-derived thumbnail
-    # is an external oembed poster URL (Vimeo/YouTube), not a local image file.
+    # Small rendition of a *manual* thumbnail, for the index/category grids.
+    # Only the manual upload can be rendered: the auto-derived thumbnail is an
+    # external oembed poster URL (Vimeo/YouTube), not a local image file. Scaled
+    # to fit, not cropped — the 3:2 grid's object-cover frames it.
     thumbnail_rendition = ImageSpecField(
         source="thumbnail",
-        processors=[ResizeToFill(THUMBNAIL_SIZE, THUMBNAIL_SIZE)],
+        processors=[ResizeToFit(THUMBNAIL_SIZE, THUMBNAIL_SIZE)],
         format="JPEG",
         options={"quality": 80},
     )
