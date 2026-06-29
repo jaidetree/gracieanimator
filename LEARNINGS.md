@@ -39,6 +39,19 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   `ignore=["E501"]` (the formatter won't fix it on comments/strings).
 - **Test import-time settings branches in a subprocess** — fixtures /
   `override_settings` run too late.
+- **Asserting a rendition URL opens the source image; asserting the field URL
+  doesn't.** `sb.thumbnail.url` is a cheap string, but `sb.thumbnail_rendition.url`
+  makes imagekit open the source → a fake upload (`b"img-bytes"`) raises
+  `UnidentifiedImageError`. Seed a real JPEG (`Image.new(...).save(buf, "JPEG")`)
+  whenever a test reads through a rendition.
+- **`--reuse-db` can carry a polluted local `test_gracie` across runs.** Symptoms:
+  order-accumulation in admin tests (e.g. 7 Illustration rows when 3 were created,
+  `order` 5/6 instead of 1/2) and imagekit `FileNotFoundError` / `ImageCacheFile
+  not subscriptable` when a rendition's source file lived in a since-deleted temp
+  `MEDIA_ROOT`. Leftover *committed* rows (an interrupted transactional/E2E run)
+  reference gone files. CI is green because it builds a fresh DB. Fix:
+  `./scripts/test.sh --create-db` once, then normal runs stay green — it is not a
+  code bug.
 
 ## Domain Knowledge
 
