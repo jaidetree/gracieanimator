@@ -1,11 +1,15 @@
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 
 from config import url_names
 
 from .models import Category, Comic, Illustration, SketchbookSample, Storyboard
 from .storyboard_gate import storyboards_required
+
+# Breadcrumb root: every portfolio trail starts at the portfolio index. The
+# _breadcrumb.html partial lowercases labels, so "Portfolio" reads "portfolio".
+PORTFOLIO_CRUMB = ("Portfolio", reverse_lazy(url_names.HOME))
 
 # Homepage grid: one featured piece per type, in display order. Each entry is
 # (model, label, section_url); reverse_lazy resolves the section URL at
@@ -52,7 +56,11 @@ def _image_gallery(request, model, page_title):
     return render(
         request,
         "portfolio/image_gallery.html",
-        {"pieces": pieces, "page_title": page_title},
+        {
+            "pieces": pieces,
+            "page_title": page_title,
+            "breadcrumbs": [PORTFOLIO_CRUMB],
+        },
     )
 
 
@@ -86,7 +94,11 @@ def storyboards_index(request):
     return render(
         request,
         "portfolio/storyboards_index.html",
-        {"sections": sections, "page_title": "Storyboards"},
+        {
+            "sections": sections,
+            "page_title": "Storyboards",
+            "breadcrumbs": [PORTFOLIO_CRUMB],
+        },
     )
 
 
@@ -102,6 +114,10 @@ def storyboard_category(request, slug):
             "category": category,
             "storyboards": storyboards,
             "page_title": category.name,
+            "breadcrumbs": [
+                PORTFOLIO_CRUMB,
+                ("Storyboards", reverse(url_names.STORYBOARD_GALLERY)),
+            ],
         },
     )
 
@@ -123,6 +139,17 @@ def storyboard_detail(request, slug):
             "decks": list(storyboard.decks.all()),
             "pdfs": list(storyboard.pdfs.all()),
             "page_title": storyboard.title,
+            "breadcrumbs": [
+                PORTFOLIO_CRUMB,
+                ("Storyboards", reverse(url_names.STORYBOARD_GALLERY)),
+                (
+                    storyboard.category.name,
+                    reverse(
+                        url_names.STORYBOARD_CATEGORY,
+                        args=[storyboard.category.slug],
+                    ),
+                ),
+            ],
         },
     )
 
@@ -134,7 +161,11 @@ def comics_index(request):
     return render(
         request,
         "portfolio/comics_index.html",
-        {"comics": comics, "page_title": "Comics"},
+        {
+            "comics": comics,
+            "page_title": "Comics",
+            "breadcrumbs": [PORTFOLIO_CRUMB],
+        },
     )
 
 
@@ -186,5 +217,9 @@ def comic_detail(request, slug, page=1):
             "previous_number": page - 1,
             "next_number": page + 1,
             "page_title": comic.title,
+            "breadcrumbs": [
+                PORTFOLIO_CRUMB,
+                ("Comics", reverse(url_names.COMICS_INDEX)),
+            ],
         },
     )

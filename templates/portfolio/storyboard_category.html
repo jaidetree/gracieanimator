@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="storyboards">
-  <h1 class="text-center md:text-left">
-    <a href="{% url 'storyboard_gallery' %}" class="block mb-1 text-base font-light md:inline md:mb-0 md:text-4xl md:font-bold">Storyboards</a><span class="hidden md:inline mx-4 font-thin">/</span>{{ category.name }}
-  </h1>
+  {% include "portfolio/_breadcrumb.html" %}
+  <h1 class="text-center md:text-left">{{ category.name }}</h1>
   <div class="space-y-16">
     <section class="storyboards__category mt-8">
       <ul class="storyboards__grid flex flex-wrap gap-4 mt-8 justify-center md:justify-start">

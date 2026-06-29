@@ -3,7 +3,10 @@
 <div id="storyboard-page" class="grid grid-cols-12 gap-8">
   <div class="col-span-full md:col-span-8 space-y-16 order-2 md:order-1">
     <section id="animatic" class="storyboard__animatic space-y-8">
-      <h1>{{ storyboard.title }}</h1>
+      <hgroup>
+        {% include "portfolio/_breadcrumb.html" %}
+        <h1>{{ storyboard.title }}</h1>
+      </hgroup>
       {% for video in videos %}
         {% if video.embed_html %}
           <div class="embedded-video relative" style="padding-bottom: {% widthratio video.embed_height video.embed_width 100 %}%">

@@ -2,7 +2,7 @@
 {% block content %}
 <article class="comic">
   <hgroup>
-    <a class="inline-block mb-2 uppercase font-light" href="{% url 'comics_index' %}">← comics</a>
+    {% include "portfolio/_breadcrumb.html" %}
     <h1 class="mb-8">{{ comic.title }}</h1>
   </hgroup>
   {% comment %}
