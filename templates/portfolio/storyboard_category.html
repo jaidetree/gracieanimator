@@ -2,8 +2,7 @@
 {% block content %}
 <section class="storyboards">
   <h1 class="text-center md:text-left">
-    <a href="{% url 'storyboard_gallery' %}">Storyboards</a>
-    <span class="mx-4 font-thin">/</span>{{ category.name }}
+    <a href="{% url 'storyboard_gallery' %}" class="block mb-1 text-base font-light md:inline md:mb-0 md:text-4xl md:font-bold">Storyboards</a><span class="hidden md:inline mx-4 font-thin">/</span>{{ category.name }}
   </h1>
   <div class="space-y-16">
     <section class="storyboards__category mt-8">
