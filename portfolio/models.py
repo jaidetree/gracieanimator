@@ -62,7 +62,7 @@ class Project(models.Model):
     """Abstract base for every portfolio piece (ADR-0003).
 
     Carries the fields common to all project types. Concrete subclasses add their
-    own media and supply ``derived_thumbnail_url`` for the auto-thumbnail.
+    own media and supply ``_derived_thumbnail_url`` for the auto-thumbnail.
     """
 
     title = models.CharField(max_length=200)
@@ -119,14 +119,24 @@ class Project(models.Model):
 
     @property
     def thumbnail_url(self):
-        """Manual thumbnail when set, else the type's auto-derived rendition."""
+        """The single seam every surface (homepage tile, section grids) asks for
+        a piece's display thumbnail, so one piece renders one image everywhere.
+        The manual-wins rule lives here once; each type supplies only how it
+        serves a manual upload and how it derives one when none is set. None when
+        nothing fits — the shared partial renders that as no DOM (a CSS color
+        block downstream)."""
         if self.thumbnail:
-            return self.thumbnail.url
-        return self.derived_thumbnail_url
+            return self._manual_thumbnail_url()
+        return self._derived_thumbnail_url()
 
-    @property
-    def derived_thumbnail_url(self):
-        """URL of the auto-derived thumbnail; None when nothing is available."""
+    def _manual_thumbnail_url(self):
+        """The manual upload as served on grids: the full image, unless a type
+        serves a small rendition of it instead (Storyboard)."""
+        return self.thumbnail.url
+
+    def _derived_thumbnail_url(self):
+        """Auto-derived thumbnail when no manual upload is set; None when the
+        type has nothing to derive one from."""
         return None
 
 
@@ -161,8 +171,7 @@ class ImageProject(Project):
     class Meta(Project.Meta):
         abstract = True
 
-    @property
-    def derived_thumbnail_url(self):
+    def _derived_thumbnail_url(self):
         return self.thumbnail_rendition.url
 
 
@@ -196,8 +205,7 @@ class Comic(Project):
         """The first page, used as the index cover; None when there are none."""
         return self.pages.first()
 
-    @property
-    def derived_thumbnail_url(self):
+    def _derived_thumbnail_url(self):
         cover = self.cover_page
         return cover.grid_image.url if cover else None
 
@@ -243,21 +251,15 @@ class Storyboard(Project):
         self.body = sanitize_html(self.body)
         super().save(*args, **kwargs)
 
-    @property
-    def thumbnail_url(self):
-        """The single seam every surface (homepage tile, index/category grids)
-        asks for a storyboard's display thumbnail, so one storyboard renders at
-        one size everywhere. A manual upload is served as its small rendition
-        (never the full image, which a grid doesn't need); otherwise the first
-        video's external, un-renditionable oembed poster; otherwise None, which
-        the shared thumbnail partial turns into the downstream CSS color block."""
-        if self.thumbnail:
-            return self.thumbnail_rendition.url
-        return self.derived_thumbnail_url
+    def _manual_thumbnail_url(self):
+        """The manual upload as its small rendition — a grid never needs the full
+        image, and renditioning it makes a manual thumbnail render at the same
+        size as a derived poster."""
+        return self.thumbnail_rendition.url
 
-    @property
-    def derived_thumbnail_url(self):
-        """The first video's oembed poster, or None when none is available."""
+    def _derived_thumbnail_url(self):
+        """The first video's external (un-renditionable) oembed poster, or None
+        when no video has one."""
         first_video = self.videos.first()
         if first_video and first_video.poster_url:
             return first_video.poster_url

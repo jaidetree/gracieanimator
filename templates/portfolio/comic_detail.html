@@ -80,9 +80,7 @@
       {% if prev_comic %}
         <a class="comic__sibling comic__sibling--prev flex flex-row items-center gap-2"
            href="{% url 'comic_detail' prev_comic.slug %}">
-          {% if prev_comic.thumbnail_url %}
-            <img class="object-scale-down h-20" src="{{ prev_comic.thumbnail_url }}" alt="{{ prev_comic.title }}">
-          {% endif %}
+          {% include "portfolio/_thumbnail.html" with url=prev_comic.thumbnail_url img_class="object-scale-down h-20" alt=prev_comic.title %}
           <span class="flex flex-col lg:flex-row flex-grow lg:flex-initial lg:items-center gap-2">
             <span class="text-lg font-bold uppercase">prev:</span>
             {{ prev_comic.title }}
@@ -96,9 +94,7 @@
             <span class="text-lg font-bold uppercase">next:</span>
             {{ next_comic.title }}
           </span>
-          {% if next_comic.thumbnail_url %}
-            <img class="object-scale-down h-20" src="{{ next_comic.thumbnail_url }}" alt="{{ next_comic.title }}">
-          {% endif %}
+          {% include "portfolio/_thumbnail.html" with url=next_comic.thumbnail_url img_class="object-scale-down h-20" alt=next_comic.title %}
         </a>
       {% endif %}
     </div>

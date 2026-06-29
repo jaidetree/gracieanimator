@@ -191,19 +191,19 @@ def test_first_video_in_order_wins(monkeypatch):
         oembed, "fetch", lambda url: _oembed(poster_url="https://poster/first.jpg")
     )
     StoryboardVideoFactory(storyboard=sb, order=1, url="https://vimeo.com/a")
-    assert sb.derived_thumbnail_url == "https://poster/first.jpg"
+    assert sb.thumbnail_url == "https://poster/first.jpg"
 
 
-def test_no_poster_yields_no_derived_thumbnail(monkeypatch):
+def test_no_poster_yields_no_thumbnail(monkeypatch):
     monkeypatch.setattr(oembed, "fetch", lambda url: _oembed(poster_url=None))
     sb = StoryboardFactory()
     StoryboardVideoFactory(storyboard=sb, url="https://vimeo.com/c")
-    assert sb.derived_thumbnail_url is None
+    assert sb.thumbnail_url is None
 
 
-def test_no_videos_yields_no_derived_thumbnail():
+def test_no_videos_yields_no_thumbnail():
     sb = StoryboardFactory()
-    assert sb.derived_thumbnail_url is None
+    assert sb.thumbnail_url is None
 
 
 def test_manual_thumbnail_wins_over_video_poster(monkeypatch):

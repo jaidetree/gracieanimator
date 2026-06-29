@@ -45,9 +45,10 @@ def test_manual_thumbnail_wins():
     assert comic.thumbnail_url != comic.cover_page.grid_image.url
 
 
-def test_derived_thumbnail_none_without_pages():
+def test_thumbnail_none_without_pages_or_manual():
     comic = ComicFactory()
-    assert comic.derived_thumbnail_url is None
+    assert not comic.thumbnail
+    assert comic.thumbnail_url is None
 
 
 # --- index seam: two-column grid, links, renditions, publishing ---

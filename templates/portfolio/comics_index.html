@@ -6,9 +6,7 @@
     {% for comic in comics %}
       <article class="comics__cell bg-black/10 p-4 text-center">
         <a class="comics__cover block" href="{% url 'comic_detail' comic.slug %}">
-          {% if comic.thumbnail_url %}
-            <img class="w-auto mx-auto" src="{{ comic.thumbnail_url }}" alt="{{ comic.title }}">
-          {% endif %}
+          {% include "portfolio/_thumbnail.html" with url=comic.thumbnail_url img_class="w-auto mx-auto" alt=comic.title %}
           <span class="block font-light text-lg uppercase my-2">{{ comic.title }}</span>
         </a>
         <div class="comics__pages grid grid-cols-4 gap-2">
