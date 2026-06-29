@@ -20,6 +20,14 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   HTML sanitizer each have a single seam tests target.
 - **Add featured content via the `FEATURED_TYPES` registry** — ordered
   `(model, label, reverse_lazy(url))`; `featured_projects()` skips empties.
+- **One breadcrumb seam: `_breadcrumb.html` + a `breadcrumbs` context list**
+  of `(label, url)` ancestor crumbs (#26). The current page's title stays in
+  the `<h1>` and is never a crumb, so "which crumbs" is mechanical per view.
+  Labels are lowercased in the partial (the one place that rule lives), so
+  views pass natural-case labels — including DB category names — and every
+  trail reads "portfolio / comics /". Home and static Pages pass no list →
+  the partial renders nothing. Tests read the trail back by regexing the
+  `aria-label="Breadcrumb"` nav, not the whole page.
 
 ## Mistakes to Avoid
 
