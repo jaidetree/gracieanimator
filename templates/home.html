@@ -1,18 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="featured">
-  <h1 class="mb-8">Portfolio</h1>
-  <div class="featured__grid grid grid-cols-2 md:grid-cols-4 gap-8">
-    {% for item in featured %}
-      <a class="featured__cell block text-center bg-black/10 p-4" href="{{ item.url }}">
-        {% if item.thumbnail_url %}
-          <img class="w-full aspect-square object-cover" src="{{ item.thumbnail_url }}" alt="{{ item.label }}">
-        {% endif %}
-        <span class="block font-light text-lg uppercase my-2">{{ item.label }}</span>
-      </a>
-    {% empty %}
-      <p class="paragraph">Nothing here yet.</p>
-    {% endfor %}
-  </div>
-</section>
+<div class="flex flex-wrap gap-4 justify-center md:justify-start">
+  {% for item in featured %}
+    <a class="block max-w-xs w-full text-center" href="{{ item.url }}">
+      {% if item.thumbnail_url %}
+        <img class="object-cover h-64 w-full" src="{{ item.thumbnail_url }}" alt="{{ item.label }}">
+      {% endif %}
+      <span class="uppercase text-lg font-body font-light">{{ item.label }}</span>
+    </a>
+  {% empty %}
+    <p class="paragraph">Nothing here yet.</p>
+  {% endfor %}
+</div>
 {% endblock %}
