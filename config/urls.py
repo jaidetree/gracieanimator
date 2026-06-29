@@ -5,6 +5,7 @@ from django.urls import include, path
 
 from config import url_names
 from pages import views as page_views
+from portfolio import storyboard_gate
 from portfolio import views as portfolio_views
 
 urlpatterns = [
@@ -37,10 +38,10 @@ urlpatterns = [
     # Storyboard password gate (Slice 9): /auth/ unlocks the session, /logout/
     # re-locks it. Both are top-level per the spec; registered before the
     # catch-all slug route, which only matches what these don't.
-    path("auth/", portfolio_views.storyboards_login, name=url_names.STORYBOARD_AUTH),
+    path("auth/", storyboard_gate.storyboards_login, name=url_names.STORYBOARD_AUTH),
     path(
         "logout/",
-        portfolio_views.storyboards_logout,
+        storyboard_gate.storyboards_logout,
         name=url_names.STORYBOARD_LOGOUT,
     ),
     path(
