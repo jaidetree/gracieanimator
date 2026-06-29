@@ -39,4 +39,18 @@
   .paragraph {
     @apply leading-relaxed text-lg my-4;
   }
+
+  /* Space each sidebar heading off the links/list beneath it. */
+  .sidebar-section h2 {
+    @apply mb-2;
+  }
+
+  /* Embeds set their aspect ratio with an inline padding-bottom on the
+     relative container; the cached oembed <iframe> keeps its native
+     width/height attributes, so pin it to fill that box instead of
+     overflowing the content column into the sidebar. */
+  .embedded-video iframe,
+  .embedded-shots iframe {
+    @apply absolute top-0 left-0 h-full w-full;
+  }
 }

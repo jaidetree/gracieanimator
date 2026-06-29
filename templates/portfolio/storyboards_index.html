@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="storyboards">
-  <div class="flex justify-between items-center mb-8">
-    <h1>{{ page_title }}</h1>
+  <div class="flex justify-end mb-4">
     <form method="post" action="{% url 'storyboards_logout' %}">
       {% csrf_token %}
       <button type="submit" class="storyboards__logout text-sm uppercase underline">Log out</button>
     </form>
   </div>
+  <h1 class="text-center md:text-left">{{ page_title }}</h1>
   <div class="space-y-16">
     {% for section in sections %}
       <section class="storyboards__category mt-8">
-        <header>
+        <header class="text-center md:text-left">
           <h2><a href="{% url 'storyboard_category' section.category.slug %}">{{ section.category.name }}</a></h2>
         </header>
         <ul class="storyboards__grid flex flex-wrap gap-4 mt-8 justify-center md:justify-start">
