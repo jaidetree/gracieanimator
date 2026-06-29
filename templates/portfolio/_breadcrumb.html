@@ -2,11 +2,11 @@
   Ancestor trail above a page title. `breadcrumbs` is a list of (label, url)
   tuples — the page's ancestors only; the current page's own title stays in the
   <h1>, never here. Every crumb is followed by a slash, so the trail reads
-  "portfolio / comics /". Labels render lowercase (the one place that rule
-  lives), so callers can pass natural-case labels. Renders nothing when unset.
+  "Portfolio / Comics /". Labels render in their natural case (section names and
+  DB-sourced category names are already capitalized). Renders nothing when unset.
 {% endcomment %}
 {% if breadcrumbs %}
   <nav class="breadcrumb mb-1 font-light" aria-label="Breadcrumb">
-    {% for label, url in breadcrumbs %}<a href="{{ url }}" class="breadcrumb__link hover:underline">{{ label|lower }}</a><span class="breadcrumb__sep mx-2 text-white/50">/</span>{% endfor %}
+    {% for label, url in breadcrumbs %}<a href="{{ url }}" class="breadcrumb__link hover:underline">{{ label }}</a><span class="breadcrumb__sep mx-2 text-white/50">/</span>{% endfor %}
   </nav>
 {% endif %}

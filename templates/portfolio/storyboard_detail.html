@@ -57,12 +57,6 @@
 
   <aside class="col-span-12 md:col-span-4 order-1 md:order-2">
     <div class="space-y-4 sticky top-8">
-      <div class="sidebar-section">
-        <h2>Category</h2>
-        <a href="{% url 'storyboard_gallery' %}">Storyboards</a>
-        <span class="mx-4 text-white/50">/</span>
-        <a href="{% url 'storyboard_category' storyboard.category.slug %}">{{ storyboard.category.name }}</a>
-      </div>
       <nav class="sidebar-section storyboard__nav">
         <h2>Navigation</h2>
         <ul class="border-l-2 border-white ml-4">

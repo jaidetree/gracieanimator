@@ -2,8 +2,9 @@
 
 One ``_breadcrumb.html`` partial renders the ancestor trail above each page
 title: the current page's own title stays in the ``<h1>`` and never appears as a
-crumb, every crumb is followed by a slash, and labels render lowercase. These
-tests drive the HTTP seam and read the rendered trail back through ``crumbs``.
+crumb, every crumb is followed by a slash, and labels render in their natural
+(capitalized) case. These tests drive the HTTP seam and read the rendered trail
+back through ``crumbs``.
 The gated storyboard pages run unlocked (see ``unlock_storyboards``).
 """
 
@@ -44,7 +45,7 @@ def unlock_storyboards(client):
     session.save()
 
 
-PORTFOLIO = ("/", "portfolio")
+PORTFOLIO = ("/", "Portfolio")
 
 
 def test_comics_index_trails_to_portfolio(client):
@@ -55,7 +56,7 @@ def test_comic_detail_trails_through_comics(client):
     comic = ComicFactory()
     ComicPageFactory(comic=comic)
     body = client.get(f"/comics/{comic.slug}/").content.decode()
-    assert crumbs(body) == [PORTFOLIO, ("/comics/", "comics")]
+    assert crumbs(body) == [PORTFOLIO, ("/comics/", "Comics")]
     # The comic's own title is the heading, not a crumb.
     assert (f"/comics/{comic.slug}/", comic.title) not in crumbs(body)
 
@@ -79,20 +80,18 @@ def test_storyboard_category_trails_through_storyboards(client, unlock_storyboar
     category = CategoryFactory(name="Commercials")
     StoryboardFactory(category=category)
     body = client.get(f"/storyboards/category/{category.slug}/").content.decode()
-    assert crumbs(body) == [PORTFOLIO, ("/storyboards/", "storyboards")]
+    assert crumbs(body) == [PORTFOLIO, ("/storyboards/", "Storyboards")]
 
 
-def test_storyboard_detail_trails_through_lowercased_category(
-    client, unlock_storyboards
-):
+def test_storyboard_detail_trails_through_category(client, unlock_storyboards):
     category = CategoryFactory(name="Commercials")
     storyboard = StoryboardFactory(category=category)
     StoryboardVideoFactory(storyboard=storyboard)
     body = client.get(f"/storyboards/{storyboard.slug}/").content.decode()
     assert crumbs(body) == [
         PORTFOLIO,
-        ("/storyboards/", "storyboards"),
-        (f"/storyboards/category/{category.slug}/", "commercials"),
+        ("/storyboards/", "Storyboards"),
+        (f"/storyboards/category/{category.slug}/", "Commercials"),
     ]
 
 
