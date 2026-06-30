@@ -176,6 +176,11 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
+# Opt into Django 6.0's URLField behaviour now: blank-scheme URLs entered in
+# admin/forms are normalised to https:// rather than http://. Transitional
+# setting, removable once we're on Django 6.0 where https is the default.
+FORMS_URLFIELD_ASSUME_HTTPS = True
+
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
