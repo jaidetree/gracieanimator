@@ -30,9 +30,7 @@ def canonical_settings(settings):
 class TestCanonicalTag:
     def test_home_declares_canonical_on_canonical_host(self, client):
         html = client.get("/").content.decode()
-        assert (
-            '<link rel="canonical" href="https://gracieanimator.art/">' in html
-        )
+        assert '<link rel="canonical" href="https://gracieanimator.art/">' in html
 
     def test_canonical_uses_canonical_host_even_when_served_elsewhere(self, client):
         """A page served on the herokuapp fallback still points at the custom
@@ -79,7 +77,11 @@ class TestSitemap:
 
     def test_includes_static_section_indexes(self, client):
         xml = client.get("/sitemap.xml").content.decode()
-        for name in ("comics_index", "illustration_gallery", "sketchbook_sample_gallery"):
+        for name in (
+            "comics_index",
+            "illustration_gallery",
+            "sketchbook_sample_gallery",
+        ):
             assert f"https://gracieanimator.art{reverse(name)}" in xml
 
     def test_excludes_unpublished_and_gated_content(self, client):
