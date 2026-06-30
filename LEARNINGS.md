@@ -176,8 +176,8 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   security review hardened: `constant_time_compare` for the password,
   `request.session.cycle_key()` on unlock (session fixation), and `or ""` so a
   fieldless POST fails closed. Brute-force/rate-limiting and the HSTS max-age vs
-  `preload=True` mismatch were written up as recommendations, not coded —
-  see `docs/security-review.md` (#30).
+  `preload=True` mismatch were written up as recommendations, not coded — see the
+  security review, now a comment on issue #30 (was `docs/security-review.md`).
 - **An inline's formset prefix is its FK `related_name`, not `<model>_set`.**
   `ComicPage`'s FK to `Comic` is `related_name="pages"`, so the admin inline DOM
   uses that prefix everywhere: group `#pages-group`, added rows
