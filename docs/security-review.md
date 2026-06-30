@@ -2,9 +2,10 @@
 
 A pass over the attack surface of the Django rebuild to find vectors that need
 hardening against common web attacks. Findings are ranked by real-world risk,
-not by ease of fixing. Two low-risk defence-in-depth fixes ship with this review
-(see *Hardened now*); the higher-impact operational items are recommendations for
-a human to weigh, because they change production behaviour or add dependencies.
+not by ease of fixing. The gate hardening and the HSTS config fix ship with this
+review (see *Hardened now*); the top operational item (brute-force rate limiting)
+remains a recommendation, because it adds a dependency and a lockout-state story a
+human should choose.
 
 The threat model: a public, read-only portfolio. The only privilege boundaries
 are (a) Django admin (staff authoring) and (b) the shared-password gate on
@@ -44,18 +45,22 @@ bounded guess rate can't succeed regardless. Deferred here because it adds a
 dependency and an operational story (where lockout state lives) that a human
 should choose.
 
-### 2. HSTS max-age (3600s) contradicts `preload=True` — config inconsistency
+### 2. HSTS max-age (3600s) contradicted `preload=True` — fixed
 
-`SECURE_HSTS_SECONDS` defaults to 3600 (1 hour) while `SECURE_HSTS_PRELOAD = True`.
-The HSTS preload list requires `max-age` ≥ 31536000 (1 year), so the current
-combination is internally inconsistent: it advertises preload intent the policy
-can't honour, and one hour is short protection against SSL-stripping.
+`SECURE_HSTS_SECONDS` defaulted to 3600 (1 hour) while `SECURE_HSTS_PRELOAD =
+True`. The HSTS preload list requires `max-age` ≥ 31536000 (1 year), so the
+combination was internally inconsistent: it advertised preload intent the policy
+couldn't honour, and one hour is short protection against SSL-stripping.
 
-**Recommendation (not shipped):** raise the default to `31536000` once the deploy
-is confirmed HTTPS-only on the apex and subdomains. **Intentionally left as a
-human decision** — HSTS is hard to reverse (browsers cache it for the full
-max-age; preload is effectively permanent), so it must not ride in silently inside
-a review commit. It is already env-overridable via `SECURE_HSTS_SECONDS`.
+**Fixed:** the default is now `31536000`, and `preload` is *derived* —
+`SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS >= 31536000` — so the directive can
+never be advertised at a non-qualifying max-age, even if a deploy ramps the value
+down via the `SECURE_HSTS_SECONDS` env var. Starting at one year is safe here
+specifically because this is a greenfield deploy: there is no already-cached
+shorter policy to ramp up from, and the only subdomain (`media.`) is HTTPS. The
+non-greenfield ramp (300s → 1d → 30d → 1yr, confirming apex + every subdomain at
+each step, *then* submitting to hstspreload.org) stays available through the env
+var. Pinned by `config/test_deploy.py::test_prod_hsts_is_preload_eligible`.
 
 ### 3. Timing-unsafe password comparison — fixed (low real risk)
 
@@ -105,7 +110,7 @@ now*.
 
 ## Hardened now
 
-`portfolio/storyboard_gate.py`, with tests in
+The storyboard gate (`portfolio/storyboard_gate.py`), with tests in
 `portfolio/tests/test_storyboard_gate.py`:
 
 - **Constant-time password check** via `django.utils.crypto.constant_time_compare`
@@ -116,3 +121,11 @@ now*.
 - **Missing-field robustness:** a POST omitting `password` coerces to `""` and
   fails closed instead of comparing `None`; pinned by
   `test_post_without_password_field_stays_locked`.
+
+HSTS config (`config/settings.py`, prod block), with a test in
+`config/test_deploy.py`:
+
+- **One-year max-age default with a derived `preload`** (finding 2):
+  `SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS >= 31536000`, so the preload
+  directive tracks the actual max-age; pinned by
+  `test_prod_hsts_is_preload_eligible`.

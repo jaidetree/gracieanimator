@@ -32,20 +32,43 @@ from config.wsgi import application
 print("OK:" + type(application).__name__)
 """
 
+_HSTS_PROBE = """
+import django
+django.setup()
+from django.conf import settings
+print(f"HSTS:{settings.SECURE_HSTS_SECONDS}:{settings.SECURE_HSTS_PRELOAD}")
+"""
 
-def test_wsgi_application_boots_under_production_config():
+
+def _prod_env():
     # Strip the host's direnv R2_*/APP_ENV exports, then inject a clean prod env.
     env = {k: v for k, v in os.environ.items() if not k.startswith("R2_")}
     env.pop("APP_ENV", None)
     env.update(PROD_ENV)
     env["DJANGO_SETTINGS_MODULE"] = "config.settings"
-    proc = subprocess.run(
-        [sys.executable, "-c", _PROBE],
+    return env
+
+
+def _probe(source):
+    return subprocess.run(
+        [sys.executable, "-c", source],
         capture_output=True,
         text=True,
-        env=env,
+        env=_prod_env(),
         cwd=settings.BASE_DIR,
     )
+
+
+def test_wsgi_application_boots_under_production_config():
+    proc = _probe(_PROBE)
     assert proc.stdout.strip().startswith("OK:"), (
         f"WSGI app failed to load under production config:\n{proc.stderr}"
     )
+
+
+def test_prod_hsts_is_preload_eligible():
+    # The header must not advertise `preload` at a max-age shorter than the
+    # preload list's one-year minimum; prod ships a qualifying default. Import-time
+    # IS_PROD gating forces the subprocess (same technique as the boot probe).
+    proc = _probe(_HSTS_PROBE)
+    assert proc.stdout.strip() == "HSTS:31536000:True", proc.stderr

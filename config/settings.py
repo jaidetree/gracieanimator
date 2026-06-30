@@ -244,6 +244,11 @@ if IS_PROD:
     SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=3600)
+    # Default to the one-year max-age the HSTS preload list requires; greenfield
+    # deploy, so there's no already-cached shorter policy to ramp up from, and the
+    # only subdomain (media.) is HTTPS. A cautious deploy can still ramp via the
+    # env var — and `preload` is advertised only when the value actually qualifies,
+    # so a ramped-down override can never emit a preload directive it can't honour.
+    SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=31536000)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS >= 31536000
