@@ -75,6 +75,9 @@ MIDDLEWARE = [
     # Must follow AuthenticationMiddleware: it turns the PermissionDenied axes
     # raises on a locked client into the friendly lockout response.
     "axes.middleware.AxesMiddleware",
+    # Tags responses on non-canonical hosts (herokuapp/preview) noindex so only
+    # the custom domain is indexed; see config/seo.py.
+    "config.seo.noindex_non_canonical_host",
 ]
 
 ROOT_URLCONF = "config.urls"

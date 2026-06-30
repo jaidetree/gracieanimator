@@ -23,7 +23,7 @@ def canonical_settings(settings):
     client present the fallback host alongside the default ``testserver``."""
     settings.CANONICAL_HOST = "gracieanimator.art"
     settings.CANONICAL_SCHEME = "https"
-    settings.ALLOWED_HOSTS = ["testserver", ALT_HOST]
+    settings.ALLOWED_HOSTS = ["testserver", "gracieanimator.art", ALT_HOST]
 
 
 @pytest.mark.django_db
@@ -46,21 +46,56 @@ class TestCanonicalTag:
 
 
 class TestRobotsTxt:
+    # robots.txt is host-aware, so the full policy only appears on the canonical
+    # host. CANONICAL_HOST is pinned to a value the default ``testserver`` host
+    # never matches, so canonical-host requests must present the host explicitly.
+    CANONICAL = "gracieanimator.art"
+
     def test_serves_plain_text(self, client):
-        resp = client.get("/robots.txt")
+        resp = client.get("/robots.txt", HTTP_HOST=self.CANONICAL)
         assert resp.status_code == 200
         assert resp["Content-Type"].startswith("text/plain")
 
-    def test_disallows_admin_and_gated_paths(self, client):
-        body = client.get("/robots.txt").content.decode()
+    def test_disallows_admin_and_gated_paths_on_canonical_host(self, client):
+        body = client.get("/robots.txt", HTTP_HOST=self.CANONICAL).content.decode()
         for path in ("/admin/", "/ckeditor5/", "/auth/", "/storyboards/"):
             assert f"Disallow: {path}" in body
 
     def test_advertises_sitemap_on_canonical_host(self, client):
-        """Even fetched on the fallback host, robots points at the canonical
-        sitemap, so crawlers index the custom domain's URLs."""
-        body = client.get("/robots.txt", HTTP_HOST=ALT_HOST).content.decode()
+        """The canonical host points crawlers at the canonical sitemap."""
+        body = client.get("/robots.txt", HTTP_HOST=self.CANONICAL).content.decode()
         assert "Sitemap: https://gracieanimator.art/sitemap.xml" in body
+
+    def test_denies_all_crawling_on_non_canonical_host(self, client):
+        """Any other host — herokuapp fallback, preview — is blanket-disallowed so
+        only the custom domain gets indexed."""
+        body = client.get("/robots.txt", HTTP_HOST=ALT_HOST).content.decode()
+        assert "Disallow: /\n" in body
+        # No selective allow-list and no sitemap leak the non-canonical host.
+        assert "Sitemap:" not in body
+        assert "/admin/" not in body
+
+    def test_canonical_host_is_not_blanket_disallowed(self, client):
+        """Guard the boundary: the canonical host must never emit ``Disallow: /``,
+        which would deindex the whole live site."""
+        body = client.get("/robots.txt", HTTP_HOST=self.CANONICAL).content.decode()
+        assert "Disallow: /\n" not in body
+
+
+class TestNoindexHeader:
+    """X-Robots-Tag backstops robots.txt for crawlers that fetch anyway."""
+
+    CANONICAL = "gracieanimator.art"
+
+    def test_non_canonical_host_response_is_noindex(self, client):
+        resp = client.get("/robots.txt", HTTP_HOST=ALT_HOST)
+        assert resp["X-Robots-Tag"] == "noindex, nofollow"
+
+    def test_canonical_host_response_is_not_tagged(self, client):
+        """The live site must stay indexable: no noindex header on the canonical
+        host."""
+        resp = client.get("/robots.txt", HTTP_HOST=self.CANONICAL)
+        assert "X-Robots-Tag" not in resp
 
 
 @pytest.mark.django_db
