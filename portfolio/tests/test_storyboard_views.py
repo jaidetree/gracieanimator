@@ -12,12 +12,10 @@ content as an unlocked visitor. The gate itself (locked/unlocked, login, logout)
 is covered separately in ``test_storyboard_gate.py``.
 """
 
-from io import BytesIO
 from unittest.mock import Mock
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
-from PIL import Image
 
 from portfolio import oembed
 from portfolio.tests.factories import (
@@ -26,6 +24,7 @@ from portfolio.tests.factories import (
     StoryboardFactory,
     StoryboardPDFFactory,
     StoryboardVideoFactory,
+    jpeg_bytes,
 )
 
 pytestmark = pytest.mark.django_db
@@ -40,12 +39,6 @@ def unlock_storyboards(client):
     session = client.session
     session["storyboards_auth"] = True
     session.save()
-
-
-def _jpeg_bytes():
-    buf = BytesIO()
-    Image.new("RGB", (40, 40), "red").save(buf, "JPEG")
-    return buf.getvalue()
 
 
 def _body(client, url):
@@ -122,7 +115,7 @@ def test_unknown_category_404(client):
 
 
 def test_grid_uses_small_rendition_not_full_thumbnail(client):
-    thumb = SimpleUploadedFile("t.jpg", _jpeg_bytes(), content_type="image/jpeg")
+    thumb = SimpleUploadedFile("t.jpg", jpeg_bytes(), content_type="image/jpeg")
     sb = StoryboardFactory(thumbnail=thumb)
     body = _body(client, INDEX_URL)
     # The small grid rendition is served; the full uploaded thumbnail is not.
@@ -196,7 +189,7 @@ def test_detail_section_nav_includes_every_present_section(client):
 
 def test_detail_renders_without_a_video(client):
     # A thumbnail-only storyboard (no video) is valid; detail still renders.
-    thumb = SimpleUploadedFile("t.jpg", _jpeg_bytes(), content_type="image/jpeg")
+    thumb = SimpleUploadedFile("t.jpg", jpeg_bytes(), content_type="image/jpeg")
     sb = StoryboardFactory(title="Quiet Board", thumbnail=thumb)
     body = _body(client, _detail_url(sb))
     assert "Quiet Board" in body

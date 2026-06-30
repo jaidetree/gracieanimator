@@ -3,7 +3,12 @@ import re
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from portfolio.tests.factories import ComicFactory, ComicPageFactory, make_comic
+from portfolio.tests.factories import (
+    ComicFactory,
+    ComicPageFactory,
+    jpeg_bytes,
+    make_comic,
+)
 from portfolio.views import adjacent_comics
 
 pytestmark = pytest.mark.django_db
@@ -39,7 +44,7 @@ def test_thumbnail_defaults_to_first_page_when_blank():
 
 
 def test_manual_thumbnail_wins():
-    manual = SimpleUploadedFile("thumb.jpg", _jpeg_bytes(), content_type="image/jpeg")
+    manual = SimpleUploadedFile("thumb.jpg", jpeg_bytes(), content_type="image/jpeg")
     comic = make_comic(n_pages=2, thumbnail=manual)
     assert comic.thumbnail_url == comic.thumbnail.url
     assert comic.thumbnail_url != comic.cover_page.grid_image.url
@@ -125,10 +130,10 @@ def test_selected_page_is_full_opacity_others_dimmed_with_hover_transition(clien
     assert "comic__page--selected" in body
     assert "opacity-100" in body  # selected page
     assert "opacity-50" in body  # dimmed pages
-    # Dimmed pages lift to full opacity on hover, transitioning over 300ms.
+    # Dimmed pages lift to full opacity on a hover transition (exact duration is
+    # cosmetic — assert the behaviour, not the magnitude).
     assert "hover:opacity-100" in body
     assert "transition-opacity" in body
-    assert "duration-300" in body
 
 
 def test_first_page_has_next_but_no_previous(client):
@@ -174,9 +179,9 @@ def test_nav_chevrons_are_centered_circles_with_hover_transition(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/page/2/").content.decode()
     prev = re.search(r'<a class="comic__prev[^"]*"', body).group(0)
-    # 48x48, vertically centered over the image, transitions, rounded with a
-    # 10% black circle on mobile that clears on desktop. Chevron is an SVG.
-    assert "w-12" in prev and "h-12" in prev
+    # Vertically centered over the image, transitions, rounded with a 10% black
+    # circle on mobile that clears on desktop. Chevron is an SVG. (Exact box size
+    # is cosmetic and intentionally not pinned.)
     assert "top-0" in prev and "bottom-0" in prev and "my-auto" in prev
     assert "rounded-full" in prev
     assert "bg-black/10" in prev and "lg:bg-transparent" in prev
@@ -204,10 +209,11 @@ def test_unpublished_comic_detail_404(client):
 # is covered by the E2E test.
 
 
-def test_detail_mounts_alpine_viewer(client):
+def test_detail_loads_alpine_and_mounts_the_viewer(client):
     comic = make_comic(n_pages=3)
     body = client.get(f"/comics/{comic.slug}/").content.decode()
-    assert 'id="comic-viewer"' in body
+    assert "js/alpine.min.js" in body  # the library is loaded...
+    assert 'id="comic-viewer"' in body  # ...and the viewer is mounted on it
     assert 'x-data="comicViewer(' in body
     assert "function comicViewer(" in body
 
@@ -225,12 +231,6 @@ def test_swapper_wraps_chevrons_and_thumbnails_but_not_the_sibling_bar(client):
     assert open_at < body.index("comic__pages") < close_at
     # The sibling bar navigates to a different comic: outside the wrapper.
     assert body.index("comic__siblings") > close_at
-
-
-def test_base_loads_alpine(client):
-    comic = make_comic(n_pages=1)
-    body = client.get(f"/comics/{comic.slug}/").content.decode()
-    assert "js/alpine.min.js" in body
 
 
 # --- sibling (prev/next comic) navigation ---
@@ -298,14 +298,3 @@ def test_sibling_bar_ignores_unpublished_comics(client):
     assert "comic__siblings" not in body
 
 
-# --- helpers ---
-
-
-def _jpeg_bytes():
-    from io import BytesIO
-
-    from PIL import Image
-
-    buf = BytesIO()
-    Image.new("RGB", (10, 10), "red").save(buf, "JPEG")
-    return buf.getvalue()

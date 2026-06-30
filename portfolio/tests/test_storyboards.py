@@ -219,7 +219,6 @@ def test_manual_thumbnail_wins_over_video_poster(monkeypatch):
     # image and never the video poster.
     assert sb.thumbnail_url == sb.thumbnail_rendition.url
     assert "auto.jpg" not in sb.thumbnail_url
-    assert "auto.jpg" not in sb.thumbnail_url
 
 
 # --- AC6: PDF stores an uploaded file + display name ---

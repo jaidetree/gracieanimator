@@ -1,7 +1,15 @@
+"""Illustration-specific behaviour.
+
+The gallery layout, ordering, rendition, and published-filtering guarantees are
+shared with SketchbookSample and live in ``test_galleries.py``; this suite covers
+what's particular to Illustration — slug generation on the shared base, the
+alpha-PNG rendition path, and thumbnail fallback.
+"""
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from portfolio.tests.factories import IllustrationFactory
+from portfolio.tests.factories import IllustrationFactory, jpeg_bytes, png_rgba_bytes
 
 pytestmark = pytest.mark.django_db
 
@@ -28,51 +36,12 @@ def test_slug_is_unique_within_type():
     assert second.slug == "portrait-2"
 
 
-# --- published filtering (HTTP seam) ---
-
-
-def test_only_published_illustrations_appear(client):
-    shown = IllustrationFactory(title="Visible", published=True)
-    hidden = IllustrationFactory(title="Hidden", published=False)
-    body = client.get(GALLERY_URL).content.decode()
-    assert shown.title in body
-    assert hidden.title not in body
-
-
-def test_unpublished_illustration_absent(client):
-    IllustrationFactory(title="Draft Piece", published=False)
-    assert "Draft Piece" not in client.get(GALLERY_URL).content.decode()
-
-
-# --- gallery layout (HTTP seam) ---
-
-
-def test_gallery_is_single_column_full_width(client):
-    IllustrationFactory(published=True)
-    body = client.get(GALLERY_URL).content.decode()
-    # Single-column stack (flex-col), images at container width (w-full), no grid.
-    assert "flex-col" in body
-    assert "w-full" in body
-    assert "grid-cols" not in body
-
-
-def test_gallery_orders_by_order_field(client):
-    IllustrationFactory(title="Second", order=2, published=True)
-    IllustrationFactory(title="First", order=1, published=True)
-    body = client.get(GALLERY_URL).content.decode()
-    assert body.index("First") < body.index("Second")
-
-
-def test_gallery_serves_rendition_not_original(client):
-    illo = IllustrationFactory(published=True)
-    body = client.get(GALLERY_URL).content.decode()
-    assert illo.gallery_image.url in body
-    assert illo.image.url not in body
+# --- alpha-source rendition (HTTP seam) ---
 
 
 def test_gallery_renders_transparent_png_source(client):
     # An illustrator may upload an RGBA PNG; the JPEG rendition must not 500.
-    png = SimpleUploadedFile("alpha.png", _png_rgba_bytes(), content_type="image/png")
+    png = SimpleUploadedFile("alpha.png", png_rgba_bytes(), content_type="image/png")
     illo = IllustrationFactory(published=True, image=png)
     resp = client.get(GALLERY_URL)
     assert resp.status_code == 200
@@ -90,30 +59,7 @@ def test_thumbnail_auto_derives_from_image_when_blank():
 
 
 def test_manual_thumbnail_wins():
-    manual = SimpleUploadedFile("thumb.jpg", _jpeg_bytes(), content_type="image/jpeg")
+    manual = SimpleUploadedFile("thumb.jpg", jpeg_bytes(), content_type="image/jpeg")
     illo = IllustrationFactory(thumbnail=manual)
     assert illo.thumbnail_url == illo.thumbnail.url
     assert illo.thumbnail_url != illo.thumbnail_rendition.url
-
-
-# --- helpers ---
-
-
-def _jpeg_bytes():
-    from io import BytesIO
-
-    from PIL import Image
-
-    buf = BytesIO()
-    Image.new("RGB", (10, 10), "red").save(buf, "JPEG")
-    return buf.getvalue()
-
-
-def _png_rgba_bytes():
-    from io import BytesIO
-
-    from PIL import Image
-
-    buf = BytesIO()
-    Image.new("RGBA", (1600, 1200), (255, 0, 0, 128)).save(buf, "PNG")
-    return buf.getvalue()

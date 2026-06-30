@@ -1,13 +1,11 @@
-from io import BytesIO
-
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
-from PIL import Image
 
 from portfolio.tests.factories import (
     IllustrationFactory,
     SketchbookSampleFactory,
     StoryboardFactory,
+    jpeg_bytes,
     make_comic,
 )
 
@@ -18,12 +16,6 @@ HOME_URL = "/"
 
 def _body(client):
     return client.get(HOME_URL).content.decode()
-
-
-def _jpeg_bytes():
-    buf = BytesIO()
-    Image.new("RGB", (40, 40), "red").save(buf, "JPEG")
-    return buf.getvalue()
 
 
 # --- one featured, published piece per type (HTTP seam) ---
@@ -65,7 +57,7 @@ def test_published_but_not_featured_never_selected(client):
 
 def test_orders_illustration_then_sketchbook_then_comic(client):
     # No featured storyboard here, so that type is absent; the remaining three
-    # keep their canonical relative order.
+    # keep their canonical relative order, each linking to its own section page.
     IllustrationFactory(featured=True, published=True)
     SketchbookSampleFactory(featured=True, published=True)
     make_comic(featured=True, published=True)
@@ -75,6 +67,8 @@ def test_orders_illustration_then_sketchbook_then_comic(client):
         < body.index("Sketchbook Samples")
         < body.index("Comics")
     )
+    for path in ("/illustrations/", "/sketchbook-samples/", "/comics/"):
+        assert f'href="{path}"' in body
 
 
 def test_featured_storyboard_leads_the_grid(client):
@@ -89,16 +83,6 @@ def test_featured_storyboard_leads_the_grid(client):
 # --- thumbnails link to section pages (HTTP seam) ---
 
 
-def test_each_type_links_to_its_section_page(client):
-    IllustrationFactory(featured=True, published=True)
-    SketchbookSampleFactory(featured=True, published=True)
-    make_comic(featured=True, published=True)
-    body = _body(client)
-    assert 'href="/illustrations/"' in body
-    assert 'href="/sketchbook-samples/"' in body
-    assert 'href="/comics/"' in body
-
-
 def test_thumbnail_uses_derived_rendition(client):
     illo = IllustrationFactory(featured=True, published=True)
     assert illo.thumbnail_rendition.url in _body(client)
@@ -108,7 +92,7 @@ def test_featured_storyboard_tile_serves_rendition_not_full_image(client):
     # AC2: a manual-thumbnail storyboard resolves to the same small rendition on
     # the homepage tile as in the grids — the full uploaded image is never served
     # into a grid surface.
-    thumb = SimpleUploadedFile("t.jpg", _jpeg_bytes(), content_type="image/jpeg")
+    thumb = SimpleUploadedFile("t.jpg", jpeg_bytes(), content_type="image/jpeg")
     sb = StoryboardFactory(featured=True, published=True, thumbnail=thumb)
     body = _body(client)
     assert sb.thumbnail_rendition.url in body

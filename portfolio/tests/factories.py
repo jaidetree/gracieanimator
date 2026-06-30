@@ -1,4 +1,7 @@
+from io import BytesIO
+
 import factory
+from PIL import Image
 
 from portfolio.models import (
     Category,
@@ -97,6 +100,20 @@ class StoryboardPDFFactory(factory.django.DjangoModelFactory):
     order = factory.Sequence(lambda n: n)
     display_name = factory.Sequence(lambda n: f"Brief {n}")
     file = factory.django.FileField(filename="brief.pdf", data=b"%PDF-1.4 test")
+
+
+def jpeg_bytes(size=(40, 40), color="red"):
+    """Raw bytes of a small solid-colour JPEG, for SimpleUploadedFile uploads."""
+    buf = BytesIO()
+    Image.new("RGB", size, color).save(buf, "JPEG")
+    return buf.getvalue()
+
+
+def png_rgba_bytes(size=(1600, 1200), color=(255, 0, 0, 128)):
+    """Raw bytes of a translucent RGBA PNG (the alpha-source rendition case)."""
+    buf = BytesIO()
+    Image.new("RGBA", size, color).save(buf, "PNG")
+    return buf.getvalue()
 
 
 def make_comic(n_pages=3, **kwargs):
