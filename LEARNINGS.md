@@ -40,6 +40,25 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   competing Sortable on the tbody. Test the promotion (row gains the class +
   handle + `_reorder_` input), not a simulated drop — SortableJS-drag-under-
   Playwright is flaky and the drop engine is already trusted for saved rows.
+- **Rate-limit a custom view with `django-ratelimit`, tested through the real DB
+  cache** (#31). The storyboard gate is a hand-rolled view, not a `contrib.auth`
+  login, so `@ratelimit(key=..., rate="5/m", method="POST", block=False)` fits
+  (axes would fight it). `block=False` sets `request.limited` instead of raising,
+  so the over-limit branch stays *in the view* — render the friendly form at
+  status 429 before the password check, so a blocked request fails closed.
+  Counting needs a **shared** cache (DB cache; the default LocMemCache is per-dyno
+  and resets on restart), keyed on the *last* `X-Forwarded-For` hop — behind
+  Heroku's router `REMOTE_ADDR` is the router and the first XFF entry is
+  client-spoofable. Provision the DB cache table with `createcachetable` (a
+  command, *not* a migration) in the Procfile `release:` phase + once locally.
+  Tests: set `RATELIMIT_ENABLE = False` in `config.test_settings` so the #30
+  many-POST gate suites don't trip the limiter, then opt back in *per test* with
+  `settings.RATELIMIT_ENABLE = True`. Drive the real seam: `call_command(
+  "createcachetable")` inside the test (PG DDL is transactional → the table lives
+  for the rolled-back transaction, no global state to clean up), `cache.clear()`,
+  give each test a distinct documentation-range IP via `HTTP_X_FORWARDED_FOR`,
+  and assert the *transition* (`statuses[0]==200`, `statuses[-1]==429`) not an
+  exact boundary index. Env-strip the run (it touches the database).
 
 ## Mistakes to Avoid
 
