@@ -17,6 +17,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django_ratelimit.decorators import ratelimit
 
 from config import url_names
+from config.client_ip import client_ip
 
 # A correct POST to /auth/ sets this session flag, which unlocks every storyboard
 # page for the browser session; the guarded views require it.
@@ -29,19 +30,15 @@ AUTH_RATE = "5/m"
 
 
 def client_ip_key(group, request):
-    """ratelimit key: the real client IP, from the last X-Forwarded-For hop.
+    """ratelimit key: the real client IP behind Heroku (the last XFF hop).
 
-    Behind Heroku's router ``REMOTE_ADDR`` is the router, not the visitor, so every
-    request would share one bucket (one attacker could lock everyone out, or the
-    limit is trivially pooled). Heroku appends the connecting client's IP as the
-    *last* XFF entry; earlier entries are client-supplied and spoofable, so the
-    last hop is the only trustworthy one. Falls back to ``REMOTE_ADDR`` when no XFF
-    header is present (local dev, or a non-proxied request).
+    The "which hop to trust" rule lives in one place, ``config.client_ip``, so the
+    gate (here) and the admin-login throttle (django-axes, #32) can't drift apart
+    on the security-critical question of which forwarded entry is spoofable.
+    ``@ratelimit`` passes a ``(group, request)`` key signature; axes passes just
+    ``request`` — both delegate to the same ``client_ip``.
     """
-    forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded:
-        return forwarded.rsplit(",", 1)[-1].strip()
-    return request.META.get("REMOTE_ADDR", "")
+    return client_ip(request)
 
 
 def storyboards_required(view):

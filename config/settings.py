@@ -48,8 +48,19 @@ INSTALLED_APPS = [
     "adminsortable2",
     "imagekit",
     "django_ckeditor_5",
+    # Brute-force lockout on the Django admin login (Slice 32). Ships its own
+    # migrations for the attempt/lockout tables (no cache backend, unlike #31).
+    "axes",
     "pages",
     "portfolio",
+]
+
+# AxesStandaloneBackend must come *first*: it raises on a locked client before
+# any real authentication happens, and otherwise returns None so ModelBackend
+# (after it) does the actual credential check.
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 MIDDLEWARE = [
@@ -61,6 +72,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Must follow AuthenticationMiddleware: it turns the PermissionDenied axes
+    # raises on a locked client into the friendly lockout response.
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -117,6 +131,33 @@ CACHES = {
         "LOCATION": "ratelimit_cache",
     }
 }
+
+# Brute-force lockout on the Django admin login (Slice 32, django-axes). The admin
+# is a `django.contrib.auth` login, so axes hooks the auth backend + failure
+# signals directly (unlike the hand-rolled storyboard gate, throttled by
+# django-ratelimit in #31). Counts live in axes' own DB tables (its migrations);
+# no cache backend is involved here.
+#
+# On in production by default (fail-secure, matching the settings posture); off in
+# dev/test so a local typo-storm or the suite's many-POST admin tests don't lock
+# anyone out. A dev can force it on with AXES_ENABLED=true. Override via env.
+AXES_ENABLED = env.bool("AXES_ENABLED", default=IS_PROD)
+# A handful of misses is fine; the (limit+1)-th attempt for the key is blocked.
+AXES_FAILURE_LIMIT = env.int("AXES_FAILURE_LIMIT", default=5)
+# Lock on the username+IP *combination* (nested list = AND): a single username
+# isn't lockable from anywhere at once (admin-account DoS), and one bad actor on a
+# shared IP doesn't lock out an innocent user on the same IP.
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+# The lockout self-clears after an hour; `manage.py axes_reset` unlocks manually.
+AXES_COOLOFF_TIME = 1
+# A correct login under the limit clears the failure count for that key (default
+# keeps it), so an honest fat-finger streak doesn't shorten the next real session.
+AXES_RESET_ON_SUCCESS = True
+# Resolve the real client IP exactly as the storyboard gate does — the last
+# X-Forwarded-For hop Heroku appends. django-ipware isn't installed, so without
+# this axes would fall back to REMOTE_ADDR (the Heroku router) and lock every
+# admin out behind one shared IP. One rule, one place: config.client_ip.
+AXES_CLIENT_IP_CALLABLE = "config.client_ip.client_ip"
 
 AUTH_PASSWORD_VALIDATORS = [
     {

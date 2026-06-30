@@ -5,12 +5,14 @@ hardening against common web attacks. Findings are ranked by real-world risk,
 not by ease of fixing. The gate hardening and the HSTS config fix ship with this
 review (see *Hardened now*); the top operational item (brute-force rate limiting)
 was deferred here as a recommendation — it added a dependency and a cache-backend
-decision — and is now **resolved** in #31 (see finding #1).
+decision — and is now **resolved** for both privilege boundaries: the storyboard
+gate in #31 (finding #1) and the admin login in #32 (finding #1b).
 
 The threat model: a public, read-only portfolio. The only privilege boundaries
 are (a) Django admin (staff authoring) and (b) the shared-password gate on
-storyboards. There are no per-visitor accounts and no user-submitted content, so
-the classic "untrusted input rendered to other users" surface is small.
+storyboards — **both now brute-force-hardened** (findings #1b, #1). There are no
+per-visitor accounts and no user-submitted content, so the classic "untrusted
+input rendered to other users" surface is small.
 
 ## Baseline: Django deploy audit is clean
 
@@ -50,6 +52,33 @@ dynos and survives a restart within the window; the table is provisioned by
 `STORYBOARDS_PASSWORD` so a bounded guess rate can't succeed regardless. The #30
 gate hardening (constant-time compare, session-key cycling, fail-closed) is
 unchanged. Pinned by `portfolio/tests/test_storyboard_gate_ratelimit.py`.
+
+### 1b. Admin login has no brute-force lockout — resolved (#32)
+
+The Django admin (`/admin/login/`) is the higher-value of the two privilege
+boundaries: it fronts full content control, not just gallery viewing. Out of the
+box it accepts unlimited credential guesses, so an attacker can brute-force or
+credential-stuff a staff account at dyno speed. Distinct from the gate (#31): the
+admin login *is* a `django.contrib.auth` login, so the fix plugs into the auth
+backend rather than wrapping a hand-rolled view.
+
+**Resolved (#32):** `django-axes` locks out failed admin logins.
+`AxesStandaloneBackend` leads `AUTHENTICATION_BACKENDS` (raising before any real
+credential check on a locked client) with `ModelBackend` after it, and
+`AxesMiddleware` turns that raise into a friendly **429** ("Account locked…"),
+never a 500. After `AXES_FAILURE_LIMIT = 5` failures the client is locked for a
+one-hour `AXES_COOLOFF_TIME`; a correct login under the limit still works and
+`AXES_RESET_ON_SUCCESS` clears the counter. The lock keys on the **username+IP
+combination** (`AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]`): a single
+account can't be locked from everywhere at once (admin-account DoS) and one bad
+actor can't lock innocent users sharing an IP. The client IP is resolved through
+the *same* seam as the gate — `AXES_CLIENT_IP_CALLABLE = config.client_ip.client_ip`,
+the **last** `X-Forwarded-For` hop Heroku appends — so neither boundary trusts the
+router's `REMOTE_ADDR` (which would lock every admin out behind one IP) nor the
+spoofable first entry. Counts live in axes' own DB tables (its migrations; no
+cache backend, unlike #31). On in production by default, off in dev/test
+(`AXES_ENABLED = IS_PROD`); manual unlock is `manage.py axes_reset`. Pinned by
+`portfolio/tests/test_admin_login_lockout.py`.
 
 ### 2. HSTS max-age (3600s) contradicted `preload=True` — fixed
 

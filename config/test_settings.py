@@ -23,3 +23,8 @@ from config.settings import *  # noqa: E402,F401,F403
 # limiter and bleed counts across tests. The rate-limit tests (#31) opt back in
 # per-test with `settings.RATELIMIT_ENABLE = True` and a cleared cache.
 RATELIMIT_ENABLE = False
+
+# Admin-login lockout (#32) off by default so the many-POST admin suites don't
+# lock themselves out; the axes tests opt back in per-test with
+# `settings.AXES_ENABLED = True` against fresh attempt rows.
+AXES_ENABLED = False

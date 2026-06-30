@@ -42,6 +42,11 @@ edit, and re-run `direnv allow`.
 - Public site: http://localhost:8000/
 - Admin: http://localhost:8000/admin/
 
+The admin login is brute-force-locked by `django-axes` (Slice 32): 5 failed
+logins for a username+IP lock that pair out for an hour. It's **off in dev/test**
+(`AXES_ENABLED=IS_PROD`) so local typos never lock you out; set `AXES_ENABLED=true`
+to exercise it. To clear a lockout manually (any env): `./manage.py axes_reset`.
+
 ## Test
 
 ```sh
