@@ -59,6 +59,31 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   give each test a distinct documentation-range IP via `HTTP_X_FORWARDED_FOR`,
   and assert the *transition* (`statuses[0]==200`, `statuses[-1]==429`) not an
   exact boundary index. Env-strip the run (it touches the database).
+- **Lock out the admin login with `django-axes`, keyed off the same client-IP
+  seam as the gate** (#32). The admin login *is* a `contrib.auth` login (unlike
+  the hand-rolled gate), so axes plugs straight in: `axes` in `INSTALLED_APPS`,
+  `axes.backends.AxesStandaloneBackend` *first* in `AUTHENTICATION_BACKENDS`
+  (it raises on a locked client before any real check, else returns None so
+  `ModelBackend` after it authenticates), `axes.middleware.AxesMiddleware` after
+  `AuthenticationMiddleware` (turns the raise into the friendly 429). No cache
+  backend / `createcachetable` — axes counts in its **own DB tables** (ships
+  migrations; the release-phase `migrate` provisions them). **`AXES_LOCKOUT_
+  PARAMETERS = [["username", "ip_address"]]` — the *nested* list is an AND
+  combination; a flat `["username", "ip_address"]` is OR, which makes one
+  username lockable from anywhere = admin-account DoS.** Prove it both ways
+  (same-IP/other-user and same-user/other-IP both stay open). `AXES_RESET_ON_
+  SUCCESS` defaults to **False** — set `True` so a correct login clears the count.
+  **ipware is *not* installed with axes 6.x**, so axes falls back to
+  `REMOTE_ADDR` (the Heroku router → every admin locked behind one IP); point
+  `AXES_CLIENT_IP_CALLABLE` at the shared **`config.client_ip.client_ip`** (last
+  XFF hop) — the one seam #31's `client_ip_key` and #32's axes both delegate to,
+  so the "which hop to trust" rule can't drift. Tests mirror #31: `AXES_ENABLED =
+  False` in `config.test_settings`, opt back in per-test with `settings.AXES_
+  ENABLED = True` + `AxesProxyHandler.reset_attempts()` (axes state is DB-backed →
+  rolls back per test). Drive the real `POST /admin/login/` with distinct
+  `HTTP_X_FORWARDED_FOR` IPs; the `admin_client` fixture's `force_login` bypasses
+  axes (no auth signals) so existing admin suites are unaffected. Env-strip the
+  run; pass `--create-db` the first time (axes adds migrations the reused DB lacks).
 
 ## Mistakes to Avoid
 
