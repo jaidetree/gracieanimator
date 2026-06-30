@@ -43,6 +43,18 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
 
 ## Mistakes to Avoid
 
+- **`manage.py check --deploy` false-positives in dev/test** because the prod
+  hardening (SSL/HSTS/secure cookies) is gated on `if IS_PROD:`. Audit the real
+  thing under a prod-like env that clears the boot guards: `env -u DATABASE_URL …
+  APP_ENV=production SECRET_KEY=$(python -c 'import
+  secrets;print(secrets.token_urlsafe(50))') ALLOWED_HOSTS=… R2_BUCKET_NAME=…
+  R2_ENDPOINT_URL=… R2_ACCESS_KEY_ID=… R2_SECRET_ACCESS_KEY=… python manage.py
+  check --deploy`. A short dummy `SECRET_KEY` trips W009 — use a 50-char one. It
+  came back fully clean, so the prod settings block is the trusted baseline (#30).
+- **A GET that only renders a form persists no session**, so there's no
+  `sessionid` cookie to read back. To test session-key cycling, seed + `save()`
+  `client.session`, capture `.session_key`, POST, then assert the new
+  `client.session.session_key` differs (#30).
 - **`ImageField` silently rejects non-images** (Pillow). Use `FileField` for
   PDFs/other files.
 - **`override_settings` breaks in two places:** in a `pytestmark` list it dies at
@@ -116,7 +128,12 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   login/logout views. `views.py` imports only the decorator; `config/urls.py`
   routes `/auth/` + `/logout/` at the gate module directly. The gate tests
   (`test_storyboard_gate`, `_e2e`) drive the HTTP seam, so the extraction needed
-  zero test edits (#25).
+  zero test edits (#25). It's the only hand-rolled auth path, so it's where the
+  security review hardened: `constant_time_compare` for the password,
+  `request.session.cycle_key()` on unlock (session fixation), and `or ""` so a
+  fieldless POST fails closed. Brute-force/rate-limiting and the HSTS max-age vs
+  `preload=True` mismatch were written up as recommendations, not coded —
+  see `docs/security-review.md` (#30).
 - **An inline's formset prefix is its FK `related_name`, not `<model>_set`.**
   `ComicPage`'s FK to `Comic` is `related_name="pages"`, so the admin inline DOM
   uses that prefix everywhere: group `#pages-group`, added rows
