@@ -14,12 +14,34 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.crypto import constant_time_compare
 from django.utils.http import url_has_allowed_host_and_scheme
+from django_ratelimit.decorators import ratelimit
 
 from config import url_names
 
 # A correct POST to /auth/ sets this session flag, which unlocks every storyboard
 # page for the browser session; the guarded views require it.
 SESSION_AUTH_KEY = "storyboards_auth"
+
+# How many /auth/ POSTs one client IP may make per minute before being blocked.
+# Generous enough that a real visitor fat-fingering the password is never caught,
+# tight enough that a shared-secret brute-force can't grind at dyno speed (#31).
+AUTH_RATE = "5/m"
+
+
+def client_ip_key(group, request):
+    """ratelimit key: the real client IP, from the last X-Forwarded-For hop.
+
+    Behind Heroku's router ``REMOTE_ADDR`` is the router, not the visitor, so every
+    request would share one bucket (one attacker could lock everyone out, or the
+    limit is trivially pooled). Heroku appends the connecting client's IP as the
+    *last* XFF entry; earlier entries are client-supplied and spoofable, so the
+    last hop is the only trustworthy one. Falls back to ``REMOTE_ADDR`` when no XFF
+    header is present (local dev, or a non-proxied request).
+    """
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
+    if forwarded:
+        return forwarded.rsplit(",", 1)[-1].strip()
+    return request.META.get("REMOTE_ADDR", "")
 
 
 def storyboards_required(view):
@@ -40,6 +62,7 @@ def storyboards_required(view):
     return guarded
 
 
+@ratelimit(key=client_ip_key, rate=AUTH_RATE, method="POST", block=False)
 def storyboards_login(request):
     """The password gate: GET shows the form, a correct POST unlocks the session.
 
@@ -49,6 +72,12 @@ def storyboards_login(request):
     time. On success the session key is cycled (defeating session fixation), the
     flag is set, and the visitor is sent to a safe ``next`` (their original
     destination) or the storyboards index.
+
+    POSTs are rate-limited per client IP (``@ratelimit`` above). With
+    ``block=False`` the decorator only flags ``request.limited`` rather than
+    raising, so an over-limit attempt is handled here: it renders the friendly form
+    with a 429 and never reaches the password check — failing closed regardless of
+    what was submitted.
     """
     next_url = request.POST.get("next") or request.GET.get("next") or ""
     if not url_has_allowed_host_and_scheme(
@@ -57,19 +86,25 @@ def storyboards_login(request):
         next_url = reverse(url_names.STORYBOARD_GALLERY)
 
     error = None
+    status = 200
     if request.method == "POST":
-        password = settings.STORYBOARDS_PASSWORD
-        submitted = request.POST.get("password") or ""
-        if password and constant_time_compare(submitted, password):
-            request.session.cycle_key()
-            request.session[SESSION_AUTH_KEY] = True
-            return redirect(next_url)
-        error = "Incorrect password."
+        if getattr(request, "limited", False):
+            error = "Too many attempts. Please wait a minute and try again."
+            status = 429
+        else:
+            password = settings.STORYBOARDS_PASSWORD
+            submitted = request.POST.get("password") or ""
+            if password and constant_time_compare(submitted, password):
+                request.session.cycle_key()
+                request.session[SESSION_AUTH_KEY] = True
+                return redirect(next_url)
+            error = "Incorrect password."
 
     return render(
         request,
         "portfolio/storyboards_login.html",
         {"next": next_url, "error": error, "page_title": "Storyboards"},
+        status=status,
     )
 
 

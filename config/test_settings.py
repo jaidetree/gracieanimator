@@ -18,3 +18,8 @@ os.environ["APP_ENV"] = "test"
 os.environ.setdefault("STORYBOARDS_PASSWORD", "test-storyboards-password")
 
 from config.settings import *  # noqa: E402,F401,F403
+
+# Rate limiting off by default so the gate's many-POST suites (#30) don't trip the
+# limiter and bleed counts across tests. The rate-limit tests (#31) opt back in
+# per-test with `settings.RATELIMIT_ENABLE = True` and a cleared cache.
+RATELIMIT_ENABLE = False

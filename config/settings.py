@@ -104,6 +104,20 @@ STORYBOARDS_PASSWORD = env("STORYBOARDS_PASSWORD", default="")
 # gate re-locks on a fresh browser without an explicit logout.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
+# The storyboard gate is rate-limited (Slice 31) by django-ratelimit, which
+# counts attempts in this cache. A shared, cross-process store is required for the
+# limit to actually bind: the default per-process LocMemCache is per-dyno and
+# resets on restart, so a brute-force grind would just spread across dynos. The DB
+# cache (one low-traffic site, no Redis addon) holds across dynos and survives a
+# restart within the window. Its table is provisioned by `createcachetable` — run
+# in the Heroku release phase (Procfile) and once locally (see README).
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "ratelimit_cache",
+    }
+}
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"

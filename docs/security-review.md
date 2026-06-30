@@ -4,8 +4,8 @@ A pass over the attack surface of the Django rebuild to find vectors that need
 hardening against common web attacks. Findings are ranked by real-world risk,
 not by ease of fixing. The gate hardening and the HSTS config fix ship with this
 review (see *Hardened now*); the top operational item (brute-force rate limiting)
-remains a recommendation, because it adds a dependency and a lockout-state story a
-human should choose.
+was deferred here as a recommendation — it added a dependency and a cache-backend
+decision — and is now **resolved** in #31 (see finding #1).
 
 The threat model: a public, read-only portfolio. The only privilege boundaries
 are (a) Django admin (staff authoring) and (b) the shared-password gate on
@@ -29,21 +29,27 @@ Boot-time `ImproperlyConfigured` guards already fail a prod deploy closed if
 
 ## Findings, ranked by risk
 
-### 1. Storyboard gate has no brute-force / rate limiting — top operational risk
+### 1. Storyboard gate has no brute-force / rate limiting — resolved (#31)
 
 A single shared password protects every storyboard page, checked on `POST /auth/`
 with no attempt throttling, lockout, or CAPTCHA. For a *shared* secret this is the
 genuinely exploitable vector: an attacker can grind guesses as fast as the dyno
 answers. Impact is bounded (unlock only reveals the storyboard gallery, no
-data-modifying or account surface), which is why it's a recommendation rather than
-a same-day code change.
+data-modifying or account surface), which is why it was deferred from #30 rather
+than shipped same-day — it adds a dependency and a cache-backend decision.
 
-**Recommendation:** add request throttling on `/auth/` POST — `django-axes` or
-`django-ratelimit` keyed on client IP, or a small hand-rolled per-IP cooldown in
-the login view. Pair with a strong, high-entropy `STORYBOARDS_PASSWORD` so a
-bounded guess rate can't succeed regardless. Deferred here because it adds a
-dependency and an operational story (where lockout state lives) that a human
-should choose.
+**Resolved (#31):** `POST /auth/` is now throttled to `5/m` per client IP via
+`django-ratelimit` (`@ratelimit` on `storyboards_login`, `storyboard_gate.py`).
+Over-limit POSTs render the friendly login form with a 429 and never reach the
+password check, so a blocked request fails closed regardless of what it submits.
+The key is the **last** `X-Forwarded-For` hop (the client IP Heroku appends), not
+the spoofable first entry nor the router's `REMOTE_ADDR`. Counts live in a shared
+**DB cache** (`DatabaseCache`, table `ratelimit_cache`), so the limit holds across
+dynos and survives a restart within the window; the table is provisioned by
+`createcachetable` in the Heroku release phase. Pair with a strong, high-entropy
+`STORYBOARDS_PASSWORD` so a bounded guess rate can't succeed regardless. The #30
+gate hardening (constant-time compare, session-key cycling, fail-closed) is
+unchanged. Pinned by `portfolio/tests/test_storyboard_gate_ratelimit.py`.
 
 ### 2. HSTS max-age (3600s) contradicted `preload=True` — fixed
 

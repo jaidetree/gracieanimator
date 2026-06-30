@@ -20,8 +20,12 @@ The dev environment is provided by Nix + direnv. From the repo root:
 direnv allow         # loads the flake, creates .venv, installs requirements.txt
 ./scripts/db start   # initialise + start the project-local Postgres cluster
 ./manage.py migrate
+./manage.py createcachetable   # DB cache the storyboard-gate rate limiter counts in
 ./manage.py createsuperuser
 ```
+
+`createcachetable` is idempotent; skip it and a `POST /auth/` (the storyboard
+login) hits a missing-table error, since the rate limiter writes to the DB cache.
 
 Local dev works with no extra config. For personal overrides (a real
 `SECRET_KEY`, a different DB, etc.), `cp .envrc.local.example .envrc.local`,
@@ -67,7 +71,9 @@ a **staging** app **auto-deploys from the default branch** through the GitHub
 integration (a production app + staging→prod promotion are added at go-live).
 
 - `Procfile` — `web` runs gunicorn (`config.wsgi`, binding `$PORT`
-  automatically); `release` runs `python manage.py migrate --noinput` each deploy.
+  automatically); `release` runs `python manage.py migrate --noinput` then
+  `python manage.py createcachetable` (idempotent) each deploy, the latter
+  provisioning the DB cache the storyboard-gate rate limiter counts in.
 - `.python-version` pins Python 3.12.
 - Tailwind CSS is pre-compiled and committed (`static/css/stylesheet.css`), so
   the dyno needs no Node/Tailwind; Heroku's build-time `collectstatic` collects
