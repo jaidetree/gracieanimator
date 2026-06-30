@@ -210,6 +210,11 @@ class StoryboardAdminForm(forms.ModelForm):
         widget=CKEditor5Widget(config_name="default"), required=False
     )
 
+    class Media:
+        # Map CKEditor's palette onto the admin theme vars so the editor follows
+        # the admin's light/dark/auto color mode (see the stylesheet).
+        css = {"all": ("admin/css/ckeditor5-dark.css",)}
+
     class Meta:
         model = Storyboard
         # All editable fields except ``order`` — SortableProjectAdmin.get_fields

@@ -1,0 +1,30 @@
+/* Make the CKEditor 5 widget follow the Django admin color theme.
+ *
+ * The admin's own palette vars (--body-bg, --body-fg, --border-color,
+ * --darkened-bg, --selected-bg) are already flipped for us by the admin theme:
+ * the auto/light/dark toggle redefines them under html[data-theme="..."] and a
+ * prefers-color-scheme media query. CKEditor's Lark theme is likewise pure CSS
+ * custom properties. So we just point CKEditor's vars at the admin's — no
+ * dark/light branching here; whatever the admin computed cascades straight in.
+ *
+ * Scoped to .ck so only the editor chrome/body is affected. Inline image and
+ * media-embed previews render as raw page HTML inside the editor and keep their
+ * own colors — only the editor surfaces track the theme.
+ */
+.ck.ck-editor,
+.ck.ck-content.ck-editor__editable {
+    --ck-color-base-background: var(--body-bg);
+    --ck-color-base-foreground: var(--darkened-bg);
+    --ck-color-base-border: var(--border-color);
+    --ck-color-text: var(--body-fg);
+
+    --ck-color-toolbar-background: var(--darkened-bg);
+    --ck-color-toolbar-border: var(--border-color);
+
+    --ck-color-panel-background: var(--body-bg);
+    --ck-color-panel-border: var(--border-color);
+
+    --ck-color-button-default-hover-background: var(--selected-bg);
+    --ck-color-base-active: var(--selected-bg);
+    --ck-color-widget-hover-border: var(--primary);
+}
