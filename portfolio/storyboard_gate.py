@@ -12,6 +12,7 @@ from functools import wraps
 from django.conf import settings
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.crypto import constant_time_compare
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from config import url_names
@@ -43,9 +44,11 @@ def storyboards_login(request):
     """The password gate: GET shows the form, a correct POST unlocks the session.
 
     The shared password is read from settings; an unset (empty) password never
-    unlocks, so a misconfigured deploy fails closed rather than open. On success
-    the session flag is set and the visitor is sent to a safe ``next`` (their
-    original destination) or the storyboards index.
+    unlocks, so a misconfigured deploy fails closed rather than open. The check is
+    constant-time so a network observer can't recover the secret a character at a
+    time. On success the session key is cycled (defeating session fixation), the
+    flag is set, and the visitor is sent to a safe ``next`` (their original
+    destination) or the storyboards index.
     """
     next_url = request.POST.get("next") or request.GET.get("next") or ""
     if not url_has_allowed_host_and_scheme(
@@ -56,7 +59,9 @@ def storyboards_login(request):
     error = None
     if request.method == "POST":
         password = settings.STORYBOARDS_PASSWORD
-        if password and request.POST.get("password") == password:
+        submitted = request.POST.get("password") or ""
+        if password and constant_time_compare(submitted, password):
+            request.session.cycle_key()
             request.session[SESSION_AUTH_KEY] = True
             return redirect(next_url)
         error = "Incorrect password."

@@ -99,6 +99,28 @@ def test_empty_configured_password_never_unlocks(client, settings):
     assert "storyboards_auth" not in client.session
 
 
+# --- hardening: session fixation + missing field ---
+
+
+def test_successful_unlock_cycles_the_session_key(client):
+    # Session fixation defence: the session id a visitor presents before auth must
+    # not survive the unlock, so a pre-seeded id can't be replayed as authenticated.
+    session = client.session  # seed + persist a pre-auth session
+    session["seed"] = 1
+    session.save()
+    before = session.session_key
+    client.post(AUTH_URL, {"password": "s3cret"})
+    assert client.session.session_key != before
+    assert client.session["storyboards_auth"] is True
+
+
+def test_post_without_password_field_stays_locked(client):
+    # A POST omitting the field entirely must fail closed, never crash.
+    resp = client.post(AUTH_URL, {"next": INDEX_URL})
+    assert resp.status_code == 200
+    assert "storyboards_auth" not in client.session
+
+
 # --- one unlock covers the whole namespace ---
 
 
