@@ -4,9 +4,9 @@ from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
-from config import url_names
-from config.seo import robots_txt
-from config.sitemaps import sitemaps
+from core import url_names
+from core.seo import robots_txt
+from core.sitemaps import sitemaps
 from pages import views as page_views
 from portfolio import storyboard_gate
 from portfolio import views as portfolio_views

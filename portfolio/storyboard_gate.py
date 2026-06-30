@@ -16,8 +16,8 @@ from django.utils.crypto import constant_time_compare
 from django.utils.http import url_has_allowed_host_and_scheme
 from django_ratelimit.decorators import ratelimit
 
-from config import url_names
 from config.client_ip import client_ip
+from core import url_names
 
 # A correct POST to /auth/ sets this session flag, which unlocks every storyboard
 # page for the browser session; the guarded views require it.

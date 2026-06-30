@@ -76,8 +76,8 @@ MIDDLEWARE = [
     # raises on a locked client into the friendly lockout response.
     "axes.middleware.AxesMiddleware",
     # Tags responses on non-canonical hosts (herokuapp/preview) noindex so only
-    # the custom domain is indexed; see config/seo.py.
-    "config.seo.noindex_non_canonical_host",
+    # the custom domain is indexed; see core/seo.py.
+    "core.seo.noindex_non_canonical_host",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -94,7 +94,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "pages.context_processors.nav_pages",
-                "config.seo.canonical",
+                "core.seo.canonical",
             ],
         },
     },

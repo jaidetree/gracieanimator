@@ -2,7 +2,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
 
-from config import url_names
+from core import url_names
 
 from .models import Category, Comic, Illustration, SketchbookSample, Storyboard
 from .storyboard_gate import storyboards_required
@@ -14,7 +14,7 @@ PORTFOLIO_CRUMB = ("Portfolio", reverse_lazy(url_names.HOME))
 # Homepage grid: one featured piece per type, in display order. Each entry is
 # (model, label, section_url); reverse_lazy resolves the section URL at
 # import-safe time so the URL itself lives in the tuple, not a name to reverse.
-# Route names come from config.url_names, so a bad name fails at import.
+# Route names come from core.url_names, so a bad name fails at import.
 FEATURED_TYPES = [
     (Storyboard, "Storyboards", reverse_lazy(url_names.STORYBOARD_GALLERY)),
     (Illustration, "Illustrations", reverse_lazy(url_names.ILLUSTRATION_GALLERY)),
