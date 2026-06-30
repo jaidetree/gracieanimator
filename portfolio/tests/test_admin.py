@@ -87,6 +87,25 @@ def test_comic_page_inline_is_sortable():
     assert issubclass(ComicPageInline, SortableInlineAdminMixin)
 
 
+# --- unsaved inline rows are made drag-sortable too (#27) ---
+
+# (inline class, parent model) for every sortable inline on the admin.
+SORTABLE_INLINES = [
+    (ComicPageInline, Comic),
+    (StoryboardVideoInline, Storyboard),
+    (StoryboardDeckInline, Storyboard),
+    (StoryboardPDFInline, Storyboard),
+]
+
+
+@pytest.mark.parametrize("inline_cls,parent", SORTABLE_INLINES)
+def test_sortable_inline_ships_new_row_promoter(inline_cls, parent):
+    # The promoter script (which makes added-but-unsaved rows drag-sortable) is
+    # wired through Media, so the change/add page actually loads it.
+    media = inline_cls(parent, site).media
+    assert "portfolio/inline_sortable_new.js" in media._js
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize("admin_cls,model,factory", ORDERED_ADMINS)
 def test_changelist_shows_drag_handle_on_the_left(admin_cls, model, factory):

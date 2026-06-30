@@ -95,7 +95,22 @@ class SketchbookSampleAdmin(SortableProjectAdmin):
     pass
 
 
-class ComicPageInline(SortableTabularInline):
+class DragNewRowsInline(SortableTabularInline):
+    """A sortable inline whose *unsaved* rows are drag-sortable too (#27).
+
+    sortable2 only drives saved rows (``tr.has_original``): a row added via "Add
+    another" has neither the class nor the handle markup, so you can't drag it
+    until it's saved. ``inline_sortable_new.js`` promotes each new row on
+    ``formset:added`` so sortable2's existing Sortable picks it up — see that
+    file for the seam. Loaded via ``Media`` here so all four sortable inlines
+    inherit it; the listener is global and no-ops outside ``fieldset.sortable``.
+    """
+
+    class Media:
+        js = ("portfolio/inline_sortable_new.js",)
+
+
+class ComicPageInline(DragNewRowsInline):
     """Drag-sortable page collection for a Comic; row order is the render order.
 
     sortable2 renders ``order`` as a hidden input updated by drag and
@@ -147,7 +162,7 @@ class RequireVideoOrThumbnailFormSet(CustomInlineFormSet):
             )
 
 
-class StoryboardVideoInline(SortableTabularInline):
+class StoryboardVideoInline(DragNewRowsInline):
     """Drag-sortable embedded videos; optional when a thumbnail is set.
 
     ``verbose_name`` drops the model's "Storyboard" prefix from the inline's
@@ -162,7 +177,7 @@ class StoryboardVideoInline(SortableTabularInline):
     verbose_name_plural = "videos"
 
 
-class StoryboardDeckInline(SortableTabularInline):
+class StoryboardDeckInline(DragNewRowsInline):
     """Drag-sortable embedded slide decks (optional)."""
 
     model = StoryboardDeck
@@ -172,7 +187,7 @@ class StoryboardDeckInline(SortableTabularInline):
     verbose_name_plural = "decks"
 
 
-class StoryboardPDFInline(SortableTabularInline):
+class StoryboardPDFInline(DragNewRowsInline):
     """Drag-sortable uploaded files (optional)."""
 
     model = StoryboardPDF
