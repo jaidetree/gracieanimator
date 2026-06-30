@@ -28,6 +28,18 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   trail reads "portfolio / comics /". Home and static Pages pass no list →
   the partial renders nothing. Tests read the trail back by regexing the
   `aria-label="Breadcrumb"` nav, not the whole page.
+- **Make unsaved inline rows sortable by *promoting* them into sortable2's
+  existing Sortable, not a second one** (#27). sortable2 only drives
+  `tr.has_original` (the grip is drawn on `td.original p`; `onEnd` rewrites the
+  `input._reorder_` of every `tr.has_original` on drop). A row added via "Add
+  another" has neither, so it's undraggable until saved. `inline_sortable_new.js`
+  listens for Django's bubbling `formset:added` and, for a new row inside a
+  `fieldset.sortable`, adds `has_original` + an empty handle `<p>`. SortableJS
+  evaluates `draggable`/`handle`/`onMove` at pointer time and re-queries
+  `tr.has_original` on drop, so a row promoted *after* init joins fully — no
+  competing Sortable on the tbody. Test the promotion (row gains the class +
+  handle + `_reorder_` input), not a simulated drop — SortableJS-drag-under-
+  Playwright is flaky and the drop engine is already trusted for saved rows.
 
 ## Mistakes to Avoid
 
@@ -105,3 +117,14 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   routes `/auth/` + `/logout/` at the gate module directly. The gate tests
   (`test_storyboard_gate`, `_e2e`) drive the HTTP seam, so the extraction needed
   zero test edits (#25).
+- **An inline's formset prefix is its FK `related_name`, not `<model>_set`.**
+  `ComicPage`'s FK to `Comic` is `related_name="pages"`, so the admin inline DOM
+  uses that prefix everywhere: group `#pages-group`, added rows
+  `tr.dynamic-pages` (ids `pages-0`…), empty template `#pages-empty`, management
+  inputs `id_pages-TOTAL_FORMS`. Admin DOM / Playwright selectors must key off
+  the related_name.
+- **An `InlineModelAdmin` `class Media` *does* load its JS.** Django's
+  `MediaDefiningClass` gives every subclass a `media` property that combines the
+  inherited core media with the class's `Media`, and `InlineAdminFormSet.media`
+  includes `self.opts.media`. So a shared base inline with `class Media` is a
+  valid way to ship admin JS to several inlines (#27).
