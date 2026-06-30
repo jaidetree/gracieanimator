@@ -3,10 +3,10 @@ from adminsortable2.admin import (
     SortableAdminMixin,
     SortableTabularInline,
 )
-from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
-from django_ckeditor_5.widgets import CKEditor5Widget
+
+from common.admin.forms import CKEditorBodyForm
 
 from .models import (
     Category,
@@ -197,23 +197,13 @@ class StoryboardPDFInline(DragNewRowsInline):
     verbose_name_plural = "PDFs"
 
 
-class StoryboardAdminForm(forms.ModelForm):
+class StoryboardAdminForm(CKEditorBodyForm):
     """Swaps the body's plain textarea for the CKEditor 5 widget (Slice 12).
 
-    Widget on the admin form, not the model, so ``body`` stays a ``TextField``
-    (no migration) and the editor is an admin-only concern. ``body`` is declared
-    explicitly so it carries the widget while the admin still builds the rest of
-    the fieldset (including the dynamically re-added ``order`` field).
+    Inherits the themed ``body`` widget and its ``Media`` from
+    ``CKEditorBodyForm``; supplies the model and the fieldset here (including the
+    dynamically re-added ``order`` field).
     """
-
-    body = forms.CharField(
-        widget=CKEditor5Widget(config_name="default"), required=False
-    )
-
-    class Media:
-        # Map CKEditor's palette onto the admin theme vars so the editor follows
-        # the admin's light/dark/auto color mode (see the stylesheet).
-        css = {"all": ("admin/css/ckeditor5-dark.css",)}
 
     class Meta:
         model = Storyboard
