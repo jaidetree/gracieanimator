@@ -1,15 +1,24 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
 
 from config import url_names
+from config.seo import robots_txt
+from config.sitemaps import sitemaps
 from pages import views as page_views
 from portfolio import storyboard_gate
 from portfolio import views as portfolio_views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # SEO endpoints. Both live above the <slug:slug>/ catch-all, though neither
+    # could collide with it: the slug converter excludes dots and these carry no
+    # trailing slash. The sitemap is named "sitemap" so seo.robots_txt can
+    # reverse it onto the canonical host.
+    path("robots.txt", robots_txt, name="robots_txt"),
+    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     # CKEditor 5 inline-image upload endpoint (Slice 12). Multi-segment, so it
     # never collides with the trailing <slug:slug>/ catch-all below.
     path("ckeditor5/", include("django_ckeditor_5.urls")),

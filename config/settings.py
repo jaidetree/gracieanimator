@@ -28,6 +28,15 @@ DEBUG = env.bool("DEBUG", default=not IS_PROD)
 SECRET_KEY = env("SECRET_KEY", default="dev-insecure-change-me")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
+# The single host search engines should consolidate ranking onto. The site is
+# reachable from more than one domain (e.g. the herokuapp fallback host), which
+# is duplicate content; every page declares its canonical URL on this host and
+# the sitemap emits URLs here, so signals converge on one domain regardless of
+# which host served the request. CANONICAL_HOST must also be in ALLOWED_HOSTS in
+# the deploy that owns it, or the canonical target itself 400s.
+CANONICAL_HOST = env("CANONICAL_HOST", default="gracieanimator.art")
+CANONICAL_SCHEME = env("CANONICAL_SCHEME", default="https")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -35,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sitemaps",
     "adminsortable2",
     "imagekit",
     "django_ckeditor_5",
@@ -67,6 +77,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "pages.context_processors.nav_pages",
+                "config.seo.canonical",
             ],
         },
     },
