@@ -26,3 +26,5 @@ htmlcov/
 
 # Claude Code — per-user local settings only (shared config can still be committed)
 .claude/settings.local.json
+backups
+rclone.conf
