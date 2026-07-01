@@ -296,5 +296,3 @@ def test_sibling_bar_ignores_unpublished_comics(client):
     body = client.get(f"/comics/{shown.slug}/").content.decode()
     # Only one published comic, so no sibling bar despite the draft existing.
     assert "comic__siblings" not in body
-
-
