@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     # Brute-force lockout on the Django admin login (Slice 32). Ships its own
     # migrations for the attempt/lockout tables (no cache backend, unlike #31).
     "axes",
+    "branding",
     "pages",
     "portfolio",
 ]
