@@ -95,6 +95,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "pages.context_processors.nav_pages",
+                "branding.context_processors.branding",
                 "core.seo.canonical",
             ],
         },
