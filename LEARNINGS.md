@@ -212,3 +212,26 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   so the value can be emitted verbatim into `--color-accent`. `LogoAdmin` is the
   project's first `format_html` admin image preview (thumbnail + color swatch);
   `is_active` is `list_editable` to toggle the pool from the list.
+- **Per-visitor branding is a context processor, mirroring `nav_pages` (#36).**
+  `branding.context_processors.branding` reads `logo_id` from `request.session`;
+  if absent *or* the id no longer resolves to an **active** logo, it picks a
+  uniform-random active logo, writes the id back, and returns `{logo, accent_color}`.
+  Store **only the id** — the `Logo` row stays source of truth (owner edits show
+  instantly, no stale session data). Sticky per session for free via the existing
+  `SESSION_EXPIRE_AT_BROWSER_CLOSE = True` (no config change). Stale/inactive/deleted
+  ids are treated as unassigned → re-picked. `base.html`: `<head>` emits
+  `<style>:root{--color-accent:{{ accent_color }}}</style>`; header renders the
+  decorative `<img alt="">` (+ `sr-only <h1>` for the accessible name/SEO) or, on an
+  empty pool, the visible text `<h1>` + default accent `#9E2820` and no `<img>`.
+  Pick over a **materialized list of active `Logo` objects** so tests pin selection
+  with `monkeypatch.setattr(random, "choice", lambda seq: seq[0])`. Test through the
+  HTTP seam (`client.get("/")` + `client.session["logo_id"]`), not the processor.
+- **`sr-only` (and any Tailwind util no template yet uses) isn't in the committed
+  `stylesheet.css` until you `make css`.** JIT scans `templates/**/*.html`, so a
+  class added to markup compiles only on the next build — rebuild and commit the CSS
+  diff or the visually-hidden `<h1>` renders *visible* in prod.
+- **A rendered `<img width height>` for CLS needs a real image in the factory.**
+  `logo.image.width`/`.height` open the file, so `LogoFactory` uses
+  `factory.django.ImageField(width=120, height=40, format="PNG")` (a valid PNG), not
+  raw `SimpleUploadedFile(b"...")` bytes. The `Logo` model has no dimension fields
+  (out of #36 scope) — dimensions are read from the image at render time.
