@@ -154,6 +154,19 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
 - **`static/css/stylesheet.css` is a committed Tailwind build artifact** — new
   template utility classes produce an unstaged diff there; commit it *with* the
   templates or styles won't apply in prod.
+- **Expose a runtime colour as `bg-`/`text-`/`border-` utilities via `safelist`,
+  not `content`** (#37). A colour that no template references yet (accent is
+  applied in the owner's later redesign) is dropped by JIT's content scan, so put
+  the utility names in a top-level `safelist: [...]` in `tailwind.config.js` — they
+  then compile unconditionally. Back the colour with the CSS variable
+  (`theme.extend.colors.accent = "var(--color-accent)"`, the one #36's header
+  render emits into `:root`) so all three utilities resolve to
+  `var(--color-accent)` verbatim. **Minifier gotcha for the "primary unchanged"
+  check:** a *hex* colour compiles to `rgb(158 40 32/var(--tw-bg-opacity,1))`, only
+  a *var-backed* colour stays literal `var(...)` — so assert the compiled
+  `rgb(...)` form for `primary`, not the source hex. Test the committed
+  `stylesheet.css` artifact (prod serves it), not the config — the safelist only
+  matters once CSS is rebuilt (`make css`).
 - **These emit no migration:** imagekit `ImageSpecField`s (descriptors), model
   field reorders. **These do:** `help_text`-only edits. Run `makemigrations
   --check` and expect only the delta you intend.
