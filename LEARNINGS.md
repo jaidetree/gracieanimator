@@ -10,6 +10,15 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
 > -u R2_CUSTOM_DOMAIN pytest`. CI is inverse: needs an explicit TCP
 > `DATABASE_URL` (base settings default to a unix socket the container rejects).
 
+> **⚠️ Local Postgres won't start if another project's PG holds TCP 5432.**
+> `scripts/db` doesn't set `listen_addresses`, so the project PG tries to bind
+> TCP 5432 and `FATAL: could not create any TCP/IP sockets` → it shuts down
+> even though Django only ever talks to the unix socket under `.pg/`. Don't kill
+> the other project's DB — start this one socket-only:
+> `pg_ctl start -D "$PWD/.pg/data" -l "$PWD/.pg/data/postgresql.log"
+> -o "-c listen_addresses=''"`. A leftover `.pg/.s.PGSQL.5432` socket with no
+> live postmaster is the stale-lock symptom.
+
 ## Patterns That Work
 
 - **Test the effect through the real seam, not config.** Drive the bound formset
@@ -113,6 +122,11 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   the real form** → needs `request.user`; a bare `RequestFactory().get()` blows up.
 - **Don't let `ruff --fix`/`format` rewrite unseen** — `--check` first. Keep
   `ignore=["E501"]` (the formatter won't fix it on comments/strings).
+- **A new issue is *not* auto-added to project board #7**, and
+  `gh project item-list 7` pages at **30 items** by default — a freshly-added
+  issue lands past that page, so the `next(... number==N)` lookup StopIterations
+  with an empty `ITEM_ID`. Fix: `gh project item-add 7 --owner jaidetree --url
+  <issue-url>` first, then look up the item id with `--limit 100`.
 - **Test import-time settings branches in a subprocess** — fixtures /
   `override_settings` run too late.
 - **Asserting a rendition URL opens the source image; asserting the field URL
@@ -189,3 +203,12 @@ Footguns and non-obvious facts for the Django migration. Prune when stale.
   inherited core media with the class's `Media`, and `InlineAdminFormSet.media`
   includes `self.opts.media`. So a shared base inline with `class Media` is a
   valid way to ship admin JS to several inlines (#27).
+- **Branding is its own app** (`branding`, #35), not `contrib.sites` — the pool
+  of per-visitor `Logo`s (name + `image` + validated `accent_color` hex +
+  `is_active` gate). #35 ships only the owner-facing admin surface; random
+  selection, session stickiness, a context processor, the `base.html` render,
+  and the Tailwind `accent` utilities are later slices of Spec #34. Hex is
+  guarded by a `RegexValidator` (`^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`, no alpha)
+  so the value can be emitted verbatim into `--color-accent`. `LogoAdmin` is the
+  project's first `format_html` admin image preview (thumbnail + color swatch);
+  `is_active` is `list_editable` to toggle the pool from the list.
