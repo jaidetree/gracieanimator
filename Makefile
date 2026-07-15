@@ -9,9 +9,8 @@ help: ## Show this help
 
 dev: ## Tailwind watcher, and runserver together
 	@trap 'kill 0' EXIT INT TERM; \
-	./scripts/build-css.sh --watch & \
 	./manage.py runserver & \
-	wait
+	./scripts/build-css.sh --watch
 
 serve: ## Run the Django dev server only
 	./manage.py runserver
