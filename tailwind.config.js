@@ -9,13 +9,14 @@ module.exports = {
     extend: {
       colors: {
         primary: "#9E2820",
+        surface: "#090808",
         // Backed by the runtime `--color-accent` the header render emits, so the
         // accent utilities resolve to the per-visitor logo's accent colour (#37).
         accent: "var(--color-accent)",
       },
       fontFamily: {
-        display: ['"Work Sans"', '"Arial Black"', "sans-serif"],
-        body: ['"Open Sans"', "Arial", "Helvetica", "sans-serif"],
+        display: ['"Exo 2"', '"Arial Black"', "sans-serif"],
+        body: ['"Work Sans"', "Arial", "Helvetica", "sans-serif"],
       },
     },
   },

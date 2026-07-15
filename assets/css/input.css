@@ -3,54 +3,69 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply font-body;
-  }
-  h1 {
-    @apply text-4xl font-bold font-display uppercase;
-  }
-  h2 {
-    @apply text-2xl font-bold font-display uppercase;
-  }
-  pre {
-    @apply my-8 p-8 bg-black bg-opacity-25 whitespace-pre-wrap;
-  }
-  .page a {
-    @apply text-white text-opacity-80 hover:text-opacity-100;
-  }
-  ul,
-  ol {
-    @apply mb-2;
-  }
+	body {
+		background-image: url(/static/img/dust-bg.jpg);
+		@apply font-body bg-fixed bg-no-repeat bg-cover;
+	}
+	body::before {
+		content: '';
+		background: url(/static/img/grid-pattern.svg) 50% 50% / 2rem 2rem;
+		@apply fixed left-0 top-0 right-0 bottom-0 opacity-75 mix-blend-soft-light -z-10;
+	}
+	body:has(#mask-checkbox:checked)::before {
+		mask: url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat;
+	}
+	h1 {
+		@apply text-4xl font-bold font-display uppercase;
+	}
+	h2 {
+		@apply text-2xl font-bold font-display uppercase;
+	}
+	pre {
+		@apply my-8 p-8 bg-black bg-opacity-25 whitespace-pre-wrap;
+	}
+	.page a {
+		@apply text-white text-opacity-80 hover:text-opacity-100;
+	}
+	ul,
+	ol {
+		@apply mb-2;
+	}
+}
+
+@layer utilities {
 }
 
 @layer components {
-  .site-title {
-    @apply text-3xl md:text-5xl;
-  }
+	.site-header {
+		@apply col-span-12;
+	}
+	.site-title {
+		@apply text-3xl md:text-5xl;
+	}
 
-  .site-nav {
-    @apply uppercase font-light;
-  }
-  .site-nav a {
-    @apply text-lg md:text-base text-white text-opacity-70 hover:text-opacity-100;
-  }
+	.site-nav {
+		@apply uppercase font-light;
+	}
+	.site-nav a {
+		@apply text-lg md:text-base text-white text-opacity-70 hover:text-opacity-100;
+	}
 
-  .paragraph {
-    @apply leading-relaxed text-lg my-4;
-  }
+	.paragraph {
+		@apply leading-relaxed text-lg my-4;
+	}
 
-  /* Space each sidebar heading off the links/list beneath it. */
-  .sidebar-section h2 {
-    @apply mb-2;
-  }
+	/* Space each sidebar heading off the links/list beneath it. */
+	.sidebar-section h2 {
+		@apply mb-2;
+	}
 
-  /* Embeds set their aspect ratio with an inline padding-bottom on the
+	/* Embeds set their aspect ratio with an inline padding-bottom on the
      relative container; the cached oembed <iframe> keeps its native
      width/height attributes, so pin it to fill that box instead of
      overflowing the content column into the sidebar. */
-  .embedded-video iframe,
-  .embedded-shots iframe {
-    @apply absolute top-0 left-0 h-full w-full;
-  }
+	.embedded-video iframe,
+	.embedded-shots iframe {
+		@apply absolute top-0 left-0 h-full w-full;
+	}
 }
