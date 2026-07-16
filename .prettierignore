@@ -1,0 +1,4 @@
+# Django templates. Prettier's HTML parser does not understand {% %} tags and
+# wraps long ones across newlines; Django's lexer is not DOTALL, so a tag
+# containing a newline stops parsing and renders as literal text.
+templates/

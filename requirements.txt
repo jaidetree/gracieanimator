@@ -42,3 +42,9 @@ playwright==1.60.0
 
 # Lint + format (config in ruff.toml)
 ruff==0.15.20
+
+# Django template lint + format (config in .djlintrc). Prettier's HTML parser
+# does not understand {% %} tags and wraps long ones across newlines; Django's
+# lexer is not DOTALL, so a wrapped tag renders as literal text. templates/ is
+# in .prettierignore; djLint owns it instead.
+djlint==1.40.7
