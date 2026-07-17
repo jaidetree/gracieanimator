@@ -20,7 +20,7 @@ FEATURED_TYPES = [
     (Illustration, "Illustrations", reverse_lazy(url_names.ILLUSTRATION_GALLERY)),
     (
         SketchbookSample,
-        "Sketchbook Samples",
+        "Sketchbook",
         reverse_lazy(url_names.SKETCHBOOK_SAMPLE_GALLERY),
     ),
     (Comic, "Comics", reverse_lazy(url_names.COMICS_INDEX)),

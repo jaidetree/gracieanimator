@@ -9,14 +9,18 @@
 	}
 	body::before {
 		content: '';
-		background: url(/static/img/grid-pattern.svg) 50% 50% / 2rem 2rem;
+		background-image: url(/static/img/grid-pattern.svg);
+		background-size: 2rem;
+		background-position-y: -1px;
+		background-position-x: 50%;
 		@apply fixed left-0 top-0 right-0 bottom-0 opacity-75 mix-blend-soft-light -z-10;
 	}
+	/* @TODO Move this into the body::before */
 	body:has(#mask-checkbox:checked)::before {
 		mask: url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat;
 	}
 	h1 {
-		@apply text-4xl font-bold font-display uppercase;
+		@apply text-4xl font-bold font-display uppercase text-mask;
 	}
 	h2 {
 		@apply text-2xl font-bold font-display uppercase;
@@ -25,7 +29,7 @@
 		@apply my-8 p-8 bg-black bg-opacity-25 whitespace-pre-wrap;
 	}
 	.page a {
-		@apply text-white text-opacity-80 hover:text-opacity-100;
+		@apply text-accent text-opacity-80 hover:text-opacity-100 transition duration-200;
 	}
 	ul,
 	ol {
@@ -34,9 +38,15 @@
 }
 
 @layer utilities {
+	.text-mask {
+		mask: url(/static/img/vertical-mask-01.png) alpha top left / contain repeat;
+	}
 }
 
 @layer components {
+	/* .site-container > * {
+		@apply bg-red-500/50;
+	} */
 	.site-header {
 		@apply col-span-12;
 	}

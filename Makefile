@@ -42,10 +42,12 @@ test: ## Run the test suite (against local Postgres + media)
 lint: ## Lint and check formatting (no changes)
 	ruff check .
 	ruff format --check .
+	djlint templates/ --check
 
 format: ## Auto-fix lint issues and reformat
 	ruff check --fix .
 	ruff format .
+	djlint templates/ --reformat
 
 build: ## Compile assets for production (CSS + collectstatic)
 	./scripts/build-css.sh

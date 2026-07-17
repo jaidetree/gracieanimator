@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="storyboards">
-  {% include "portfolio/_breadcrumb.html" %}
-  <h1 class="text-center md:text-left">{{ category.name }}</h1>
-  <div class="space-y-16">
-    <section class="storyboards__category mt-8">
-      <ul class="storyboards__grid flex flex-wrap gap-4 mt-8 justify-center md:justify-start">
-        {% for storyboard in storyboards %}
-          <li class="storyboards__cell max-w-xs w-full">
-            <a class="block text-center" href="{% url 'storyboard_detail' storyboard.slug %}">
-              {% include "portfolio/_thumbnail.html" with url=storyboard.thumbnail_url img_class="w-full aspect-[3/2] object-cover" alt=storyboard.title %}
-              <span class="block font-light text-lg uppercase my-2">{{ storyboard.title }}</span>
-            </a>
-          </li>
-        {% empty %}
-          <p class="paragraph">Nothing here yet.</p>
-        {% endfor %}
-      </ul>
-    </section>
-  </div>
-</section>
+  <section class="storyboards">
+    {% include "portfolio/_breadcrumb.html" %}
+    <h1 class="text-center md:text-left">{{ category.name }}</h1>
+    <div class="space-y-16">
+      <section class="storyboards__category mt-8">
+        <ul class="storyboards__grid flex flex-wrap gap-4 mt-8 justify-center md:justify-start">
+          {% for storyboard in storyboards %}
+            <li class="storyboards__cell max-w-xs w-full">
+              <a class="block text-center" href="{% url 'storyboard_detail' storyboard.slug %}">
+                {% include "portfolio/_thumbnail.html" with url=storyboard.thumbnail_url img_class="w-72 h-56 object-cover" alt=storyboard.title %}
+                <span class="block font-light text-lg uppercase my-2">{{ storyboard.title }}</span>
+              </a>
+            </li>
+          {% empty %}
+            <p class="paragraph">Nothing here yet.</p>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+  </section>
 {% endblock %}

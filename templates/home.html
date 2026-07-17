@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="flex flex-wrap gap-4 justify-center md:justify-start">
-  {% for item in featured %}
-    <a class="block max-w-xs w-full text-center" href="{{ item.url }}">
-      {% include "portfolio/_thumbnail.html" with url=item.thumbnail_url img_class="object-cover h-64 w-full" alt=item.label %}
-      <span class="uppercase text-lg font-body font-light">{{ item.label }}</span>
-    </a>
-  {% empty %}
-    <p class="paragraph">Nothing here yet.</p>
-  {% endfor %}
-</div>
+  <div class="flex flex-row flex-wrap xl:flex-nowrap gap-8 justify-center">
+    {% for item in featured %}
+      <a class="block w-80 text-center transform-gpu transition translate-y-0 hover:-translate-y-4 duration-200" href="{{ item.url }}">
+        {% include "portfolio/_thumbnail.html" with url=item.thumbnail_url img_class="block object-cover aspect-[5/4] w-full" alt=item.label %}
+        <span class="bg-surface/10 bg-gradient-to-b to-accent/0 from-accent min-h-[4rem] bg-blend-screen flex flex-col justify-center">
+          <span class="font-display text-white text-mask uppercase text-[2rem] font-black">{{ item.label }}</span>
+        </span>
+      </a>
+    {% empty %}
+      <p class="paragraph">Nothing here yet.</p>
+    {% endfor %}
+  </div>
 {% endblock %}

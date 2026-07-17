@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="comics">
-  {% include "portfolio/_breadcrumb.html" %}
-  <h1 class="mb-8">{{ page_title }}</h1>
-  <div class="comics__grid grid grid-cols-1 md:grid-cols-2 gap-8">
-    {% for comic in comics %}
-      <article class="comics__cell bg-black/10 p-4 text-center">
-        <a class="comics__cover block" href="{% url 'comic_detail' comic.slug %}">
-          {% include "portfolio/_thumbnail.html" with url=comic.thumbnail_url img_class="w-auto mx-auto" alt=comic.title %}
-          <span class="block font-light text-lg uppercase my-2">{{ comic.title }}</span>
-        </a>
-        <div class="comics__pages grid grid-cols-4 gap-2">
-          {% for page in comic.ordered_pages %}
-            {% if not forloop.first %}
-              <a class="opacity-50 hover:opacity-100" href="{% url 'comic_page' comic.slug forloop.counter %}">
-                <img class="object-scale-down w-full" src="{{ page.grid_image.url }}" alt="{{ comic.title }} page {{ forloop.counter }}">
-              </a>
-            {% endif %}
-          {% endfor %}
-        </div>
-      </article>
-    {% empty %}
-      <p class="paragraph">Nothing here yet.</p>
-    {% endfor %}
-  </div>
-</section>
+  <section class="comics">
+    {% include "portfolio/_breadcrumb.html" %}
+    <h1 class="mb-8">{{ page_title }}</h1>
+    <div class="comics__grid grid grid-cols-1 md:grid-cols-2 gap-8">
+      {% for comic in comics %}
+        <article class="comics__cell bg-black/10 p-4 text-center">
+          <a class="comics__cover block" href="{% url 'comic_detail' comic.slug %}">
+            {% include "portfolio/_thumbnail.html" with url=comic.thumbnail_url img_class="w-auto mx-auto" alt=comic.title %}
+            <span class="block font-light text-lg uppercase my-2">{{ comic.title }}</span>
+          </a>
+          <div class="comics__pages grid grid-cols-4 gap-2">
+            {% for page in comic.ordered_pages %}
+              {% if not forloop.first %}
+                <a class="opacity-50 hover:opacity-100" href="{% url 'comic_page' comic.slug forloop.counter %}">
+                  <img class="object-scale-down w-full" src="{{ page.grid_image.url }}" alt="{{ comic.title }} page {{ forloop.counter }}">
+                </a>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </article>
+      {% empty %}
+        <p class="paragraph">Nothing here yet.</p>
+      {% endfor %}
+    </div>
+  </section>
 {% endblock %}

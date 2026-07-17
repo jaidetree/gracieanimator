@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="image-gallery flex flex-col gap-8">
-  <div>
-    {% include "portfolio/_breadcrumb.html" %}
-    <h1>{{ page_title }}</h1>
-  </div>
-  {% for piece in pieces %}
-    <figure class="image-gallery__item">
-      <img class="w-full" src="{{ piece.gallery_image.url }}" alt="{{ piece.title }}">
-    </figure>
-  {% empty %}
-    <p class="paragraph">Nothing here yet.</p>
-  {% endfor %}
-</section>
+  <section class="image-gallery flex flex-col gap-8">
+    <div>
+      {% include "portfolio/_breadcrumb.html" %}
+      <h1>{{ page_title }}</h1>
+    </div>
+    {% for piece in pieces %}
+      <figure class="image-gallery__item">
+        <img class="w-full" src="{{ piece.gallery_image.url }}" alt="{{ piece.title }}">
+      </figure>
+    {% empty %}
+      <p class="paragraph">Nothing here yet.</p>
+    {% endfor %}
+  </section>
 {% endblock %}

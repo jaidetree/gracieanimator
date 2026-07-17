@@ -16,8 +16,8 @@ CONTAINER_WIDTH = 1024
 # image is scaled to fit within this box with its aspect ratio intact and no
 # crop; each grid surface frames it to its own aspect with CSS object-cover
 # (equivalent to background-size: cover), so a single uncropped rendition serves
-# the 5:4 homepage and 3:2 storyboard grids without the double-crop that a
-# pre-cropped square would cause.
+# the 9:7 homepage and storyboard grids (both 288x224) without the double-crop
+# that a pre-cropped box would cause.
 THUMBNAIL_SIZE = 400
 # Width of comic page renditions on the two-column comics index. Sized to the
 # on-screen cover/grid cell so the small rendition isn't upscaled into a blur;
@@ -237,7 +237,7 @@ class Storyboard(Project):
     # Small rendition of a *manual* thumbnail, for the index/category grids.
     # Only the manual upload can be rendered: the auto-derived thumbnail is an
     # external oembed poster URL (Vimeo/YouTube), not a local image file. Scaled
-    # to fit, not cropped — the 3:2 grid's object-cover frames it.
+    # to fit, not cropped — the 9:7 grid's object-cover frames it.
     thumbnail_rendition = ImageSpecField(
         source="thumbnail",
         processors=[ResizeToFit(THUMBNAIL_SIZE, THUMBNAIL_SIZE)],

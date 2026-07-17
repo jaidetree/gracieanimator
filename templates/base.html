@@ -1,61 +1,54 @@
-{% load static %}<!doctype html>
+{% load static %}
+<!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>
-			{% block title %}{% if page_title %}{{ page_title }} | {% endif %}Grace
-			Space{% endblock %}
-		</title>
-		<link rel="canonical" href="{{ canonical_url }}" />
-		<link rel="icon" href="{% static 'img/site-icon.png' %}" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			rel="stylesheet"
-			href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Exo+2:ital,wght@0,100..800;1,400&display=block"
-		/>
-		<link rel="stylesheet" href="{% static 'css/stylesheet.css' %}" />
-		<style>
-			:root{--color-accent:{{ accent_color }}}
-		</style>
-	</head>
-	<body class="bg-surface text-white">
-		<div class="max-w-7xl m-auto site-container border">
-			<header
-				class="md:flex md:flex-row justify-between items-center mb-8 md:mb-16 site-header"
-			>
-				{% if logo %}
-				<div class="site-title text-center md:text-left">
-					<a href="/">
-						<img
-							src="{{ logo.image.url }}"
-							alt="Grace Space Logo"
-							class="max-w-2xl h-auto -mx-8 -my-6"
-							is="site-logo"
-						/>
-						<h1 class="sr-only">The Grace Space</h1>
-					</a>
-				</div>
-				{% else %}
-				<h1 class="site-title text-center md:text-left">
-					<a href="/">The Grace Space</a>
-				</h1>
-				{% endif %}
-				<nav
-					class="flex flex-row gap-4 site-nav justify-center md:justify-start"
-				>
-					<a href="/">Portfolio</a>
-					{% for nav in nav_pages %}
-					<a href="{{ nav.get_absolute_url }}">{{ nav.title }}</a>
-					{% endfor %}
-				</nav>
-			</header>
-			<main class="page">{% block content %}{% endblock %}</main>
-			<footer class="absolute bottom-8 right-8">
-				<input type="checkbox" id="mask-checkbox" name="maskCheckbox" />
-			</footer>
-		</div>
-		<script src="{% static 'js/alpine.min.js' %}" defer></script>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}{% if page_title %}{{ page_title }} | {% endif %}Grace Space{% endblock %}
+  </title>
+  <link rel="canonical" href="{{ canonical_url }}" />
+  <link rel="icon" href="{% static 'img/site-icon.png' %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Exo+2:ital,wght@0,100..800;1,400&display=block" />
+  <style>
+      :root {
+          --color-accent: {{ accent_color }}
+      }
+  </style>
+  <link rel="stylesheet" href="{% static 'css/stylesheet.css' %}" />
+</head>
+<body class="bg-surface text-white">
+  <div class="max-w-[90rem] mx-auto my-8 flex flex-col gap-8 site-container lg:px-8">
+    <header class="md:flex md:flex-row justify-between items-center md:h-16 site-header md:overflow-hidden">
+      {% if logo %}
+        <div class="site-title text-center md:text-left">
+          <a href="/">
+            <img src="{{ logo.image.url }}" alt="Grace Space Logo" class="max-w-2xl w-full h-auto md:-mx-10 -my-4" is="site-logo" />
+            <h1 class="sr-only">The Grace Space</h1>
+          </a>
+        </div>
+      {% else %}
+        <h1 class="site-title text-center md:text-left">
+          <a href="/">The Grace Space</a>
+        </h1>
+      {% endif %}
+      <nav class="flex flex-row gap-4 site-nav justify-center">
+        <a href="/">Portfolio</a>
+        {% for nav in nav_pages %}
+          <a href="{{ nav.get_absolute_url }}">{{ nav.title }}</a>
+        {% endfor %}
+      </nav>
+    </header>
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="fixed bottom-8 right-8">
+      <input type="checkbox" id="mask-checkbox" name="maskCheckbox" />
+    </footer>
+  </div>
+  <script src="{% static 'js/alpine.min.js' %}" defer></script>
+</body>
 </html>
