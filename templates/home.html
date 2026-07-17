@@ -2,7 +2,7 @@
 {% block content %}
   <div class="flex flex-row flex-wrap xl:flex-nowrap gap-8 justify-center">
     {% for item in featured %}
-      <a class="block w-80 text-center transform-gpu transition translate-y-0 hover:-translate-y-4 duration-200" href="{{ item.url }}">
+      <a class="block w-80 text-center transform-gpu transition translate-y-0 hover:-translate-y-4 duration-200 ease-in-out" href="{{ item.url }}">
         {% include "portfolio/_thumbnail.html" with url=item.thumbnail_url img_class="block object-cover aspect-[5/4] w-full" alt=item.label %}
         <span class="bg-surface/10 bg-gradient-to-b to-accent/0 from-accent min-h-[4rem] bg-blend-screen flex flex-col justify-center">
           <span class="font-display text-white text-mask uppercase text-[2rem] font-black">{{ item.label }}</span>
