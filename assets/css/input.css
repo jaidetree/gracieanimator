@@ -13,7 +13,7 @@
 		background-size: 2rem;
 		background-position-y: -1px;
 		background-position-x: 50%;
-		@apply fixed left-0 top-0 right-0 bottom-0 opacity-75 mix-blend-soft-light -z-10;
+		@apply fixed inset-0 opacity-75 mix-blend-soft-light -z-10;
 	}
 	/* @TODO Move this into the body::before */
 	body:has(#mask-checkbox:checked)::before {
@@ -40,6 +40,15 @@
 @layer utilities {
 	.text-mask {
 		mask: url(/static/img/vertical-mask-01.png) alpha top left / contain repeat;
+	}
+	.vertical-scanlines {
+		background-image: linear-gradient(
+			to right,
+			var(--color-accent),
+			transparent
+		);
+		background-size: 3px;
+		mask: linear-gradient(to bottom, white 30%, rgba(255, 255, 255, 0.1));
 	}
 }
 
@@ -76,6 +85,6 @@
      overflowing the content column into the sidebar. */
 	.embedded-video iframe,
 	.embedded-shots iframe {
-		@apply absolute top-0 left-0 h-full w-full;
+		@apply absolute inset-0 h-full w-full;
 	}
 }
