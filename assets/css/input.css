@@ -87,7 +87,7 @@
 	}
 
 	.page {
-		@apply absolute;
+		@apply relative;
 	}
 
 	.page::before,
@@ -99,7 +99,7 @@
 	}
 
 	.page::before {
-		margin: 6rem auto 2rem;
+		margin: 2rem auto 2rem;
 		background-image: url('/static/img/lineart-top.svg');
 		mask:
 			url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat,
