@@ -83,7 +83,29 @@
 		@apply uppercase font-light;
 	}
 	.site-nav a {
-		@apply text-lg md:text-base text-white text-opacity-70 hover:text-opacity-100;
+		@apply text-2xl md:text-base text-white text-opacity-70 relative inline-block hover:text-opacity-100 p-2 transition-colors duration-200 ease-in-out;
+	}
+	.site-nav a::before,
+	.site-nav a::after {
+		content: '';
+		left: 0;
+		right: 0;
+		@apply absolute border-b border-current;
+	}
+	.site-nav a::before {
+		@apply border-l border-r h-2;
+		left: 1px;
+		right: 1px;
+		bottom: 3px;
+	}
+	.site-nav a::after {
+		bottom: 0;
+	}
+	.site-nav a.active {
+		@apply text-accent text-opacity-75;
+	}
+	.site-nav a.active:hover {
+		@apply text-opacity-100;
 	}
 
 	.page {
@@ -92,7 +114,7 @@
 
 	.page::before,
 	.page::after {
-		@apply block bg-no-repeat static h-8;
+		@apply block bg-no-repeat static h-8 mix-blend-soft-light;
 		content: '';
 		max-width: 86rem;
 		background-size: 100% 100%;
@@ -103,7 +125,7 @@
 		background-image: url('/static/img/lineart-top.svg');
 		mask:
 			url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat,
-			linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)) top left / cover
+			linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)) top left / cover
 				no-repeat;
 	}
 
@@ -112,7 +134,7 @@
 		background-image: url('/static/img/lineart-bottom.svg');
 		mask:
 			url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat,
-			linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05)) top left / cover
+			linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)) top left / cover
 				no-repeat;
 	}
 

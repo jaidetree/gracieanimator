@@ -35,10 +35,11 @@
           <a href="/">The Grace Space</a>
         </h1>
       {% endif %}
-      <nav class="flex flex-row gap-4 site-nav justify-center">
-        <a href="/">Portfolio</a>
+      <nav class="flex flex-row site-nav justify-center">
+        <a href="/" class="{% if portfolio_nav_active %}active{% endif %}">Portfolio</a>
         {% for nav in nav_pages %}
-          <a href="{{ nav.get_absolute_url }}">{{ nav.title }}</a>
+          <a href="{{ nav.get_absolute_url }}"
+             class="{% if request.path == nav.get_absolute_url %}active{% endif %}">{{ nav.title }}</a>
         {% endfor %}
       </nav>
     </header>
