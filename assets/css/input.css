@@ -83,7 +83,7 @@
 		@apply uppercase font-light;
 	}
 	.site-nav a {
-		@apply text-2xl md:text-base text-white text-opacity-70 relative inline-block hover:text-opacity-100 p-2 transition-colors duration-200 ease-in-out;
+		@apply text-2xl md:text-base text-white text-opacity-70 relative inline-block hover:text-opacity-100 px-2 py-1 transition-colors duration-200 ease-in-out;
 	}
 	.site-nav a::before,
 	.site-nav a::after {
@@ -114,28 +114,24 @@
 
 	.page::before,
 	.page::after {
-		@apply block bg-no-repeat static h-8 mix-blend-soft-light;
+		@apply block h-8 border-solid mt-8;
 		content: '';
-		max-width: 86rem;
-		background-size: 100% 100%;
+		border-width: 2rem 0;
+		border-image-slice: 32 32 0 32;
+		border-image-width: 2rem;
+		border-image-repeat: stretch space;
+		mask:
+			url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat,
+			linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)) top left / cover
+				no-repeat;
 	}
 
 	.page::before {
-		margin: 2rem auto 2rem;
-		background-image: url('/static/img/lineart-top.svg');
-		mask:
-			url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat,
-			linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)) top left / cover
-				no-repeat;
+		border-image-source: url(/static/img/lineart-top.svg);
 	}
 
 	.page::after {
-		margin: 2rem auto 0;
-		background-image: url('/static/img/lineart-bottom.svg');
-		mask:
-			url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat,
-			linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)) top left / cover
-				no-repeat;
+		border-image-source: url(/static/img/lineart-bottom.svg);
 	}
 
 	.paragraph {
