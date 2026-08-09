@@ -151,4 +151,11 @@
 	.embedded-shots iframe {
 		@apply absolute inset-0 h-full w-full;
 	}
+
+	#car-hero img {
+		@apply absolute;
+	}
+	#car-hero img.active {
+		@apply z-20;
+	}
 }

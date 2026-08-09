@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="flex flex-row flex-wrap xl:flex-nowrap gap-8 justify-center">
+  <section class="flex flex-row flex-wrap xl:flex-nowrap gap-8 justify-center">
     {% for item in featured %}
       <a class="block w-80 text-center transform-gpu transition translate-y-0 hover:-translate-y-4 duration-200 ease-in-out radial-noise" href="{{ item.url }}">
         {% include "portfolio/_thumbnail.html" with url=item.thumbnail_url img_class="block object-cover aspect-[5/4] w-full" alt=item.label %}
@@ -11,5 +11,13 @@
     {% empty %}
       <p class="paragraph">Nothing here yet.</p>
     {% endfor %}
-  </div>
+  </section>
+  <section id="car-hero" class="relative my-8">
+    <img alt="Car Illustration 1" src="/static/img/car/car-1.png" class="active" />
+    <img alt="Car Illustration 2" src="/static/img/car/car-2.png" class="" />
+    <img alt="Car Illustration 3" src="/static/img/car/car-3.png" class="" />
+    <img alt="Car Illustration 4" src="/static/img/car/car-4.png" class="" />
+    <img alt="Car Illustration 5" src="/static/img/car/car-5.png" class="" />
+  </section>
+  <script type="application/javascript" src="/static/js/car-hero.js"></script>
 {% endblock %}
