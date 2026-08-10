@@ -20,7 +20,7 @@ module.exports = {
 					'color-mix(in srgb, var(--color-accent) calc(<alpha-value> * 100%), transparent)',
 			},
 			fontFamily: {
-				display: ['"Caveat Brush"', '"Arial Black"', 'sans-serif'],
+				display: ['"jrhandregular"', '"Arial Black"', 'sans-serif'],
 				body: ['"Work Sans"', 'Arial', 'Helvetica', 'sans-serif'],
 			},
 		},

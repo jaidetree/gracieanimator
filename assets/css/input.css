@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+	font-family: 'jrhandregular';
+	src:
+		url('/static/fonts/jrhand/jrhand-webfont.woff2') format('woff2'),
+		url('/static/fonts/jrhand/jrhand-webfont.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+
 @layer base {
 	body {
 		background-image: url(/static/img/dust-bg.jpg);
