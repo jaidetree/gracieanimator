@@ -1,6 +1,7 @@
 ---
 tags:
-    - needs-triage
+  - needs-triage
+modified: 2026-08-09T22:43:19-04:00
 ---
 # Fix lineart on mobile
 
@@ -12,12 +13,12 @@ Looks off on Safari in iOS.
 
 ## User Stories
 
-- {Role} should be able to {describe feature}
+- Users should be able to see the lineart on Mobile Safari
 
 ## Implementation Plan Overview
 
-- Update {filename} with {describe change}
+- Update input.css with more accurate border-image properties
 
 ## Acceptance Criteria
 
-- [ ] {Role} can {describe feature}
+- [ ] Users can see the lineart at the correct size on Mobile Safari
