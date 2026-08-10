@@ -14,7 +14,7 @@
 @layer base {
 	body {
 		background-image: url(/static/img/dust-bg.jpg);
-		@apply font-body bg-fixed bg-no-repeat bg-cover;
+		@apply font-body bg-no-repeat bg-cover;
 	}
 	body::before {
 		content: '';
@@ -27,6 +27,16 @@
 	/* @TODO Move this into the body::before */
 	body:has(#mask-checkbox:checked)::before {
 		mask: url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat;
+	}
+	/* WebKit drops mix-blend-mode (and the mask above) on this element
+	   entirely -- confirmed across fixed/absolute, pseudo-element/real
+	   element, and isolated/non-isolated stacking, so the grid renders at
+	   full opacity there. -webkit-touch-callout is a Safari-only property,
+	   used here purely to scope this override to Safari/WebKit. */
+	@supports (-webkit-touch-callout: none) {
+		body::before {
+			opacity: 0.05;
+		}
 	}
 	h1 {
 		@apply text-4xl font-bold font-display uppercase text-mask;
