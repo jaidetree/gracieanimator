@@ -1,72 +1,49 @@
-# Issue tracker: GitHub
+# Issue tracker: Obsidian project vault
 
-Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Issues and specs (you may know a spec as a PRD) live as markdown in the vault at `.gracie-vault/Projects/<slug>/`. A visual kanban board (Obsidian Bases `.base` file) renders them for humans; agents operate on the files directly.
 
 ## Conventions
 
-- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
-- **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
-- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
-- **Comment on an issue**: `gh issue comment <number> --body "..."`
-- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
-- **Close**: `gh issue close <number> --comment "..."`
+- One feature/spec per dir: `.gracie-vault/Projects/<slug>/`. Create with `./new-project.sh <slug> .gracie-vault` (from the `setup-project-vault` skill folder).
+- Spec: `.gracie-vault/Projects/<slug>/Spec.md`.
+- Issues/slices: `.gracie-vault/Projects/<slug>/issues/<Status>/<NN>-<slug>.md`.
+- **Dev state = the folder** the file sits in: `Backlog / Ready / In Progress / Review / Done / Archived`. Moving the file between these folders is the status change.
+- **Triage role = frontmatter `tags:`** (e.g. `ready-for-agent`) — see `triage-labels.md`. Orthogonal to dev state.
+- **id = the filename** `NN-slug` (e.g. `03-setup-e2e-harness.md`), numbered from `01`.
+- **Blocking** (frontmatter, wayfinder-ready): `blocked_by` / `blocks` are lists of relative markdown links to the issue files, e.g. `[02-api](<../Ready/02-api.md>)` (frontmatter-links plugin). **Resolve by filename stem, never the folder segment** — files move between folders, so the path in the link goes stale by design.
+- **type** (frontmatter): `research | prototype | grilling | task`.
 
-Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
+Issue body template: `.gracie-vault/Templates/Issue Template.md` (Description / User Stories / Implementation Plan Overview / Acceptance Criteria).
 
-## Project board
+## When a skill says "publish a spec" (or a PRD)
 
-Issues are tracked on the **Gracie Animator Django Migration** GitHub Project (project #7, owner `jaidetree`). The board groups by a single-select **Status** field with these options:
+1. Derive the project slug from the spec/feature title (kebab-case). Confirm if ambiguous.
+2. Invoke `/new-vault-project <slug>` to scaffold `.gracie-vault/Projects/<slug>/` if it doesn't exist.
+3. Write the spec content to `.gracie-vault/Projects/<slug>/Spec.md`.
 
-`Backlog` → `Ready` → `In progress` → `In review` → `Done`
+## When a skill says "publish an issue"
 
-Identifiers (stable; only change if the board is rebuilt):
-
-| Item | ID |
-| --- | --- |
-| Project ID | `PVT_kwHOAAkB2c4BbxyK` |
-| Status field ID | `PVTSSF_lAHOAAkB2c4BbxyKzhWf1GQ` |
-| `In progress` option | `47fc9ee4` |
-| `In review` option | `df73e18b` |
-| `Done` option | `98236657` |
-
-### Move an issue to a status
-
-- **Starting work**: move the issue to `In progress` (option `47fc9ee4`).
-- **Finishing work**: move it to `In review` (option `df73e18b`) — this signals the change awaits manual testing by a human. Only a human moves an issue to `Done`.
-
-`gh project item-edit` needs the *project item ID*, not the issue number. Look it up, then edit:
-
-```bash
-PROJECT_ID="PVT_kwHOAAkB2c4BbxyK"
-STATUS_FIELD="PVTSSF_lAHOAAkB2c4BbxyKzhWf1GQ"
-IN_REVIEW="df73e18b"
-N=<issue-number>
-
-ITEM_ID=$(gh project item-list 7 --owner jaidetree --format json \
-  | python3 -c "import json,sys; print(next(i['id'] for i in json.load(sys.stdin)['items'] if i.get('content',{}).get('number')==$N))")
-
-gh project item-edit --project-id "$PROJECT_ID" --id "$ITEM_ID" \
-  --field-id "$STATUS_FIELD" --single-select-option-id "$IN_REVIEW"
-```
-
-Swap `--single-select-option-id` for another option ID from the table above to move to a different status.
-
-## Pull requests as a triage surface
-
-**PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
-
-When set to `yes`, PRs run through the same labels and states as issues, using the `gh pr` equivalents:
-
-- **Read a PR**: `gh pr view <number> --comments` and `gh pr diff <number>` for the diff.
-- **List external PRs for triage**: `gh pr list --state open --json number,title,body,labels,author,authorAssociation,comments` then keep only `authorAssociation` of `CONTRIBUTOR`, `FIRST_TIME_CONTRIBUTOR`, or `NONE` (drop `OWNER`/`MEMBER`/`COLLABORATOR`).
-- **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
-
-GitHub shares one number space across issues and PRs, so a bare `#42` may be either — resolve with `gh pr view 42` and fall back to `gh issue view 42`.
-
-## When a skill says "publish to the issue tracker"
-
-Create a GitHub issue.
+Create a new file in `.gracie-vault/Projects/<slug>/issues/Backlog/` with a `ready-for-agent` tag (or the role instructed).
 
 ## When a skill says "fetch the relevant ticket"
 
-Run `gh issue view <number> --comments`.
+Find the file by its `NN-slug` stem anywhere under `.gracie-vault/Projects/<slug>/issues/` (its folder = current dev state). The user usually passes the number or stem.
+
+## When a skill sets a triage state
+
+Edit the `tags:` frontmatter only. Do **not** move the file between folders — dev state and triage role are independent.
+
+## Dev-state transitions
+
+Driven by `/slice` (which wraps `/implement`), not by triage:
+
+- **Claim / start work**: move `Ready` → `In Progress`.
+- **Finish**: move `In Progress` → `Review`. Only a human moves `Review` → `Done`.
+
+## Frontier (wayfinder-ready)
+
+Issues in `Ready/` whose every `blocked_by` stem resolves to a file now in `Done/`. Wired by the generated `/afk` skill, which ships the whole frontier per round and recomputes it after each merge.
+
+## This repo's project
+
+The active project is `gracie-portfolio` (`.gracie-vault/Projects/gracie-portfolio/`) — the Django rebuild of Gracie's portfolio site. Its `Backlog/` was seeded 2026-08-09 by migrating 8 open, untriaged GitHub issues (former #38–#45): run `/triage` before treating any of them as `ready-for-agent`.

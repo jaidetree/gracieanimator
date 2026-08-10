@@ -28,3 +28,6 @@ htmlcov/
 .claude/settings.local.json
 backups
 rclone.conf
+
+# Obsidian per-user workspace state (vault content itself is committed)
+.gracie-vault/.obsidian/workspace*
