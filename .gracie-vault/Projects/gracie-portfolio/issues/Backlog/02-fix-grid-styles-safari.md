@@ -1,7 +1,7 @@
 ---
 tags:
   - needs-triage
-modified: 2026-08-09T22:43:34-04:00
+modified: 2026-08-10T02:44:42-04:00
 ---
 # Fix grid styles on Safari
 
@@ -11,14 +11,12 @@ modified: 2026-08-09T22:43:34-04:00
 
 Lower the grid opacity or diagnose why mix-blend-mode is not seemingly working on Safari.
 
-## User Stories
+### Expected
 
-- {Role} should be able to {describe feature}
+What it should look like:  
+![](</Attachments/CleanShot 2026-08-10 at 02.18.09@2x.png>)
 
-## Implementation Plan Overview
+### Actual
 
-- Update {filename} with {describe change}
-
-## Acceptance Criteria
-
-- [ ] {Role} can {describe feature}
+It looks like:  
+![](</Attachments/CleanShot 2026-08-10 at 02.12.35@2x.png>)
