@@ -83,7 +83,7 @@
 		@apply uppercase font-light;
 	}
 	.site-nav a {
-		@apply text-2xl md:text-base text-white text-opacity-70 relative inline-block hover:text-opacity-100 px-2 py-1 transition-colors duration-200 ease-in-out;
+		@apply text-2xl md:text-xl text-white text-opacity-70 relative inline-block hover:text-opacity-100 px-2 py-1 transition-colors duration-200 ease-in-out;
 	}
 	.site-nav a::before,
 	.site-nav a::after {

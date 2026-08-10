@@ -16,10 +16,11 @@ module.exports = {
 				// variable stays a plain hex the header can emit verbatim. Bare
 				// `bg-accent` resolves `<alpha-value>` to `var(--tw-*-opacity, 1)`, which
 				// the utility sets to 1, so it stays opaque.
-				accent: 'color-mix(in srgb, var(--color-accent) calc(<alpha-value> * 100%), transparent)',
+				accent:
+					'color-mix(in srgb, var(--color-accent) calc(<alpha-value> * 100%), transparent)',
 			},
 			fontFamily: {
-				display: ['"Exo 2"', '"Arial Black"', 'sans-serif'],
+				display: ['"Caveat Brush"', '"Arial Black"', 'sans-serif'],
 				body: ['"Work Sans"', 'Arial', 'Helvetica', 'sans-serif'],
 			},
 		},
