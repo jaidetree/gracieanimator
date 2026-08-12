@@ -8,7 +8,7 @@ Fixing gracie-portfolio issue #39 (grid overlay pattern in
 `assets/css/input.css`, `#grid-overlay`) surfaced two distinct, real WebKit
 bugs that were initially misdiagnosed as one categorical "mix-blend-mode +
 mask don't combine in Safari" limitation (see the now-corrected
-[[Safari Drops Mix Blend Mode Combined With Mask]]). Both bugs are
+[Safari Drops Mix Blend Mode Combined With Mask](</Knowledge/Safari Drops Mix Blend Mode Combined With Mask.md>)). Both bugs are
 size/asset-dependent, which is why the symptom looked identical across many
 unrelated DOM/positioning rewrites -- none of those rewrites touched the
 actual causes.
@@ -47,4 +47,14 @@ grayscale the source, then use it as the alpha channel of a new RGBA PNG.
   page. Pair any such change with `pointer-events-none` on the overlay and
   `relative z-<n>` on the content it should sit under.
 
-Related: [[Safari Drops Mix Blend Mode Combined With Mask]]
+## Recurrence (2026-08-12)
+
+Bug 2 (luminance-from-JPEG) recurred at a second call site: `.page::before`/
+`.page::after` in `assets/css/input.css` (the lineart border-image, gracie-
+portfolio issue #38) masked with the same `clouds-mask.jpg` + `luminance`.
+No `mix-blend-mode` here, so bug 1 didn't apply -- only the mask bug. Fixed
+the same way: point at `clouds-mask.png`, drop `luminance`. Worth grepping
+`input.css` for any other remaining `clouds-mask.jpg`/`luminance` pairs next
+time this surfaces.
+
+Related: [Safari Drops Mix Blend Mode Combined With Mask](</Knowledge/Safari Drops Mix Blend Mode Combined With Mask.md>)

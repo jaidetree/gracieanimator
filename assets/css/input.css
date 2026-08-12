@@ -143,8 +143,12 @@
 		border-image-slice: 32 32 0 32;
 		border-image-width: 2rem;
 		border-image-repeat: stretch space;
+		/* clouds-mask.png carries a real alpha channel; mask-mode: luminance
+		   from the original .jpg never rendered in Safari (see gracie-portfolio
+		   issue #39 / knowledge note "Safari Loses Blend Mode And Mask On Large
+		   Composited Layers"). */
 		mask:
-			url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat,
+			url(/static/img/clouds-mask.png) top left / cover no-repeat,
 			linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)) top left / cover
 				no-repeat;
 	}
