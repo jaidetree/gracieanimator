@@ -29,3 +29,21 @@ specifically, as shipped in `assets/css/input.css`'s `body::before` grid
 overlay.
 
 Related: [[Grid Overlay Uses Mask Plus Blend On Body Before]]
+
+## Correction (2026-08-12)
+
+This note's conclusion was wrong: it isn't a fundamental "can't combine
+mix-blend-mode + mask" limitation. Continued investigation found two
+distinct, real, **size-dependent** WebKit bugs that happened to produce the
+identical symptom across all four variants above (all tested on the same
+large ~3081x1105px viewport), which is why restructuring DOM/positioning
+never helped -- none of those variants addressed either actual cause. See
+[[Safari Loses Blend Mode And Mask On Large Composited Layers]] for the real
+root causes and fix (transform-gpu + alpha-channel PNG mask instead of
+luminance-from-JPEG).
+
+**Apply:** a bug that reproduces identically across several *unrelated*
+structural rewrites is a signal to stop varying that axis (positioning/DOM
+shape) and look at what stayed constant instead (element size, asset format,
+compositing triggers) -- not a signal that the combination is categorically
+unsupported.

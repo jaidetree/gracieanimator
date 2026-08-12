@@ -12,31 +12,35 @@
 }
 
 @layer base {
+	html {
+		min-height: 100%;
+	}
 	body {
 		background-image: url(/static/img/dust-bg.jpg);
-		@apply font-body bg-no-repeat bg-cover;
+		@apply font-body bg-no-repeat bg-cover min-h-full;
 	}
-	body::before {
-		content: '';
+	/* transform-gpu forces this large layer onto its own dedicated
+	   compositing layer up front, working around a WebKit bug where large
+	   composited layers lose mix-blend-mode when crossing the tiled /
+	   non-tiled rendering threshold (webkit.org/b/250828). */
+	#grid-overlay {
+		/* No negative z-index: that broke the transform-gpu compositing fix
+		   above. It stacks above static content by default instead, so
+		   pointer-events-none keeps it from swallowing clicks across the
+		   page; site-container is explicitly relative z-10 to paint over it. */
+		@apply absolute inset-0 opacity-75 mix-blend-soft-light transform-gpu pointer-events-none;
 		background-image: url(/static/img/grid-pattern.svg);
 		background-size: 2rem;
 		background-position-y: -1px;
 		background-position-x: 50%;
-		@apply fixed inset-0 opacity-75 mix-blend-soft-light -z-10;
 	}
-	/* @TODO Move this into the body::before */
-	body:has(#mask-checkbox:checked)::before {
-		mask: url(/static/img/clouds-mask.jpg) luminance top left / cover no-repeat;
-	}
-	/* WebKit drops mix-blend-mode (and the mask above) on this element
-	   entirely -- confirmed across fixed/absolute, pseudo-element/real
-	   element, and isolated/non-isolated stacking, so the grid renders at
-	   full opacity there. -webkit-touch-callout is a Safari-only property,
-	   used here purely to scope this override to Safari/WebKit. */
-	@supports (-webkit-touch-callout: none) {
-		body::before {
-			opacity: 0.05;
-		}
+	/* clouds-mask.png (converted from the original .jpg, see
+	   static/img/clouds-mask.jpg) carries a real alpha channel so the
+	   browser can use standard alpha masking instead of computing
+	   mask-mode: luminance from a JPEG -- the latter didn't render in
+	   Safari even with transform-gpu forcing a dedicated layer. */
+	body:has(#mask-checkbox:checked) #grid-overlay {
+		mask: url(/static/img/clouds-mask.png) top left / cover no-repeat;
 	}
 	h1 {
 		@apply text-4xl font-bold font-display uppercase text-mask;
