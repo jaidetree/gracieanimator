@@ -53,4 +53,4 @@ function handleMouseMove(e) {
 
 document.addEventListener('mousemove', handleMouseMove)
 
-updateImages(0)
+updateImages(1)
