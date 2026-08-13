@@ -4,10 +4,11 @@
     "/.+\\.tldraw\\.md$/"
   ],
   "includePaths": [],
+  "linkConversionMode": "OnEveryModification",
   "shouldAllowEmptyEmbedAlias": false,
-  "shouldAutomaticallyConvertNewLinks": true,
   "shouldAutomaticallyUpdateLinksOnRenameOrMove": true,
   "shouldIncludeAttachmentExtensionToEmbedAlias": true,
+  "shouldNormalizeFileLinks": true,
   "shouldPreserveExistingLinkStyle": false,
   "shouldUseAngleBrackets": true,
   "shouldUseLeadingDotForRelativePaths": true,

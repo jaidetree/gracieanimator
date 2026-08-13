@@ -1,18 +1,109 @@
 {% extends "base.html" %}
 {% block content %}
   <section class="image-gallery flex flex-col gap-8">
-    <div>
-      {% include "portfolio/_breadcrumb.html" %}
-      <h1>{{ page_title }}</h1>
-    </div>
-    <div class="flex flex-row flex-wrap gap-8">
-      {% for piece in pieces %}
-        <figure class="image-gallery__item">
-          <a href="{{ piece.gallery_image.url }}" target="_blank"><img class="h-64 w-auto" src="{{ piece.gallery_image.url }}" alt="{{ piece.title }}"></a>
-        </figure>
-      {% empty %}
-        <p class="paragraph">Nothing here yet.</p>
-      {% endfor %}
-    </div>
+  	<div>
+  		{% include "portfolio/_breadcrumb.html" %}
+  		<h1>{{ page_title }}</h1>
+  	</div>
+  	<div class="image-gallery__grid flex flex-row flex-wrap gap-8">
+  		{% for piece in pieces %}
+    		<figure class="image-gallery__item relative">
+    			<a
+    				href="{{ piece.gallery_image.url }}"
+    				target="_blank"
+    				class="block image-gallery__link"
+    				title="{{ piece.title }}"
+    			>
+    				<img class="h-64 w-auto" src="{{ piece.gallery_image.url }}" alt="{{ piece.title }}" />
+    			</a>
+    		</figure>
+  		{% empty %}
+    		<p class="paragraph">Nothing here yet.</p>
+  		{% endfor %}
+  	</div>
   </section>
+  <dialog id="gallery-dialog" closedby="any">
+  	<img
+  		class="gallery-dialog__img w-auto h-auto max-h-[60vh] max-w-[50vw]"
+  		alt=""
+  		src=""
+  	/>
+  	<div
+  		class="gallery-dialog__nav absolute -bottom-24 left-0 right-0 flex flex-row justify-center gap-8"
+  	>
+  		<button class="gallery-dialog__select gallery-dialog__prev">
+  			<svg
+  				xmlns="http://www.w3.org/2000/svg"
+  				fill="none"
+  				viewBox="0 0 24 24"
+  				stroke-width="1.5"
+  				stroke="currentColor"
+  				class="size-6"
+  			>
+  				<path
+  					stroke-linecap="round"
+  					stroke-linejoin="round"
+  					d="M15.75 19.5 8.25 12l7.5-7.5"
+  				/>
+  			</svg>
+  		</button>
+  		<div class="flex flex-row justify-items-stretch gap-4">
+  			<button
+  				class="gallery-dialog__select gallery-dialog__select--prev"
+  				value=""
+  			>
+  				<img class="gallery-dialog__img" alt="" src="" />
+  			</button>
+  			<button
+  				class="gallery-dialog__select gallery-dialog__select--self"
+  				value=""
+  			>
+  				<img class="gallery-dialog__img" alt="" src="" />
+  			</button>
+  			<button
+  				class="gallery-dialog__select gallery-dialog__select--next"
+  				value=""
+  			>
+  				<img class="gallery-dialog__img" alt="" src="" />
+  			</button>
+  		</div>
+  		<button class="gallery-dialog__select gallery-dialog__next">
+  			<svg
+  				xmlns="http://www.w3.org/2000/svg"
+  				fill="none"
+  				viewBox="0 0 24 24"
+  				stroke-width="1.5"
+  				stroke="currentColor"
+  				class="size-6"
+  			>
+  				<path
+  					stroke-linecap="round"
+  					stroke-linejoin="round"
+  					d="m8.25 4.5 7.5 7.5-7.5 7.5"
+  				/>
+  			</svg>
+  		</button>
+  	</div>
+  	<button
+  		commandfor="gallery-dialog"
+  		command="close"
+  		class="absolute -right-2 -top-2 bg-black/80 rounded-full"
+  	>
+  		<svg
+  			xmlns="http://www.w3.org/2000/svg"
+  			fill="none"
+  			viewBox="0 0 24 24"
+  			stroke-width="1.5"
+  			stroke="currentColor"
+  			class="size-6"
+  		>
+  			<path
+  				stroke-linecap="round"
+  				stroke-linejoin="round"
+  				d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+  			/>
+  		</svg>
+  	</button>
+  </dialog>
+  <script type="text/javascript" src="/static/js/gallery-dialog.js"></script>
 {% endblock %}
