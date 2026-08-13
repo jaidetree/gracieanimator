@@ -5,12 +5,14 @@
       {% include "portfolio/_breadcrumb.html" %}
       <h1>{{ page_title }}</h1>
     </div>
-    {% for piece in pieces %}
-      <figure class="image-gallery__item">
-        <img class="w-full" src="{{ piece.gallery_image.url }}" alt="{{ piece.title }}">
-      </figure>
-    {% empty %}
-      <p class="paragraph">Nothing here yet.</p>
-    {% endfor %}
+    <div class="flex flex-row flex-wrap gap-8">
+      {% for piece in pieces %}
+        <figure class="image-gallery__item">
+          <a href="{{ piece.gallery_image.url }}" target="_blank"><img class="h-64 w-auto" src="{{ piece.gallery_image.url }}" alt="{{ piece.title }}"></a>
+        </figure>
+      {% empty %}
+        <p class="paragraph">Nothing here yet.</p>
+      {% endfor %}
+    </div>
   </section>
 {% endblock %}
