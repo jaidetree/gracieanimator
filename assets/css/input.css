@@ -190,7 +190,7 @@
 		@apply bg-surface/40 p-8 max-w-[80vw] text-white shadow-lg overflow-visible transition-all duration-300 ease-in-out;
 	}
 	#gallery-dialog::backdrop {
-		@apply bg-surface/60 backdrop-blur-md;
+		@apply bg-surface/60 transition-all duration-300 ease-in-out;
 	}
 	.gallery-dialog__select img {
 		@apply w-auto h-auto max-h-16 max-w-32;
@@ -202,10 +202,16 @@
 	#gallery-dialog:open {
 		@apply opacity-100 translate-y-0;
 	}
+	#gallery-dialog:open::backdrop {
+		@apply opacity-100 backdrop-blur-md;
+	}
 
 	@starting-style {
 		#gallery-dialog:open {
 			@apply opacity-0 -translate-y-64;
+		}
+		#gallery-dialog:open::backdrop {
+			@apply opacity-0 backdrop-blur-none;
 		}
 	}
 }
