@@ -1,0 +1,17 @@
+<li class="storyboards__cell max-w-xs w-full">
+	<a
+		class="block text-center transform-gpu transition translate-y-0 hover:-translate-y-4 duration-200 ease-in-out radial-noise"
+		href="{% url 'storyboard_detail' storyboard.slug %}"
+	>
+		{% include "portfolio/_thumbnail.html" with url=storyboard.thumbnail_url img_class="block w-80 h-64 object-cover" alt=storyboard.title %}
+		<span
+			class="vertical-scanlines min-h-[4rem] flex flex-col justify-center"
+		>
+			<span
+				class="text-white uppercase text-lg font-black leading-5"
+			>
+				{{ storyboard.title }}
+			</span>
+		</span>
+	</a>
+</li>
