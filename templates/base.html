@@ -50,6 +50,7 @@
     <footer class="fixed bottom-8 right-8">
       <input type="checkbox" id="mask-checkbox" name="maskCheckbox" checked />
     </footer>
+    {% block below_page %}{% endblock %}
   </div>
   <script src="{% static 'js/alpine.min.js' %}" defer></script>
 </body>

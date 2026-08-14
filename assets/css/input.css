@@ -13,11 +13,27 @@
 
 @layer base {
 	html {
-		min-height: 100%;
+		/* dvh (not %) so this tracks the real visible viewport as iOS/iPadOS
+		   Safari's collapsible toolbar shows/hides -- min-height: 100% holds
+		   steady at the "large" viewport size, leaving a gap of raw
+		   background below the page once the toolbar retracts.
+		   relative gives #grid-overlay (absolute inset-0, no other positioned
+		   ancestor) an explicit containing block, since iOS/iPadOS Safari
+		   doesn't reliably extend the implicit initial containing block to
+		   full document height. This lives on html rather than body: pairing
+		   position: relative with a dvh-based min-height on the SAME element
+		   that also holds the transform-gpu'd #grid-overlay descendant made
+		   iOS Safari hard-cap that element's box at exactly one viewport
+		   height instead of treating min-height as a floor (confirmed via
+		   the exposed gap measuring exactly scrollHeight - innerHeight on
+		   tall pages). Splitting the roles across html/body avoids that
+		   pairing. */
+		@apply relative;
+		min-height: 100dvh;
 	}
 	body {
 		background-image: url(/static/img/dust-bg.jpg);
-		@apply font-body bg-no-repeat bg-cover min-h-full;
+		@apply font-body bg-no-repeat bg-cover min-h-dvh;
 	}
 	/* transform-gpu forces this large layer onto its own dedicated
 	   compositing layer up front, working around a WebKit bug where large
@@ -212,16 +228,17 @@
 	}
 
 	#car-hero-slider::-moz-range-thumb {
-		@apply bg-accent rounded-full w-5 h-5 border-2 border-white;
+		@apply bg-accent rounded-full w-5 h-5 coarse:w-10 coarse:h-10 border-2 border-white;
 	}
 	#car-hero-slider::-webkit-slider-thumb {
 		/* Only WebKit centers the thumb on the track manually; the track is
-		   h-2 (0.5rem) and the thumb is h-5 (1.25rem), so pull it up by half
-		   the difference to match Firefox/Edge's automatic centering. */
-		@apply appearance-none bg-accent rounded-full w-5 h-5 border-2 border-white -mt-1.5;
+		   h-2 (0.5rem) and the thumb is h-5 (1.25rem) by default / h-10 under
+		   coarse (touch) pointers, so pull it up by half the difference to
+		   match Firefox/Edge's automatic centering at each size. */
+		@apply appearance-none bg-accent rounded-full w-5 h-5 coarse:w-10 coarse:h-10 border-2 border-white -mt-1.5 coarse:-mt-4;
 	}
 	#car-hero-slider::-ms-thumb {
-		@apply bg-accent rounded-full w-5 h-5 border-2 border-white;
+		@apply bg-accent rounded-full w-5 h-5 coarse:w-10 coarse:h-10 border-2 border-white;
 	}
 
 	#gallery-dialog {

@@ -1,23 +1,48 @@
 {% extends "base.html" %}
 {% block content %}
   <section class="flex flex-row flex-wrap xl:flex-nowrap gap-8 justify-center">
-    {% for item in featured %}
-      <a class="block w-80 text-center transform-gpu transition translate-y-0 hover:-translate-y-4 duration-200 ease-in-out radial-noise" href="{{ item.url }}">
-        {% include "portfolio/_thumbnail.html" with url=item.thumbnail_url img_class="block object-cover aspect-[5/4] w-full" alt=item.label %}
-        <span class="vertical-scanlines min-h-[4rem] flex flex-col justify-center">
-          <span class="font-display text-white uppercase text-[2rem] font-black text-mask">{{ item.label }}</span>
-        </span>
-      </a>
-    {% empty %}
-      <p class="paragraph">Nothing here yet.</p>
-    {% endfor %}
+  	{% for item in featured %}
+    	<a
+    		class="block w-80 text-center transform-gpu transition translate-y-0 hover:-translate-y-4 duration-200 ease-in-out radial-noise"
+    		href="{{ item.url }}"
+    	>
+    		{% include "portfolio/_thumbnail.html" with url=item.thumbnail_url img_class="block object-cover aspect-[5/4] w-full" alt=item.label %}
+    		<span class="vertical-scanlines min-h-[4rem] flex flex-col justify-center">
+    			<span
+    				class="font-display text-white uppercase text-[2rem] font-black text-mask"
+    			>
+    				{{ item.label }}
+    			</span>
+    		</span>
+    	</a>
+  	{% empty %}
+    	<p class="paragraph">Nothing here yet.</p>
+  	{% endfor %}
   </section>
-  <section id="car-hero" class="relative my-8">
-    <img alt="Car Illustration 1" src="/static/img/car/car-1.png" class="active" />
-    <img alt="Car Illustration 2" src="/static/img/car/car-2.png" class="" />
-    <img alt="Car Illustration 3" src="/static/img/car/car-3.png" class="" />
-    <img alt="Car Illustration 4" src="/static/img/car/car-4.png" class="" />
-    <img alt="Car Illustration 5" src="/static/img/car/car-5.png" class="" />
+{% endblock %}
+{% block below_page %}
+  <section id="car-hero" class="relative pt-24 z-10 h-[36rem]">
+  	<div class="car-hero__ui flex flex-row justify-center">
+  		<input
+  			type="range"
+  			min="0"
+  			max="100"
+  			id="car-hero-slider"
+  			value="0"
+  			class="w-[80%]"
+  		/>
+  	</div>
+  	<div class="car-hero__frames">
+  		<img
+  			alt="Car Illustration 1"
+  			src="/static/img/car/car-1.png"
+  			class="active"
+  		/>
+  		<img alt="Car Illustration 2" src="/static/img/car/car-2.png" class="" />
+  		<img alt="Car Illustration 3" src="/static/img/car/car-3.png" class="" />
+  		<img alt="Car Illustration 4" src="/static/img/car/car-4.png" class="" />
+  		<img alt="Car Illustration 5" src="/static/img/car/car-5.png" class="" />
+  	</div>
   </section>
   <script type="application/javascript" src="/static/js/car-hero.js"></script>
 {% endblock %}

@@ -7,6 +7,12 @@ module.exports = {
 	safelist: ['bg-accent', 'text-accent', 'border-accent'],
 	theme: {
 		extend: {
+			// Targets touch/stylus input regardless of viewport width, since
+			// tablets (e.g. iPad landscape) report desktop-class widths but
+			// still need larger touch targets.
+			screens: {
+				coarse: { raw: '(pointer: coarse)' },
+			},
 			colors: {
 				primary: '#9E2820',
 				surface: '#090808',
