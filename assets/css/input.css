@@ -198,7 +198,7 @@
 		@apply transition-all translate-y-0 opacity-100 duration-500;
 	}
 	.car-hero__prompt.active {
-		@apply translate-y-[100vh] opacity-0 ease-in-out;
+		@apply translate-y-8 opacity-0 ease-in-out;
 	}
 
 	#gallery-dialog {
