@@ -103,3 +103,14 @@ container.addEventListener('click', handleClickItem)
 dialog
 	.querySelector('.gallery-dialog__nav')
 	.addEventListener('click', handleClickNavItem)
+
+function handleClickClose(e) {
+	e.preventDefault()
+	e.stopPropagation()
+
+	dialog.close()
+}
+
+dialog
+	.querySelector('.gallery-dialog__close')
+	.addEventListener('click', handleClickClose)

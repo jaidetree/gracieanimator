@@ -22,7 +22,7 @@
 </head>
 <body class="bg-surface text-white">
   <div id="grid-overlay"></div>
-  <div class="max-w-[90rem] mx-auto my-8 flex flex-col gap-8 site-container px-4 lg:px-8 relative z-10">
+  <div class="max-w-[90rem] mx-auto pt-8 flex flex-col gap-8 site-container px-4 lg:px-8 relative z-10">
     <header class="md:flex md:flex-row justify-between items-center md:h-16 site-header md:overflow-hidden">
       {% if logo %}
         <div class="site-title text-center md:text-left">
@@ -47,9 +47,6 @@
     <main class="page">
       {% block content %}{% endblock %}
     </main>
-    <footer class="fixed bottom-8 right-8">
-      <input type="checkbox" id="mask-checkbox" name="maskCheckbox" checked />
-    </footer>
     {% block below_page %}{% endblock %}
   </div>
   <script src="{% static 'js/alpine.min.js' %}" defer></script>
