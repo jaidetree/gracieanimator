@@ -185,6 +185,44 @@
 	#car-hero img.active {
 		@apply z-20;
 	}
+	#car-hero-slider {
+		@apply bg-transparent appearance-none;
+	}
+	#car-hero-slider::-moz-range-track {
+		@apply bg-white/20 rounded-full h-2;
+	}
+	#car-hero-slider::-webkit-slider-runnable-track {
+		@apply bg-white/20 rounded-full h-2;
+	}
+	#car-hero-slider::-ms-track {
+		@apply bg-white/20 rounded-full h-2;
+		/* IE/Edge legacy paints the fill via -ms-fill-lower/-upper instead of a
+		   single track background, so hide the native track/ticks and let the
+		   fill pseudo-elements below stand in for it. */
+		color: transparent;
+		background: transparent;
+		border-color: transparent;
+	}
+
+	#car-hero-slider::-moz-range-progress {
+		@apply rounded-full bg-gradient-to-r from-accent/20 to-accent/60 border-none h-2;
+	}
+	#car-hero-slider::-ms-fill-lower {
+		@apply rounded-full bg-gradient-to-r from-accent/20 to-accent/60 border-none h-2;
+	}
+
+	#car-hero-slider::-moz-range-thumb {
+		@apply bg-accent rounded-full w-5 h-5 border-2 border-white;
+	}
+	#car-hero-slider::-webkit-slider-thumb {
+		/* Only WebKit centers the thumb on the track manually; the track is
+		   h-2 (0.5rem) and the thumb is h-5 (1.25rem), so pull it up by half
+		   the difference to match Firefox/Edge's automatic centering. */
+		@apply appearance-none bg-accent rounded-full w-5 h-5 border-2 border-white -mt-1.5;
+	}
+	#car-hero-slider::-ms-thumb {
+		@apply bg-accent rounded-full w-5 h-5 border-2 border-white;
+	}
 
 	#gallery-dialog {
 		@apply bg-surface/40 p-8 max-w-[80vw] text-white shadow-lg overflow-visible transition-all duration-300 ease-in-out;
