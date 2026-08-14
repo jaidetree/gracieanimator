@@ -30,7 +30,7 @@ def canonical_settings(settings):
 class TestCanonicalTag:
     def test_home_declares_canonical_on_canonical_host(self, client):
         html = client.get("/").content.decode()
-        assert '<link rel="canonical" href="https://gracieanimator.art/">' in html
+        assert '<link rel="canonical" href="https://gracieanimator.art/" />' in html
 
     def test_canonical_uses_canonical_host_even_when_served_elsewhere(self, client):
         """A page served on the herokuapp fallback still points at the custom

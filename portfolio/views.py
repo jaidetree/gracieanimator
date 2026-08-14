@@ -51,7 +51,7 @@ def featured_projects():
 
 
 def _image_gallery(request, model, page_title):
-    """Published single-image pieces as a single-column, full-width gallery."""
+    """Published single-image pieces as a wrapping thumbnail grid with a lightbox."""
     pieces = model.objects.filter(published=True)
     return render(
         request,

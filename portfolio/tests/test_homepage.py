@@ -62,11 +62,7 @@ def test_orders_illustration_then_sketchbook_then_comic(client):
     SketchbookSampleFactory(featured=True, published=True)
     make_comic(featured=True, published=True)
     body = _body(client)
-    assert (
-        body.index("Illustrations")
-        < body.index("Sketchbook Samples")
-        < body.index("Comics")
-    )
+    assert body.index("Illustrations") < body.index("Sketchbook") < body.index("Comics")
     for path in ("/illustrations/", "/sketchbook-samples/", "/comics/"):
         assert f'href="{path}"' in body
 

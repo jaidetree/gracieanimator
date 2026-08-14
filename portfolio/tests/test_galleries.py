@@ -1,10 +1,11 @@
 """Shared gallery-page behaviour for the single-column image galleries.
 
-Illustration and SketchbookSample render through the same gallery template and
-inherit the same ``Project`` base, so the published-filtering, layout, ordering,
-and rendition guarantees are identical — exercised here once, parametrized over
-both types. Type-specific behaviour (slug rules, alpha-PNG renditions, thumbnail
-fallback) stays in each type's own suite.
+Illustration and SketchbookSample render through the same gallery template (a
+wrapping thumbnail grid with a lightbox dialog) and inherit the same
+``Project`` base, so the published-filtering, layout, ordering, and rendition
+guarantees are identical — exercised here once, parametrized over both types.
+Type-specific behaviour (slug rules, alpha-PNG renditions, thumbnail fallback)
+stays in each type's own suite.
 """
 
 import pytest
@@ -29,12 +30,12 @@ def test_only_published_pieces_appear(client, factory, url):
 
 
 @pytest.mark.parametrize("factory,url", GALLERIES)
-def test_gallery_is_single_column_full_width(client, factory, url):
+def test_gallery_is_wrapping_thumbnail_grid(client, factory, url):
     factory(published=True)
     body = client.get(url).content.decode()
-    # Single-column stack (flex-col), images at container width (w-full), no grid.
-    assert "flex-col" in body
-    assert "w-full" in body
+    # Wrapping flexbox thumbnail grid with a lightbox dialog, not a CSS grid.
+    assert "flex-wrap" in body
+    assert "gallery-dialog" in body
     assert "grid-cols" not in body
 
 

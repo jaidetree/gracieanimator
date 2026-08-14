@@ -4,7 +4,10 @@ module.exports = {
 	// Accent utilities must compile even before any template uses them (the
 	// per-visitor colour is applied in the owner's later redesign work), so the
 	// three consumables are safelisted rather than discovered via `content`.
-	safelist: ['bg-accent', 'text-accent', 'border-accent'],
+	// bg-primary is safelisted too: no template currently uses it (body now
+	// uses bg-surface), but the brand primary colour must stay available as a
+	// literal utility rather than being purged.
+	safelist: ['bg-accent', 'text-accent', 'border-accent', 'bg-primary'],
 	theme: {
 		extend: {
 			// Targets touch/stylus input regardless of viewport width, since
