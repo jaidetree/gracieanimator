@@ -11,7 +11,7 @@
       pkgs = import nixpkgs { inherit system; };
     in
     {
-      devShell = pkgs.mkShell {
+      devShells.default = pkgs.mkShell {
         # Toolchain only. Python packages live in requirements.txt and are
         # installed into a .venv by direnv (`layout python`). Adding a Python
         # dep does NOT require touching this file or reloading direnv.
