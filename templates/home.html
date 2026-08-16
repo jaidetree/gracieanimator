@@ -22,7 +22,10 @@
 {% endblock %}
 {% block below_page %}
   <section id="car-hero" class="relative h-[24rem] overflow-hidden">
-  	<label class="car-hero__ui flex flex-row justify-center absolute inset-0 z-40" for="car-hero-slider">
+  	<label
+  		class="car-hero__ui flex flex-row justify-center absolute inset-0 z-40"
+  		for="car-hero-slider"
+  	>
   		<input
   			type="range"
   			min="0"
@@ -43,9 +46,11 @@
   		<img alt="Car Illustration 4" src="/static/img/car/car-4.png" class="" />
   		<img alt="Car Illustration 5" src="/static/img/car/car-5.png" class="" />
   	</div>
-    <div class="car-hero__prompt absolute bottom-0 left-0 right-0 text-center pb-8">
-      <p class="italic text-white/40">Click &amp; Drag the car left or right</p>
-    </div>
+  	<div
+  		class="car-hero__prompt absolute bottom-0 left-0 right-0 text-center pb-8"
+  	>
+  		<p class="italic text-white/40">Click &amp; Drag the car left or right</p>
+  	</div>
   </section>
   <script type="application/javascript" src="/static/js/car-hero.js"></script>
 {% endblock %}

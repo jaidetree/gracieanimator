@@ -4,51 +4,50 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      {% block title %}{% if page_title %}{{ page_title }} | {% endif %}Grace Space{% endblock %}
-  </title>
-  <link rel="canonical" href="{{ canonical_url }}" />
-  <link rel="icon" href="{% static 'img/site-icon.png' %}" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Exo+2:ital,wght@0,100..800;1,400&display=block" />
-  <style>
-      :root {
-          --color-accent: {{ accent_color }}
-      }
-  </style>
-  <link rel="stylesheet" href="{% static 'css/stylesheet.css' %}" />
-</head>
-<body class="bg-surface text-white">
-  <div id="grid-overlay"></div>
-  <div class="max-w-[90rem] mx-auto pt-8 flex flex-col gap-8 site-container px-4 lg:px-8 relative z-10">
-    <header class="md:flex md:flex-row justify-between items-center md:h-16 site-header md:overflow-hidden">
-      {% if logo %}
-        <div class="site-title text-center md:text-left">
-          <a href="/">
-            <img src="{{ logo.image.url }}" alt="Grace Space Logo" class="max-w-2xl w-auto h-24" is="site-logo" />
-            <h1 class="sr-only">The Grace Space</h1>
-          </a>
+    <title>{% block title %}{% if page_title %}{{ page_title }} | {% endif %}Grace Space{% endblock %}</title>
+    <link rel="canonical" href="{{ canonical_url }}" />
+    <link rel="icon" href="{% static 'img/site-icon.png' %}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Exo+2:ital,wght@0,100..800;1,400&display=block" />
+    <style>
+        :root {
+            --color-accent: {{ accent_color }}
+        }
+    </style>
+    <link rel="stylesheet" href="{% static 'css/stylesheet.css' %}" />
+  </head>
+  <body class="bg-surface text-white">
+    <div id="grid-overlay"></div>
+    <div class="max-w-[90rem] mx-auto pt-8 flex flex-col gap-8 site-container px-4 lg:px-8 relative z-10">
+      <header class="md:flex md:flex-row justify-center lg:justify-between items-center md:h-16 site-header md:overflow-hidden">
+        <div class="site-title flex flex-row justify-center lg:justify-start">
+          {% if logo %}
+            <a href="/" class="block">
+              <img src="{{ logo.image.url }}" alt="Grace Space Logo" class="max-w-full md:max-w-2xl md:h-24" is="site-logo" />
+              <h1 class="sr-only">The Grace Space</h1>
+            </a>
+          {% else %}
+            <h1>
+              <a href="/">The Grace Space</a>
+            </h1>
+          {% endif %}
         </div>
-      {% else %}
-        <h1 class="site-title text-center md:text-left">
-          <a href="/">The Grace Space</a>
-        </h1>
-      {% endif %}
-      <nav class="flex flex-row site-nav justify-center font-display">
-        <a href="/" class="{% if portfolio_nav_active %}active{% endif %}">Portfolio</a>
-        {% for nav in nav_pages %}
-          <a href="{{ nav.get_absolute_url }}"
-             class="{% if request.path == nav.get_absolute_url %}active{% endif %}">{{ nav.title }}</a>
-        {% endfor %}
-      </nav>
-    </header>
-    <main class="page">
-      {% block content %}{% endblock %}
-    </main>
-    {% block below_page %}{% endblock %}
-  </div>
-  <script src="{% static 'js/alpine.min.js' %}" defer></script>
-</body>
+        <nav class="flex flex-row site-nav justify-center font-display">
+          <a href="/" class="{% if portfolio_nav_active %}active{% endif %}">Portfolio</a>
+          {% for nav in nav_pages %}
+            <a href="{{ nav.get_absolute_url }}" class="{% if request.path == nav.get_absolute_url %}active{% endif %}">{{ nav.title }}</a>
+          {% endfor %}
+        </nav>
+      </header>
+      <main class="page">
+        {% block content %}
+        {% endblock content %}
+      </main>
+      {% block below_page %}
+      {% endblock below_page %}
+    </div>
+    <script src="{% static 'js/alpine.min.js' %}" defer></script>
+  </body>
 </html>
