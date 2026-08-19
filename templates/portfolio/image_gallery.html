@@ -1,18 +1,16 @@
 {% extends "base.html" %} {% block content %}
 <script>
 	function imageGallery(items) {
+		const total = items.length
+
 		return {
 			items: items,
 			current: null,
 			get prevIndex() {
-				return this.current === null
-					? null
-					: (this.current - 1 + this.items.length) % this.items.length
+				return this.current === null ? null : (this.current - 1 + total) % total
 			},
 			get nextIndex() {
-				return this.current === null
-					? null
-					: (this.current + 1) % this.items.length
+				return this.current === null ? null : (this.current + 1) % total
 			},
 			open(index) {
 				this.current = index
