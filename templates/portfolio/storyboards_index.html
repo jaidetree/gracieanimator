@@ -1,40 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="storyboards">
-  	{% include "portfolio/_breadcrumb.html" %}
-  	<header class="md:flex md:flex-row justify-between items-center mb-4">
-  		<h1 class="text-center md:text-left">{{ page_title }}</h1>
-  		<form
-  			method="post"
-  			action="{% url 'storyboards_logout' %}"
-  			class="text-center md:text-right mt-2 md:mt-0"
-  		>
-  			{% csrf_token %}
-  			<button
-  				type="submit"
-  				class="storyboards__logout text-sm uppercase underline"
-  			>
-  				Log out
-  			</button>
-  		</form>
-  	</header>
-  	<div class="space-y-16">
-  		{% for section in sections %}
-    		<section class="storyboards__category mt-8">
-    			<header class="text-center md:text-left">
-    				<h2><a href="{% url 'storyboard_category' section.category.slug %}">{{ section.category.name }}</a></h2>
-    			</header>
-    			<ul
-    				class="storyboards__grid flex flex-wrap gap-8 mt-8 justify-center md:justify-start"
-    			>
-    				{% for storyboard in section.storyboards %}
-      				{% include "portfolio/_storyboard_entry.html" with storyboard=storyboard %}
-    				{% endfor %}
-    			</ul>
-    		</section>
-  		{% empty %}
-    		<p class="paragraph">Nothing here yet.</p>
-  		{% endfor %}
-  	</div>
-  </section>
-{% endblock %}
+    <section class="storyboards">
+        {% include "portfolio/_breadcrumb.html" %}
+        <header class="md:flex md:flex-row justify-between items-center mb-4">
+            <h1 class="text-center md:text-left">{{ page_title }}</h1>
+            <form method="post" action="{% url 'storyboards_logout' %}" class="text-center md:text-right mt-2 md:mt-0">
+                {% csrf_token %}
+                <button type="submit" class="storyboards__logout text-sm uppercase underline">Log out</button>
+            </form>
+        </header>
+        <div class="space-y-16">
+            {% for section in sections %}
+                <section class="storyboards__category mt-8">
+                    <header class="text-center md:text-left">
+                        <h2><a href="{% url 'storyboard_category' section.category.slug %}">{{ section.category.name }}</a></h2>
+                    </header>
+                    <ul class="storyboards__grid flex flex-wrap gap-8 mt-8 justify-center md:justify-start">
+                        {% for storyboard in section.storyboards %}
+                            {% include "portfolio/_storyboard_entry.html" with storyboard=storyboard %}
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% empty %}
+                <p class="paragraph">Nothing here yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock content %}
